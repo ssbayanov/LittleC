@@ -63,7 +63,6 @@ typedef std::tuple<TokenClass, string, int> TokenTableRow;
 
 std::vector <TokenTableRow> TokenTable;
 
-
 static void dumpTokenTable(string firstColName, string secondColName, string thirdColName)
 {
     cout << left;
@@ -77,6 +76,11 @@ static void dumpTokenTable(string firstColName, string secondColName, string thi
       cout.width(20);
       cout << get<1>(ttr) << get<2>(ttr) << "\n";
     }
+}
+
+int yylex()
+{
+    return 0;
 }
 
 #endif // LEXER_CONSTRUCTIONS_H

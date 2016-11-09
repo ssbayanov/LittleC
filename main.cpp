@@ -11,9 +11,6 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include <map>
-#include <tuple>
-#include <vector>
 #include <string>
 
 #include <QtCore>
@@ -27,7 +24,6 @@
 //#include "parser.cpp"
 
 using namespace std;
-
 
 int main(int argc, char *argv[])
 {

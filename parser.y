@@ -21,7 +21,7 @@
 
 %{
 #include <QtGui>
-//#include "lexer.cpp"
+//#include "lexer_constructions.h"
 
 extern int yylex(void);
 void yyerror(const char *s);
