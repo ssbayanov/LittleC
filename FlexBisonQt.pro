@@ -84,5 +84,4 @@ bisonheader.CONFIG += target_predeps no_link
 
 QMAKE_EXTRA_COMPILERS += bisonheader
 
-HEADERS += \
-    lexer_constructions.h
+HEADERS +=

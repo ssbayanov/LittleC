@@ -1,6 +1,6 @@
 /*
-   Example using Flex and Bison with Qt.
-   Copyright (C) 2013  Gonzalo Exequiel Pedone
+   Based on FlexBisonQt Gonzalo Exequiel Pedone Copyright (C) 2013
+   Web-Site: http://github.com/hipersayanX/FlexBisonQt
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,16 +15,17 @@
    You should have received a copy of the GNU General Public License
    along with This program.  If not, see <http://www.gnu.org/licenses/>.
 
-   Email   : hipersayan DOT x AT gmail DOT com
-   Web-Site: http://github.com/hipersayanX/FlexBisonQt
+   Email   : ssbayanov AT gmail DOT com
+
 */
 
 %{
+
 #include <QtGui>
-//#include "lexer_constructions.h"
 
 extern int yylex(void);
 void yyerror(const char *s);
+
 %}
 
 // Here we can define some custom variable types.
