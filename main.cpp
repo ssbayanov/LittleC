@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     infile.close();
 
     cout << "Dump token table.\n\n";
+    cout << "Test git branch Masha2.\n\n";
     if (0 < TokenTable.size()) {
         dumpTokenTable("Token class", "Token value", "Line number"); }
     else {
