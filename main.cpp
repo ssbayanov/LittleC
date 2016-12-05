@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
     cout << "Dump token table.\n\n";
     cout << "Test git branch Masha2.\n\n";
-    cout << "Test git commit";
+    cout << "Test #2 git in QtCreator";
     if (0 < TokenTable.size()) {
         dumpTokenTable("Token class", "Token value", "Line number"); }
     else {
