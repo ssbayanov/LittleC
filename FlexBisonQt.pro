@@ -10,7 +10,7 @@ CONFIG -= app_bundle
 
 QMAKE_LEX = flex
 QMAKE_YACC = bison
-QMAKE_YACCFLAGS = -d -o parser.tab.c -l
+QMAKE_YACCFLAGS = -d -o parser.tab.c -l -v
 Debug:DEFINES += YYDEBUG
 
 QT       += core

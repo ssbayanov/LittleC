@@ -8,6 +8,7 @@ typedef enum
     typeFloat,
     typeVoid,
     typeChar,
+    typeBool,
     typeStruct,
     typeMass,
     typeEmum,

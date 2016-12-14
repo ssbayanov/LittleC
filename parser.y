@@ -7,6 +7,7 @@
 #include <vector>
 //#include "lexer.h"
 #include "myast.h"
+#include "parser_yacc.h"
 
 /* Обработка синтаксического дерева */
 #define ADDITION_OPERATOR       1
@@ -42,6 +43,10 @@
 #define PRINT_OPERATOR          31
 #define SCAN_OPERATOR           32
 
+#define YYERROR_VERBOSE         1
+
+#define YYDEBUG 0
+
 /* описание структуры синтаксического дерева */
 int g_tmpvar_upper_index = 0;
 
@@ -49,10 +54,10 @@ int g_tmpvar_upper_index = 0;
 NodeAST* idents (int index);
 NodeAST* tmpvars (int tmp_index);*/
 /* Генерация трехадресного кода */
-int codegenBinary(FILE* outputFile, int operatorCode, NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result);
+/*int codegenBinary(FILE* outputFile, int operatorCode, NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result);
 int codegenUnary(FILE* outputFile, int operatorCode, NodeAST* operand, NodeAST* result);
 int codegenGoto(FILE* outputFile, int operatorCode,int labelREALCONST, NodeAST* optionalExpression);
-int codegenLabel(FILE* outputFile, int labelREALCONST);
+int codegenLabel(FILE* outputFile, int labelREALCONST);*/
 
 /* Обработка таблицы меток. Используется стековая организация */
 static int g_LastLabelREALCONST = 0;
@@ -73,7 +78,6 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 %}
 
-
 %code requires
 {
     //#include "myast.h"
@@ -88,7 +92,7 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 }
 
-/* The parsing context
+/* The parsing context */
 //%param { Simpl_driver& driver }
 
 //%locations
@@ -103,8 +107,8 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 %code
 {
-    /*#undef yyerror
-#define yyerror driver.error */
+//#undef yyerror
+//#define yyerror driver.error
 
     std::string ErrorMessageVariableNotDeclared(std::string);
     std::string ErrorMessageVariableDoublyDeclared(std::string);
@@ -124,6 +128,7 @@ extern char g_outFileName[256]; /* Имя выходного файла */
     char s[3]; // имя оператора
     std::string *str; // строкова константа
     char other;
+    SubexpressionValueTypeEnum type;
 }
 
 // Declare tokens.
@@ -162,12 +167,12 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 %token       BREAK      "break"
 %token       GOTO       "goto"
 // Types of data.
-%token       INT        "int"
-%token       DOUBLE     "double"
-%token       FLOAT      "float"
-%token       BOOL       "bool"
-%token       CHAR       "char"
-%token       SHORT      "short"
+%token      INT        "int"
+%token     DOUBLE     "double"
+%token      FLOAT      "float"
+%token      BOOL       "bool"
+%token      CHAR       "char"
+%token      SHORT      "short"
 %token       ENUM       "enum"
 %token       VOID       "void"
 %token       STRUCT     "struct"
@@ -184,8 +189,10 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 /*%token IFX */
 
-%type <a> exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declarations loop_stmt loop_head switch_stmt
+%type <a>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt loop_head switch_stmt
 goto_stmt call_stmt descr_stmt case_stmt
+
+%type <type> numeric_data_types
 
 /* Priority */
 %nonassoc IF
@@ -229,10 +236,15 @@ stmtlist : statement stmtlist_tail
         $$ = CreateNodeAST(typeList, "L", $1, $2);
 };
 
-stmtlist_tail : %empty   { $$ = NULL; }
-| stmtlist { $$ = $1;   };
+stmtlist_tail : %empty   {
+    $$ = NULL;
+}
+| stmtlist {
+    $$ = $1;
+};
 
-statement : assignment | cond_stmt | declarations | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | case_stmt |BREAK SEMICOLON
+
+statement : assignment | cond_stmt | declaration_number | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | case_stmt |BREAK SEMICOLON
 {
     if (g_LoopNestingCounter <= 0)
         yyerror("'break' not inside loop");
@@ -250,9 +262,10 @@ CLOSEBRACE { // }
     HideUserVariableTable(currentTable); currentTable = currentTable->parentTable;
 };
 
-descr_stmt: INT IDENTIFIER OPENPAREN exp CLOSEPAREN compound_statement {};
+descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_statement {};
 
 call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
+
 
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
 {
@@ -270,7 +283,26 @@ assignment : IDENTIFIER ASSIGN exp SEMICOLON
 |IDENTIFIER ASSIGN call_stmt {}
 ;
 
-declarations : INT IDENTIFIER SEMICOLON
+numeric_data_types : INT {
+    $$ = typeInt;
+}
+| DOUBLE {
+    $$ = typeDouble;
+}
+| FLOAT {
+    $$ = typeFloat;
+}
+| BOOL {
+    $$ = typeBool;
+}
+| CHAR {
+    $$ = typeChar;
+}
+| SHORT {
+    $$ = typeShort;
+};
+
+declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 {
     TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
     if (NULL != var)
@@ -279,13 +311,15 @@ declarations : INT IDENTIFIER SEMICOLON
     }
     else
     {
-        bool kuku = InsertUserVariableTable(currentTable, *$2, typeInt, var);
-        if (false == kuku)
+        SubexpressionValueTypeEnum type;
+
+        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        if (!isInserted)
             yyerror("Memory allocation or access error");
     }
     $$ = CreateAssignmentNode(var, CreateNumberNode(0));
 }
-| INT IDENTIFIER ASSIGN exp SEMICOLON
+| numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
 {
     TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
     if (NULL != var)
@@ -294,8 +328,8 @@ declarations : INT IDENTIFIER SEMICOLON
     }
     else
     {
-        bool kuku = InsertUserVariableTable(currentTable, *$2, typeInt, var);
-        if (false == kuku)
+        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        if (!isInserted)
             yyerror("Memory allocation or access error");
     }
 
@@ -304,24 +338,11 @@ declarations : INT IDENTIFIER SEMICOLON
         yyerror("warning - types incompatible in assignment");
     }
     $$ = CreateAssignmentNode(var, $4);
-}
 
-| DOUBLE IDENTIFIER SEMICOLON
-{
-    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
-    if (var != NULL)
-    {
-        yyerror(ErrorMessageVariableDoublyDeclared(*$2));
-    }
-    else
-    {
-        bool kuku = InsertUserVariableTable(currentTable, *$2, typeDouble, var);
-        if (false == kuku)
-            yyerror("Memory allocation or access error");
-    }
-    $$ = CreateAssignmentNode(var, CreateNumberNode(0.0f));
 }
-| IDENTIFIER COLON {}
+| IDENTIFIER COLON {
+
+}
 ;
 
 goto_stmt: GOTO IDENTIFIER SEMICOLON {};
@@ -460,6 +481,7 @@ std::string ErrorMessageVariableDoublyDeclared(std::string name)
     return errorDeclaration;
 }
 
+/*
 int codegenBinary(FILE* outputFile, int operatorCode,
                   NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result)
 {
@@ -599,6 +621,7 @@ static void EmptyLabels(void)
     g_LabelStackPointer = 0;
 }
 
+*/
 
 int yyerror (std::string s) {
     printf ("Line %d: %s.\n", lno, s.c_str());
