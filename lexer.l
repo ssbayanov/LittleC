@@ -63,7 +63,7 @@ stringch      [^"\n]
 
 
     /* Noneclose multiline comment. */
-\/\*(.|[\t\n\r])* {
+\/\*(.|[\t\n\r])*$ {
     std::cerr << "ERROR: " << yytext << " - Unfinished comment. Line "
          << lno << ".\n";}
 
@@ -74,18 +74,18 @@ stringch      [^"\n]
 
     /* Binar operations. */
 \=                          { TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno)); return ASSIGN;}
-\+                          { TokenTable.push_back(TokenTableRow("PLUS", yytext, lno)); strcpy(parserlval.s, yytext); return PLUS;}
-\-                          { TokenTable.push_back(TokenTableRow("MINUS", yytext, lno)); strcpy(parserlval.s, yytext); return MINUS;}
-\++|\--                     { TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno)); strcpy(parserlval.s, yytext); return ADDUOP;}
+\+                          { TokenTable.push_back(TokenTableRow("PLUS", yytext, lno)); strcpy(parserlval.opName, yytext); return PLUS;}
+\-                          { TokenTable.push_back(TokenTableRow("MINUS", yytext, lno)); strcpy(parserlval.opName, yytext); return MINUS;}
+\++|\--                     { TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno)); strcpy(parserlval.opName, yytext); return ADDUOP;}
 
     /*  */
-\*|\/|\%                    { TokenTable.push_back(TokenTableRow("MULOP", yytext, lno)); strcpy(parserlval.s, yytext); return MULOP;}
+\*|\/|\%                    { TokenTable.push_back(TokenTableRow("MULOP", yytext, lno)); strcpy(parserlval.opName, yytext); return MULOP;}
 
     /* Boolean operations */
-"&"|"|"|"^"|"!"             { TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno)); strcpy(parserlval.s, yytext); return BOOLOP;}
+"&"|"|"|"^"|"!"             { TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno)); strcpy(parserlval.opName, yytext); return BOOLOP;}
 
     /* Comparison and relation operator tokens */
-">="|"<="|"<"|">"|"=="|"!=" { TokenTable.push_back(TokenTableRow("RELOP", yytext, lno)); strcpy(parserlval.s, yytext); return RELOP;}
+">="|"<="|"<"|">"|"=="|"!=" { TokenTable.push_back(TokenTableRow("RELOP", yytext, lno)); strcpy(parserlval.opName, yytext); return RELOP;}
 
     /* Punctuation */
 \;  { TokenTable.push_back(TokenTableRow("SEMICOLON", yytext, lno)); return SEMICOLON;}
@@ -136,16 +136,27 @@ print    { TokenTable.push_back(TokenTableRow("PRINT", yytext, lno)); return PRI
 scan     { TokenTable.push_back(TokenTableRow("SCAN", yytext, lno)); return SCAN; }
 
     /* Real constants. */
-[0-9]+\.[0-9]+ {TokenTable.push_back(TokenTableRow("REALCONST", yytext, lno)); parserlval.d = atof(yytext);
+[0-9]+\.[0-9]+ {TokenTable.push_back(TokenTableRow("REALCONST", yytext, lno)); parserlval.doubleValue = atof(yytext);
             return REALCONST;}
 
     /* Integer constanst. */
-[0-9]+ {TokenTable.push_back(TokenTableRow("INTCONST", yytext, lno)); parserlval.i = atoi(yytext);
+[0-9]+ {TokenTable.push_back(TokenTableRow("INTCONST", yytext, lno)); parserlval.intValue = atoi(yytext);
             return INTCONST;}
 
     /* Identifiers. */
-[:alpha:]|[[:alnum:]_]* {TokenTable.push_back(TokenTableRow("IDENTIFIER", yytext, lno)); parserlval.var = new std::string(yytext, yyleng);
+[:alpha:]|[[:alnum:]_]* {TokenTable.push_back(TokenTableRow("IDENTIFIER", yytext, lno)); parserlval.var = new QString(yytext);
 return IDENTIFIER;}
+
+    /* Errors strings (without ") */
+ \"{stringch}*$  {
+     std::cerr << "ERROR: " << yytext << " - Unfinished string literal. Line "
+          << lno << ".\n"; }
+
+
+     /* Strings */
+ \"{stringch}*\" {
+     TokenTable.push_back(TokenTableRow("STRING", yytext, lno)); parserlval.var = new QString(yytext);
+     return STRING;}
 
     /* Undefined token. */
 .       {

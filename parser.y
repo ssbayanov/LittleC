@@ -1,12 +1,17 @@
-%{
+%code requires{ //code insert in top parser_yacc.h
 #include <cstdio>
 #include <string>
 #include <iostream>
 #include <map>
 #include <tuple>
 #include <vector>
+#include <QString>
+#include <QStringList>
 //#include "lexer.h"
 #include "myast.h"
+}
+
+%{
 #include "parser_yacc.h"
 
 /* Обработка синтаксического дерева */
@@ -45,7 +50,9 @@
 
 #define YYERROR_VERBOSE         1
 
-#define YYDEBUG 0
+
+/*#define YYDEBUG 1
+#define yyoutput std::cout*/
 
 /* описание структуры синтаксического дерева */
 int g_tmpvar_upper_index = 0;
@@ -67,14 +74,23 @@ static void PushLabelREALCONST(int);
 static int PopLabelREALCONST(void);
 static void EmptyLabels(void);
 
-std::string ErrorMessageVariableNotDeclared(std::string);
-std::string ErrorMessageVariableDoublyDeclared(std::string);
-
 extern int lno;
-extern int yyerror(std::string);
+void yyerror(QString);
 extern int parserlex();
 extern char g_outFileName[256]; /* Имя выходного файла */
 
+//errors
+enum {  ERROR_DOUBLE_DECLARED,
+        ERROR_NOT_DECLARED,
+        WARNING_TYPES_INCOMPATIBLE,
+        ERROR_BREAK_NOT_INSIDE_LOOP,
+        ERROR_MEMORY_ALLOCATION } errorTypes;
+
+static QStringList errorList = QStringList() << "warning: Variable %1 is already declared"
+                          << "error: Variable %1 was not declared"
+                          << "warning: types in %1 opertion incompatible"
+                          << "error: 'break' not inside loop"
+                          << "Memory allocation or access error";
 
 %}
 
@@ -95,15 +111,15 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 /* The parsing context */
 //%param { Simpl_driver& driver }
 
-//%locations
-//%initial-action
-//{
+/*%locations
+%initial-action
+{
   // Initialize the initial location.
-//  @$.begin.filename = @$.end.filename = &driver.filename;
-//};
+  @$.begin.filename = @$.end.filename = &driver.filename;
+};
+*/
 
-//%define parse.trace
-//%define parse.error verbose*/
+%define parse.trace
 
 %code
 {
@@ -121,28 +137,28 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 %union
 {
-    NodeAST *a; // узел абс.синт. дерева
-    double d;
-    int i;
-    std::string *var; // переменная
-    char s[3]; // имя оператора
-    std::string *str; // строкова константа
+    NodeAST *astNode; // узел абс.синт. дерева
+    double doubleValue;
+    int intValue;
+    QString *var; // переменная
+    char opName[3]; // имя оператора
+    QString *strValue; // строкова константа
     char other;
     SubexpressionValueTypeEnum type;
 }
 
 // Declare tokens.
 %token       EOFILE 0   "end of file"
-%token <d>   REALCONST  "floating point double precision"
-%token <i>   INTCONST   "integer"
+%token <doubleValue>   REALCONST  "floating point double precision"
+%token <intValue>   INTCONST   "integer"
 %token <var> IDENTIFIER "name"
-%token <str> STRING     "string"
-%token <s>   RELOP      "relop"
-%token <s>   ADDUOP     "adduop"
-%token       PLUS       "plus"
-%token       MINUS      "minus"
-%token <s>   MULOP      "mulop"
-%token <s>   BOOLOP     "boolop"
+%token <strValue> STRING     "string"
+%token <opName>   RELOP      "relop"
+%token <opName>   ADDUOP     "adduop"
+%token <opName>   PLUS       "plus"
+%token <opName>   MINUS      "minus"
+%token <opName>   MULOP      "mulop"
+%token <opName>   BOOLOP     "boolop"
 %token       OPENBRACE  "{"
 %token       CLOSEBRACE "}"
 %token       OPENPAREN  "("
@@ -185,11 +201,9 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 %token       RETURN     "return"
 
-
-
 /*%token IFX */
 
-%type <a>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt loop_head switch_stmt
+%type <astNode>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt loop_head switch_stmt
 goto_stmt call_stmt descr_stmt case_stmt
 
 %type <type> numeric_data_types
@@ -208,9 +222,9 @@ goto_stmt call_stmt descr_stmt case_stmt
 
 %start prog
 
-%printer {
+/*%printer {
     yyoutput << $$;
-} <*>
+} <*>*/
 
 %destructor {
     delete $$;
@@ -247,7 +261,7 @@ stmtlist_tail : %empty   {
 statement : assignment | cond_stmt | declaration_number | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | case_stmt |BREAK SEMICOLON
 {
     if (g_LoopNestingCounter <= 0)
-        yyerror("'break' not inside loop");
+        yyerror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
     $$ = CreateControlFlowNode(typeJumpStatement, NULL, NULL, NULL);
 };
 
@@ -269,14 +283,15 @@ call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
 
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
 {
-    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, *$1);
+    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, $1->toStdString());
     if (NULL == var)
     {
-        yyerror(ErrorMessageVariableNotDeclared(*$1));
+        yyerror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        YYERROR;
     }
     else if ($3->valueType != var->table->data[var->index].valueType)
     {
-        yyerror("warning - types incompatible in assignment");
+        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg("assign"));
     }
     $$ = CreateAssignmentNode(var, $3);
 }
@@ -304,38 +319,38 @@ numeric_data_types : INT {
 
 declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 {
-    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
+    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, $2->toStdString());
     if (NULL != var)
     {
-        yyerror(ErrorMessageVariableDoublyDeclared(*$2));
+        yyerror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
     }
     else
     {
         SubexpressionValueTypeEnum type;
 
-        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        bool isInserted = InsertUserVariableTable(currentTable, $2->toStdString(), $1, var);
         if (!isInserted)
-            yyerror("Memory allocation or access error");
+            yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
     $$ = CreateAssignmentNode(var, CreateNumberNode(0));
 }
 | numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
 {
-    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
+    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, $2->toStdString());
     if (NULL != var)
     {
-        yyerror(ErrorMessageVariableDoublyDeclared(*$2));
+        yyerror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
     }
     else
     {
-        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        bool isInserted = InsertUserVariableTable(currentTable, $2->toStdString(), $1, var);
         if (!isInserted)
-            yyerror("Memory allocation or access error");
+            yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
 
     if ($4->valueType != var->table->data[var->index].valueType)
     {
-        yyerror("warning - types incompatible in assignment");
+        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg(*$2));
     }
     $$ = CreateAssignmentNode(var, $4);
 
@@ -387,7 +402,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror("warning - types in relop incompatible");
+        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
         else
@@ -400,24 +415,24 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror("warning - types in addop incompatible");
+        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, "+", CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, "+", $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
     }
     else
-        $$ = CreateNodeAST(typeBinaryOp, "+", $1, $3);
+        $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
 }
 | exp MINUS exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror("warning - types in subop incompatible");
+        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, "-", CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, "-", $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
     }
     else
         $$ = CreateNodeAST(typeBinaryOp, "-", $1, $3);
@@ -426,11 +441,11 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror("warning - types in mulop incompatible");
+        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, "+", CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, "+", $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
     }
     else
         $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
@@ -439,7 +454,7 @@ exp : exp RELOP exp
 {
     $$ = CreateNodeAST(typeUnaryOp, "-", $2, NULL);
 }
-| OPENPAREN exp CLOSEPAREN
+| OPENPAREN exp CLOSEPAREN // ( exp )
 {
     $$ = $2;
 }
@@ -451,34 +466,34 @@ exp : exp RELOP exp
 {
     $$ = CreateNumberNode($1);
 }
+| TRUE
+{
+    $$ = CreateNumberNode(1);
+}
+| FALSE
+{
+    $$ = CreateNumberNode(0);
+}
 | IDENTIFIER
 {
-    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, *$1);
+    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, $1->toStdString());
     if (NULL == var)
     {
-        yyerror(ErrorMessageVariableNotDeclared(*$1));
+        yyerror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        YYERROR;
+                    //ErrorMessageVariableNotDeclared(*$1).c_str());
     }
     $$ = CreateReferenceNode(var);
 }
 ;
 
 %%
-void yyerror(const char *s) {
-    std::cout << "EEK, parse error!  Message: " << s << std::endl;
+void yyerror(QString s) {
+
+    printf ("Line %d: %s.\n", lno, s.toStdString().c_str());
+    //std::cout << "EEK, parse error!  Message: " << s << std::endl;
     // might as well halt now:
-    exit(-1);
-}
-
-std::string ErrorMessageVariableNotDeclared(std::string name)
-{
-    std::string errorDeclaration = "warning - Variable " + name + " isn't declared";
-    return errorDeclaration;
-}
-
-std::string ErrorMessageVariableDoublyDeclared(std::string name)
-{
-    std::string errorDeclaration = "warning - Variable " + name + " is already declared";
-    return errorDeclaration;
+    //exit(-1);
 }
 
 /*
@@ -623,11 +638,11 @@ static void EmptyLabels(void)
 
 */
 
-int yyerror (std::string s) {
+/*int yyerror (std::string s) {
     printf ("Line %d: %s.\n", lno, s.c_str());
     //fprintf(stderr, "Line %d: %s.\n", lno, s);
-    // g_ErrorStatus = !0;
+    //g_ErrorStatus = !0;
     return !0;
-}
+}*/
 
 
