@@ -6,19 +6,19 @@
 
 typedef enum
 {
-    typeBinaryOp,     /* Binary operator. */
-    typeUnaryOp,      /* Unary arithmetice operator. */
-    typeAssignmentOp, /* Unary assignment operator. */
-    typeConst,             /* Numeric literal. */
-    typeStrConst,             /* Sting literal. */
-    typeIdentifier,        /* Variable name. */
-    typeIfStatement,       /* If statement. */
-    typeWhileStatement,    /* While statement. */
-    typeForStatement,    /* For statement */
-    typeJumpStatement,     /* Goto, Break or Continue statement. */
-    typeSwitchStatement,     /* Switch-Case statement. */
-    typeInOutStatement,     /* Print-Scan statement. */
-    typeList               /* Expression or statement list. */
+    NT_BinaryOperation,     // Binary operator.
+    NT_UnaryOperation,      // Unary arithmetice operator.
+    NT_AssignmentOperation, // Unary assignment operator.
+    NT_NumericConstant,             // Numeric literal.
+    NT_StringConstant,             // Sting literal.
+    NT_Identifier,        // Variable name.
+    NT_IfStatement,       // If statement.
+    NT_WhileStatement,    // While statement.
+    NT_ForStatement,    // For statement
+    NT_JumpStatement,     // Goto, Break or Continue statement.
+    NT_SwitchStatement,     // Switch-Case statement.
+    NT_InOutStatement,     // Print-Scan statement.
+    NT_List               // Expression or statement list.
 } NodeTypeEnum;
 
 
@@ -87,24 +87,24 @@ typedef struct
 } TAssignmentNode;
 
 /* AST procedures declaration */
-NodeAST* CreateNodeAST(NodeTypeEnum cmptype, const char* opValue,
+NodeAST* createNodeAST(NodeTypeEnum cmptype, const char* opValue,
                                            NodeAST* left, NodeAST* right
                                           );
-NodeAST* CreateNumberNode(double doubleValue);
-NodeAST* CreateNumberNode(int integerValue);
+NodeAST* createNumberNode(double doubleValue);
+NodeAST* createNumberNode(int integerValue);
 
-NodeAST* CreateControlFlowNode(NodeTypeEnum Nodetype, NodeAST* condition,
+NodeAST* createControlFlowNode(NodeTypeEnum Nodetype, NodeAST* condition,
                                NodeAST* trueBranch, NodeAST* elseBranch
                               );
-NodeAST* CreateReferenceNode(TSymbolTableElementPtr symbol);
-NodeAST* CreateAssignmentNode(TSymbolTableElementPtr symbol, NodeAST* rightValue);
-NodeAST* CreateTmpNode(int tmp_index);
+NodeAST* createReferenceNode(TSymbolTableElementPtr symbol);
+NodeAST* createAssignmentNode(TSymbolTableElementPtr symbol, NodeAST* rightValue);
+NodeAST* createTmpNode(int tmp_index);
 
 /* Freeing AST node from memory space */
-void FreeAST(NodeAST *);
+void freeAST(NodeAST *);
 
 /* AST node dump */
-void PrintAST(NodeAST* aTree, int level);
+void printAST(NodeAST* aTree, int level);
 
 //typedef std::tuple<std::string, std::string, int> TokenTableRow;
 extern std::vector <std::tuple<std::string, std::string, int> > TokenTable;

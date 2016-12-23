@@ -19,7 +19,6 @@ char g_outFileName[256];
 int main(int argc, char *argv[])
 {
 
-
     if (argc < 3)
     {
         printf("Too few paremeters.\n");

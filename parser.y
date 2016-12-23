@@ -79,12 +79,12 @@ void yyerror(QString);
 extern int parserlex();
 extern char g_outFileName[256]; /* Имя выходного файла */
 
-//errors
+// Errors
 enum {  ERROR_DOUBLE_DECLARED,
         ERROR_NOT_DECLARED,
         WARNING_TYPES_INCOMPATIBLE,
         ERROR_BREAK_NOT_INSIDE_LOOP,
-        ERROR_MEMORY_ALLOCATION } errorTypes;
+        ERROR_MEMORY_ALLOCATION };
 
 static QStringList errorList = QStringList() << "warning: Variable %1 is already declared"
                           << "error: Variable %1 was not declared"
@@ -203,7 +203,7 @@ static QStringList errorList = QStringList() << "warning: Variable %1 is already
 
 /*%token IFX */
 
-%type <astNode>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt loop_head switch_stmt
+%type <astNode>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt while_head switch_stmt
 goto_stmt call_stmt descr_stmt case_stmt
 
 %type <type> numeric_data_types
@@ -235,9 +235,9 @@ prog : stmtlist
 {
     /*     if (driver.AST_dumping)
       { */
-    PrintAST($1, 0);
+    printAST($1, 0);
     /*      } */
-    FreeAST($1);
+    freeAST($1);
     DestroyUserVariableTable(currentTable);
     /*   driver.result = 0;*/
 };
@@ -247,7 +247,7 @@ stmtlist : statement stmtlist_tail
     if ($2 == NULL)
         $$ = $1;
     else
-        $$ = CreateNodeAST(typeList, "L", $1, $2);
+        $$ = createNodeAST(NT_List, "L", $1, $2);
 };
 
 stmtlist_tail : %empty   {
@@ -258,12 +258,24 @@ stmtlist_tail : %empty   {
 };
 
 
-statement : assignment | cond_stmt | declaration_number | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | case_stmt |BREAK SEMICOLON
+statement : assignment
+| cond_stmt
+| declaration_number
+| compound_statement
+| loop_stmt
+| switch_stmt
+| goto_stmt
+| call_stmt
+| descr_stmt
+| case_stmt
+|BREAK SEMICOLON
 {
     if (g_LoopNestingCounter <= 0)
         yyerror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
-    $$ = CreateControlFlowNode(typeJumpStatement, NULL, NULL, NULL);
-};
+    $$ = createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
+}
+| error SEMICOLON // Restore after error
+;
 
 
 compound_statement :
@@ -280,7 +292,6 @@ descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_stat
 
 call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
 
-
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
 {
     TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, $1->toStdString());
@@ -293,7 +304,7 @@ assignment : IDENTIFIER ASSIGN exp SEMICOLON
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg("assign"));
     }
-    $$ = CreateAssignmentNode(var, $3);
+    $$ = createAssignmentNode(var, $3);
 }
 |IDENTIFIER ASSIGN call_stmt {}
 ;
@@ -332,7 +343,7 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
         if (!isInserted)
             yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
-    $$ = CreateAssignmentNode(var, CreateNumberNode(0));
+    $$ = createAssignmentNode(var, createNumberNode(0));
 }
 | numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
 {
@@ -352,7 +363,7 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg(*$2));
     }
-    $$ = CreateAssignmentNode(var, $4);
+    $$ = createAssignmentNode(var, $4);
 
 }
 | IDENTIFIER COLON {
@@ -378,20 +389,20 @@ print_stmt: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
 
 cond_stmt: IF OPENPAREN exp CLOSEPAREN statement %prec IF
 {
-    $$ = CreateControlFlowNode(typeIfStatement, $3, $5, NULL);
+    $$ = createControlFlowNode(NT_IfStatement, $3, $5, NULL);
 }
 | IF OPENPAREN exp CLOSEPAREN statement ELSE statement
 {
-    $$ = CreateControlFlowNode(typeIfStatement, $3, $5, $7);
+    $$ = createControlFlowNode(NT_IfStatement, $3, $5, $7);
 };
 
-loop_stmt : loop_head statement
+loop_stmt : while_head statement
 {
-    $$ = CreateControlFlowNode(typeWhileStatement, $1, $2, NULL);
+    $$ = createControlFlowNode(NT_WhileStatement, $1, $2, NULL);
     --g_LoopNestingCounter;
 };
 
-loop_head : WHILE OPENPAREN exp CLOSEPAREN
+while_head : WHILE OPENPAREN exp CLOSEPAREN
 {
     $$ = $3;
     ++g_LoopNestingCounter;
@@ -404,12 +415,12 @@ exp : exp RELOP exp
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
+        $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
 }
 | exp PLUS exp
 {
@@ -417,12 +428,12 @@ exp : exp RELOP exp
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
+        $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
 }
 | exp MINUS exp
 {
@@ -430,12 +441,12 @@ exp : exp RELOP exp
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = CreateNodeAST(typeBinaryOp, "-", $1, $3);
+        $$ = createNodeAST(NT_BinaryOperation, "-", $1, $3);
 }
 | exp MULOP exp
 {
@@ -443,36 +454,37 @@ exp : exp RELOP exp
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
-            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
+        $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
 }
 | MINUS exp %prec UMINUS
 {
-    $$ = CreateNodeAST(typeUnaryOp, "-", $2, NULL);
+    $$ = createNodeAST(NT_UnaryOperation, "-", $2, NULL);
 }
 | OPENPAREN exp CLOSEPAREN // ( exp )
 {
     $$ = $2;
 }
+| OPENPAREN error CLOSEPAREN // Restore after error
 | REALCONST
 {
-    $$ = CreateNumberNode($1);
+    $$ = createNumberNode($1);
 }
 | INTCONST
 {
-    $$ = CreateNumberNode($1);
+    $$ = createNumberNode($1);
 }
 | TRUE
 {
-    $$ = CreateNumberNode(1);
+    $$ = createNumberNode(1);
 }
 | FALSE
 {
-    $$ = CreateNumberNode(0);
+    $$ = createNumberNode(0);
 }
 | IDENTIFIER
 {
@@ -483,7 +495,7 @@ exp : exp RELOP exp
         YYERROR;
                     //ErrorMessageVariableNotDeclared(*$1).c_str());
     }
-    $$ = CreateReferenceNode(var);
+    $$ = createReferenceNode(var);
 }
 ;
 
