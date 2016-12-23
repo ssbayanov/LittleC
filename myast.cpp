@@ -113,7 +113,7 @@ NodeAST* createControlFlowNode(NodeTypeEnum nodetype, NodeAST* condition,
     return reinterpret_cast<NodeAST *>(a);
 }
 
-NodeAST* createReferenceNode(TSymbolTableElementPtr symbol)
+NodeAST* createReferenceNode(SymbolsTableRecord* symbol)
 {
     TSymbolTableReference* a;
     try
@@ -127,12 +127,12 @@ NodeAST* createReferenceNode(TSymbolTableElementPtr symbol)
     }
     a->nodetype = NT_Identifier;
     a->variable = symbol;
-    a->valueType = symbol->table->data[symbol->index].valueType;
+    a->valueType = symbol->valueType;
 
     return reinterpret_cast<NodeAST *>(a);
 }
 
-NodeAST* createAssignmentNode(TSymbolTableElementPtr symbol, NodeAST* rightValue)
+NodeAST* createAssignmentNode(SymbolsTableRecord *symbol, NodeAST* rightValue)
 {
     TAssignmentNode* a;
     try
@@ -221,10 +221,10 @@ void printAST(NodeAST* a, int level)
         /* Symtable reference node */
     case NT_Identifier:
     {
-        TSymbolTableElementPtr tmp = ((TSymbolTableReference *)a)->variable;
+        SymbolsTableRecord *tmp = ((TSymbolTableReference *)a)->variable;
         std::cout << "Reference: ";
         if (NULL != tmp)
-            std::cout << *(tmp->table->data[tmp->index].name);
+            std::cout << tmp->name.toStdString();
         else
             std::cout << "(Bad reference)";
         std::cout << std::endl;
@@ -248,10 +248,10 @@ void printAST(NodeAST* a, int level)
         /* Assignment node */
     case NT_AssignmentOperation:
     {
-        TSymbolTableElementPtr tmp = ((TAssignmentNode *)a)->variable;
+        SymbolsTableRecord *tmp = ((TAssignmentNode *)a)->variable;
         std::cout << "= ";
         if (NULL != tmp)
-            std::cout << *(tmp->table->data[tmp->index].name);
+            std::cout << tmp->name.toStdString();
         else
             std::cout << "(Bad reference)";
         std::cout << std::endl;

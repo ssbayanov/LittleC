@@ -1,4 +1,3 @@
-//#include <QtCore/QCoreApplication>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +8,8 @@
 #include <tuple>
 #include <vector>
 
-//extern int yylex();
 extern int yyparse();
-//extern FILE *yyin;
+
 FILE* outfile;
 char g_outFileName[256];
 #include "parser_yacc.h"

@@ -1,0 +1,113 @@
+#include "symbolstable.h"
+
+SymbolsTable::SymbolsTable(SymbolsTable *p) :
+    QHash()
+{
+    parent = p;
+    if(parent != NULL)
+        parent->childs.append(this);
+    childs.clear();
+}
+
+
+SymbolsTableRecord * SymbolsTable::insertValue(QString name,
+                               SubexpressionValueTypeEnum type,
+                               QVariant value)
+{
+    SymbolsTableRecord *record;
+    try {
+        record = new SymbolsTableRecord;
+    }
+    catch (std::bad_alloc& ba) {
+        return NULL;
+    }
+
+    record->valueType = type;
+    record->value = value;
+    record->name = name;
+    record->table = this;
+
+    this->insert(name, record);
+
+    return record;
+}
+
+void SymbolsTable::setParent(SymbolsTable *p)
+{
+    parent = p;
+}
+
+SymbolsTable *SymbolsTable::getParent()
+{
+    return parent;
+}
+
+void SymbolsTable::setHidden(bool flag)
+{
+    _isHidden = flag;
+}
+
+bool SymbolsTable::isHidden()
+{
+    return _isHidden;
+}
+
+bool SymbolsTable::insertChild(SymbolsTable *c)
+{
+    childs.append(c);
+}
+
+u_int SymbolsTable::getChildsCount()
+{
+    childs.count();
+}
+
+SymbolsTable *SymbolsTable::appendChildTable()
+{
+    SymbolsTable *newTable;
+    try {
+        newTable = new SymbolsTable(this);
+    }
+    catch (std::bad_alloc& ba) {
+        return NULL;
+    }
+
+    return newTable;
+}
+
+SymbolsTableRecord *SymbolsTable::getVariable(QString name)
+{
+    SymbolsTable::iterator i = find(name);
+    if(i != end())
+        return (SymbolsTableRecord *) i.value();
+    else NULL;
+}
+
+SymbolsTableRecord *SymbolsTable::getVariableGlobal(QString name)
+{
+    SymbolsTable *ptr = this;
+    while(ptr != NULL && !ptr->contains(name))
+    {
+        ptr = ptr->getParent();
+    }
+    if(ptr != NULL){
+        return ptr->find(name).value();
+    }
+    return NULL;
+}
+
+bool SymbolsTable::containsGlobal(QString name)
+{
+    SymbolsTable *ptr = this;
+    while(ptr != NULL && !ptr->contains(name))
+    {
+        ptr = ptr->getParent();
+    }
+    if(ptr != NULL)
+        return true;
+    return false;
+}
+
+
+
+

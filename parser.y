@@ -1,4 +1,4 @@
-%code requires{ //code insert in top parser_yacc.h
+%code requires { //code insert in top parser_yacc.h
 #include <cstdio>
 #include <string>
 #include <iostream>
@@ -7,8 +7,28 @@
 #include <vector>
 #include <QString>
 #include <QStringList>
-//#include "lexer.h"
+#include "symbolstable.h"
 #include "myast.h"
+}
+
+%code provides {
+    void yyerror(QString s);
+
+    // Errors
+    enum {  ERROR_DOUBLE_DECLARED,
+            ERROR_NOT_DECLARED,
+            WARNING_TYPES_INCOMPATIBLE,
+            ERROR_BREAK_NOT_INSIDE_LOOP,
+            ERROR_MEMORY_ALLOCATION,
+            ERROR_UNRECOGNIZED_TOKEN,};
+
+    static QStringList errorList = QStringList() << "error: Variable %1 is already declared."
+                              << "error: Variable %1 was not declared."
+                              << "warning: types in %1 opertion incompatible."
+                              << "error: 'break' not inside loop."
+                              << "error: memory allocation or access error."
+                              << "error: %1 - unrecognized token.";
+
 }
 
 %{
@@ -75,22 +95,22 @@ static int PopLabelREALCONST(void);
 static void EmptyLabels(void);
 
 extern int lno;
-void yyerror(QString);
 extern int parserlex();
 extern char g_outFileName[256]; /* Имя выходного файла */
 
-// Errors
-enum {  ERROR_DOUBLE_DECLARED,
-        ERROR_NOT_DECLARED,
-        WARNING_TYPES_INCOMPATIBLE,
-        ERROR_BREAK_NOT_INSIDE_LOOP,
-        ERROR_MEMORY_ALLOCATION };
+//#undef yyerror
+//#define yyerror driver.error
 
-static QStringList errorList = QStringList() << "warning: Variable %1 is already declared"
-                          << "error: Variable %1 was not declared"
-                          << "warning: types in %1 opertion incompatible"
-                          << "error: 'break' not inside loop"
-                          << "Memory allocation or access error";
+std::string ErrorMessageVariableNotDeclared(std::string);
+std::string ErrorMessageVariableDoublyDeclared(std::string);
+
+int g_LoopNestingCounter = 0;
+
+static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
+static SymbolsTable* currentTable = topLevelVariableTable;
+
+//static TSymbolTable* g_TopLevelUserVariableTable = CreateUserVariableTable(NULL);
+//static TSymbolTable* currentTable = g_TopLevelUserVariableTable;
 
 %}
 
@@ -119,21 +139,7 @@ static QStringList errorList = QStringList() << "warning: Variable %1 is already
 };
 */
 
-%define parse.trace
-
-%code
-{
-//#undef yyerror
-//#define yyerror driver.error
-
-    std::string ErrorMessageVariableNotDeclared(std::string);
-    std::string ErrorMessageVariableDoublyDeclared(std::string);
-
-    int g_LoopNestingCounter = 0;
-
-    static TSymbolTable* g_TopLevelUserVariableTable = CreateUserVariableTable(NULL);
-    static TSymbolTable* currentTable = g_TopLevelUserVariableTable;
-}
+//%define parse.trace
 
 %union
 {
@@ -238,7 +244,7 @@ prog : stmtlist
     printAST($1, 0);
     /*      } */
     freeAST($1);
-    DestroyUserVariableTable(currentTable);
+    //DestroyUserVariableTable(currentTable);
     /*   driver.result = 0;*/
 };
 
@@ -280,12 +286,13 @@ statement : assignment
 
 compound_statement :
 OPENBRACE  { // {
-    currentTable = CreateUserVariableTable(currentTable);
+    currentTable = currentTable->appendChildTable();
 }
 stmtlist
 CLOSEBRACE { // }
     $$ = $3;
-    HideUserVariableTable(currentTable); currentTable = currentTable->parentTable;
+    currentTable->setHidden();
+    currentTable = currentTable->getParent();
 };
 
 descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_statement {};
@@ -293,14 +300,14 @@ descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_stat
 call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
 
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
-{
-    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, $1->toStdString());
-    if (NULL == var)
+{    
+    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$1);
+    if (var == NULL)
     {
         yyerror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
         YYERROR;
     }
-    else if ($3->valueType != var->table->data[var->index].valueType)
+    else if ($3->valueType != var->valueType)
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg("assign"));
     }
@@ -330,36 +337,38 @@ numeric_data_types : INT {
 
 declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 {
-    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, $2->toStdString());
-    if (NULL != var)
+    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
+    if (var != NULL)
     {
         yyerror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
+        YYERROR;
     }
     else
     {
-        SubexpressionValueTypeEnum type;
 
-        bool isInserted = InsertUserVariableTable(currentTable, $2->toStdString(), $1, var);
-        if (!isInserted)
+        var = currentTable->insertValue(*$2, $1, 0);
+        if (var == NULL)
             yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
     $$ = createAssignmentNode(var, createNumberNode(0));
 }
 | numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
 {
-    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, $2->toStdString());
-    if (NULL != var)
+    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
+    if (var != NULL)
     {
         yyerror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
+        YYERROR;
     }
     else
     {
-        bool isInserted = InsertUserVariableTable(currentTable, $2->toStdString(), $1, var);
-        if (!isInserted)
+
+        var = currentTable->insertValue(*$2, $1, 0);
+        if (var == NULL)
             yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
 
-    if ($4->valueType != var->table->data[var->index].valueType)
+    if ($4->valueType != var->valueType)
     {
         yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg(*$2));
     }
@@ -470,6 +479,9 @@ exp : exp RELOP exp
     $$ = $2;
 }
 | OPENPAREN error CLOSEPAREN // Restore after error
+{
+    yyerrok;
+}
 | REALCONST
 {
     $$ = createNumberNode($1);
@@ -488,11 +500,12 @@ exp : exp RELOP exp
 }
 | IDENTIFIER
 {
-    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, $1->toStdString());
-    if (NULL == var)
+    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$1);
+
+    if (var == NULL)
     {
         yyerror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
-        YYERROR;
+        //YYERROR;
                     //ErrorMessageVariableNotDeclared(*$1).c_str());
     }
     $$ = createReferenceNode(var);

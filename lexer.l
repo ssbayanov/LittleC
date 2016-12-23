@@ -29,15 +29,15 @@
 #include <vector>
 #include <string.h>
 
-#include "myast.h"
-int yyerror(std::string);
-int yylex();
 #include "parser_yacc.h"
+//#include "myast.h"
+
+extern void yyerror(QString);
+
 #define lexerlex parserlex
-//using namespace std;
+
 typedef std::tuple<std::string, std::string, int> TokenTableRow;
 std::vector <std::tuple<std::string, std::string, int> > TokenTable;
-
 
 #define yyterminate() return EOFILE
 
@@ -73,31 +73,100 @@ stringch      [^"\n]
 
 
     /* Binar operations. */
-\=                          { TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno)); return ASSIGN;}
-\+                          { TokenTable.push_back(TokenTableRow("PLUS", yytext, lno)); strcpy(parserlval.opName, yytext); return PLUS;}
-\-                          { TokenTable.push_back(TokenTableRow("MINUS", yytext, lno)); strcpy(parserlval.opName, yytext); return MINUS;}
-\++|\--                     { TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno)); strcpy(parserlval.opName, yytext); return ADDUOP;}
+\=                          {
+                                //TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno));
+                                return ASSIGN;
+                            }
+
+\+                          {
+                                //TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return PLUS;
+                            }
+
+\-                          {
+                                //TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return MINUS;
+                            }
+
+\++|\--                     {
+                                TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return ADDUOP;
+                            }
 
     /*  */
-\*|\/|\%                    { TokenTable.push_back(TokenTableRow("MULOP", yytext, lno)); strcpy(parserlval.opName, yytext); return MULOP;}
+\*|\/|\%                    {
+                                TokenTable.push_back(TokenTableRow("MULOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return MULOP;
+                            }
 
     /* Boolean operations */
-"&"|"|"|"^"|"!"             { TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno)); strcpy(parserlval.opName, yytext); return BOOLOP;}
+"&"|"|"|"^"|"!"             {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return BOOLOP;
+                            }
 
     /* Comparison and relation operator tokens */
-">="|"<="|"<"|">"|"=="|"!=" { TokenTable.push_back(TokenTableRow("RELOP", yytext, lno)); strcpy(parserlval.opName, yytext); return RELOP;}
+">="|"<="|"<"|">"|"=="|"!=" {
+                                TokenTable.push_back(TokenTableRow("RELOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return RELOP;
+                            }
 
     /* Punctuation */
-\;  { TokenTable.push_back(TokenTableRow("SEMICOLON", yytext, lno)); return SEMICOLON;}
-\:  { TokenTable.push_back(TokenTableRow("COLON", yytext, lno)); return COLON;}
-\,  { TokenTable.push_back(TokenTableRow("COMA", yytext, lno)); return COMA;}
-\.  { TokenTable.push_back(TokenTableRow("DOT", yytext, lno)); return DOT;}
-\[  { TokenTable.push_back(TokenTableRow("OPENBRACKET", yytext, lno)); return OPENBRACKET;}
-\]  { TokenTable.push_back(TokenTableRow("CLOSEBRACKET", yytext, lno)); return CLOSEBRACKET;}
-\(  { TokenTable.push_back(TokenTableRow("OPENPAREN", yytext, lno)); return OPENPAREN;}
-\)  { TokenTable.push_back(TokenTableRow("CLOSEPAREN", yytext, lno)); return CLOSEPAREN;}
-\{  { TokenTable.push_back(TokenTableRow("OPENBRACE", yytext, lno)); return OPENBRACE;}
-\}  { TokenTable.push_back(TokenTableRow("CLOSEBRACE", yytext, lno)); return CLOSEBRACE;}
+\;                          {
+                                TokenTable.push_back(TokenTableRow("SEMICOLON", yytext, lno));
+                                return SEMICOLON;
+                            }
+
+\:                          {
+                                TokenTable.push_back(TokenTableRow("COLON", yytext, lno));
+                                return COLON;
+                            }
+
+\,                          {
+                                TokenTable.push_back(TokenTableRow("COMA", yytext, lno));
+                                return COMA;
+                            }
+
+\.                          {
+                                TokenTable.push_back(TokenTableRow("DOT", yytext, lno));
+                                return DOT;
+                            }
+
+\[                          {
+                                TokenTable.push_back(TokenTableRow("OPENBRACKET", yytext, lno));
+                                return OPENBRACKET;
+                            }
+
+\]                          {
+                                TokenTable.push_back(TokenTableRow("CLOSEBRACKET", yytext, lno));
+                                return CLOSEBRACKET;
+                            }
+
+\(                          {
+                                TokenTable.push_back(TokenTableRow("OPENPAREN", yytext, lno));
+                                return OPENPAREN;
+                            }
+
+\)                          {
+                                TokenTable.push_back(TokenTableRow("CLOSEPAREN", yytext, lno));
+                                return CLOSEPAREN;
+                            }
+
+\{                          {
+                                TokenTable.push_back(TokenTableRow("OPENBRACE", yytext, lno));
+                                return OPENBRACE;
+                            }
+
+\}                          {
+                                TokenTable.push_back(TokenTableRow("CLOSEBRACE", yytext, lno));
+                                return CLOSEBRACE;
+                            }
 
     /* Control commands. */
 if       { TokenTable.push_back(TokenTableRow("IF", yytext, lno)); return IF; }
@@ -158,8 +227,10 @@ return IDENTIFIER;}
      TokenTable.push_back(TokenTableRow("STRING", yytext, lno)); parserlval.var = new QString(yytext);
      return STRING;}
 
+
     /* Undefined token. */
 .       {
+        //yyerror(errorList.at(ERROR_UNRECOGNIZED_TOKEN).arg(yytext));
         std::cerr << "ERROR: " << yytext << " - unrecognized token. Line " << lno << ".\n";
         }
 

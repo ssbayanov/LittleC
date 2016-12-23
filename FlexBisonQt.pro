@@ -22,13 +22,13 @@ TARGET = test-lexbiz
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    symtable.cpp \
-    myast.cpp
+    myast.cpp \
+    symbolstable.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
 
 HEADERS += \
-    symtable.h \
     myast.h \
-    subexpression.h
+    subexpression.h \
+    symbolstable.h

@@ -1,7 +1,7 @@
 #ifndef MYAST_H
 #define MYAST_H
 #include <string>
-#include "symtable.h"
+#include "symbolstable.h"
 #include "subexpression.h"
 
 typedef enum
@@ -69,7 +69,7 @@ typedef struct
 {
   NodeTypeEnum nodetype;
   SubexpressionValueTypeEnum valueType;
-  TSymbolTableElementPtr variable;
+  SymbolsTableRecord *variable;
 } TSymbolTableReference;
 
 typedef struct
@@ -82,7 +82,7 @@ typedef struct
 typedef struct
 {
   NodeTypeEnum nodetype;
-  TSymbolTableElementPtr variable;
+  SymbolsTableRecord *variable;
   NodeAST* value;
 } TAssignmentNode;
 
@@ -96,8 +96,8 @@ NodeAST* createNumberNode(int integerValue);
 NodeAST* createControlFlowNode(NodeTypeEnum Nodetype, NodeAST* condition,
                                NodeAST* trueBranch, NodeAST* elseBranch
                               );
-NodeAST* createReferenceNode(TSymbolTableElementPtr symbol);
-NodeAST* createAssignmentNode(TSymbolTableElementPtr symbol, NodeAST* rightValue);
+NodeAST* createReferenceNode(SymbolsTableRecord *symbol);
+NodeAST* createAssignmentNode(SymbolsTableRecord *symbol, NodeAST* rightValue);
 NodeAST* createTmpNode(int tmp_index);
 
 /* Freeing AST node from memory space */
