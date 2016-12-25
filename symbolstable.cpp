@@ -9,6 +9,14 @@ SymbolsTable::SymbolsTable(SymbolsTable *p) :
     childs.clear();
 }
 
+SymbolsTable::~SymbolsTable()
+{
+    for(int i =0; i < childs.count(); i++)
+        childs.at(i)->~SymbolsTable();
+
+    clear();
+    childs.clear();
+}
 
 SymbolsTableRecord * SymbolsTable::insertValue(QString name,
                                SubexpressionValueTypeEnum type,

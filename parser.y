@@ -12,7 +12,7 @@
 }
 
 %code provides {
-    void yyerror(QString s);
+    void parsererror(QString s);
 
     // Errors
     enum {  ERROR_DOUBLE_DECLARED,
@@ -20,14 +20,18 @@
             WARNING_TYPES_INCOMPATIBLE,
             ERROR_BREAK_NOT_INSIDE_LOOP,
             ERROR_MEMORY_ALLOCATION,
-            ERROR_UNRECOGNIZED_TOKEN,};
+            ERROR_UNRECOGNIZED_TOKEN,
+            ERROR_UNFINISHED_STRING,
+            ERROR_UNCLOSED_COMMENT};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared."
                               << "error: Variable %1 was not declared."
                               << "warning: types in %1 opertion incompatible."
                               << "error: 'break' not inside loop."
                               << "error: memory allocation or access error."
-                              << "error: %1 - unrecognized token.";
+                              << "error: %1 - unrecognized token."
+                              << "error: unfinished string."
+                              << "error: nonclosed comment";
 
 }
 
@@ -101,9 +105,6 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 //#undef yyerror
 //#define yyerror driver.error
 
-std::string ErrorMessageVariableNotDeclared(std::string);
-std::string ErrorMessageVariableDoublyDeclared(std::string);
-
 int g_LoopNestingCounter = 0;
 
 static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
@@ -157,8 +158,8 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 %token       EOFILE 0   "end of file"
 %token <doubleValue>   REALCONST  "floating point double precision"
 %token <intValue>   INTCONST   "integer"
-%token <var> IDENTIFIER "name"
-%token <strValue> STRING     "string"
+%token <var>        IDENTIFIER "name"
+%token <strValue>   STRING     "string"
 %token <opName>   RELOP      "relop"
 %token <opName>   ADDUOP     "adduop"
 %token <opName>   PLUS       "plus"
@@ -187,25 +188,25 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 %token       DEFAULT    "default"
 %token       CONTINUE   "continue"
 %token       BREAK      "break"
-%token       GOTO       "goto"
+%token      GOTO       "goto"
 // Types of data.
 %token      INT        "int"
-%token     DOUBLE     "double"
+%token      DOUBLE     "double"
 %token      FLOAT      "float"
 %token      BOOL       "bool"
 %token      CHAR       "char"
 %token      SHORT      "short"
-%token       ENUM       "enum"
-%token       VOID       "void"
-%token       STRUCT     "struct"
+%token      ENUM       "enum"
+%token      VOID       "void"
+%token      STRUCT     "struct"
 // Functions.
-%token       SCAN       "scan"
-%token       PRINT      "print"
+%token      SCAN       "scan"
+%token      PRINT      "print"
 //
-%token       TRUE       "true"
-%token       FALSE      "false"
+%token      TRUE       "true"
+%token      FALSE      "false"
 
-%token       RETURN     "return"
+%token      RETURN     "return"
 
 /*%token IFX */
 
@@ -244,7 +245,7 @@ prog : stmtlist
     printAST($1, 0);
     /*      } */
     freeAST($1);
-    //DestroyUserVariableTable(currentTable);
+    topLevelVariableTable->~SymbolsTable();
     /*   driver.result = 0;*/
 };
 
@@ -277,7 +278,7 @@ statement : assignment
 |BREAK SEMICOLON
 {
     if (g_LoopNestingCounter <= 0)
-        yyerror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
+        parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
     $$ = createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
 }
 | error SEMICOLON // Restore after error
@@ -304,12 +305,12 @@ assignment : IDENTIFIER ASSIGN exp SEMICOLON
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$1);
     if (var == NULL)
     {
-        yyerror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
         YYERROR;
     }
     else if ($3->valueType != var->valueType)
     {
-        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg("assign"));
+        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg("assign"));
     }
     $$ = createAssignmentNode(var, $3);
 }
@@ -340,7 +341,7 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
     if (var != NULL)
     {
-        yyerror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
+        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
         YYERROR;
     }
     else
@@ -348,7 +349,7 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 
         var = currentTable->insertValue(*$2, $1, 0);
         if (var == NULL)
-            yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
+            parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
     $$ = createAssignmentNode(var, createNumberNode(0));
 }
@@ -357,7 +358,7 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
     if (var != NULL)
     {
-        yyerror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
+        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
         YYERROR;
     }
     else
@@ -365,12 +366,12 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 
         var = currentTable->insertValue(*$2, $1, 0);
         if (var == NULL)
-            yyerror(errorList.at(ERROR_MEMORY_ALLOCATION));
+            parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
 
     if ($4->valueType != var->valueType)
     {
-        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg(*$2));
+        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg(*$2));
     }
     $$ = createAssignmentNode(var, $4);
 
@@ -422,7 +423,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -435,7 +436,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -448,7 +449,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -461,7 +462,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        yyerror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -504,8 +505,8 @@ exp : exp RELOP exp
 
     if (var == NULL)
     {
-        yyerror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
-        //YYERROR;
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        YYERROR;
                     //ErrorMessageVariableNotDeclared(*$1).c_str());
     }
     $$ = createReferenceNode(var);

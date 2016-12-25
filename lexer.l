@@ -32,7 +32,8 @@
 #include "parser_yacc.h"
 //#include "myast.h"
 
-extern void yyerror(QString);
+//extern void yyerror(QString);
+bool multilineComment();
 
 #define lexerlex parserlex
 
@@ -62,14 +63,11 @@ stringch      [^"\n]
 \/\/.*$     { }
 
 
-    /* Noneclose multiline comment. */
-\/\*(.|[\t\n\r])*$ {
-    std::cerr << "ERROR: " << yytext << " - Unfinished comment. Line "
-         << lno << ".\n";}
-
-
     /* Multiline comment. */
-\/\*(.|[\t\n\r])*\*\/   { }
+\/\* { bool isClosed = multilineComment();
+        if(!isClosed)
+            parsererror(errorList.at(ERROR_UNCLOSED_COMMENT));
+    }
 
 
     /* Binar operations. */
@@ -218,8 +216,8 @@ return IDENTIFIER;}
 
     /* Errors strings (without ") */
  \"{stringch}*$  {
-     std::cerr << "ERROR: " << yytext << " - Unfinished string literal. Line "
-          << lno << ".\n"; }
+     parsererror(errorList.at(ERROR_UNFINISHED_STRING));
+          }
 
 
      /* Strings */
@@ -230,12 +228,27 @@ return IDENTIFIER;}
 
     /* Undefined token. */
 .       {
-        //yyerror(errorList.at(ERROR_UNRECOGNIZED_TOKEN).arg(yytext));
-        std::cerr << "ERROR: " << yytext << " - unrecognized token. Line " << lno << ".\n";
+        parsererror(errorList.at(ERROR_UNRECOGNIZED_TOKEN).arg(yytext));
         }
 
 
 <<EOF>> {
         return EOFILE; }
 
+
 %%
+bool multilineComment(){
+    char    c1 = ' ', c2 = ' ';
+    while(c1 != '*' || c2 != '/')
+    {
+        c1 = c2;
+        c2 = yyinput();
+        if(c2 == EOF)
+            return false;
+
+        if(c2 == '\n')
+            lno++;
+    }
+
+    return true;
+}
