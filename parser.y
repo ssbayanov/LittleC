@@ -1,376 +1,697 @@
-/*
-   Based on FlexBisonQt Gonzalo Exequiel Pedone Copyright (C) 2013
-   Web-Site: http://github.com/hipersayanX/FlexBisonQt
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with This program.  If not, see <http://www.gnu.org/licenses/>.
-
-   Email   : ssbayanov AT gmail DOT com
-
-*/
-
 %{
+#include <cstdio>
+#include <string>
+#include <iostream>
+#include <map>
+#include <tuple>
+#include <vector>
+//#include "lexer.h"
+#include "myast.h"
+#include "parser_yacc.h"
 
-#include <QtGui>
+/* Обработка синтаксического дерева */
+#define ADDITION_OPERATOR       1
+#define SUBTRACTION_OPERATOR    2
+#define MULTIPLICATION_OPERATOR 3
+#define DIVISION_OPERATOR       4
+#define NEGATION_OPERATOR       5
+#define UNPLUS_OPERATOR         6
+#define IF_FALSE_GOTO_OPERATOR 	7
+#define IF_TRUE_GOTO_OPERATOR 	8
+#define GOTO_OPERATOR           9
+#define SET_LABEL_OPERATOR      10
+#define OUTPUT_OPERATOR         11
+#define ASSIGN_OPERATOR         12
+#define UNMINUS_OPERATOR        13
+#define MOD_OPERATOR            14
+#define AND_OPERATOR            15
+#define OR_OPERATOR             16
+#define XOR_OPERATOR            17
+#define NOT_OPERATOR            18
+#define MORE_OPERATOR           19
+#define LESS_OPERATOR           20
+#define MEQ_OPERATOR            21
+#define LEQ_OPERATOR            22
+#define EQ_OPERATOR             23
+#define NEQ_OPERATOR            24
+#define BRACKET_OPERATOR        25
+#define PAREN_OPERATOR          26
+#define BRACE_OPERATOR          27
+#define COLON_OPERATOR          28
+#define DOT_OPERATOR            29
+#define COMA_OPERATOR           30
+#define PRINT_OPERATOR          31
+#define SCAN_OPERATOR           32
 
-extern int yylex(void);
-void yyerror(const char *s);
+#define YYERROR_VERBOSE         1
+
+#define YYDEBUG 0
+
+/* описание структуры синтаксического дерева */
+int g_tmpvar_upper_index = 0;
+
+/*NodeAST* constants(double value);
+NodeAST* idents (int index);
+NodeAST* tmpvars (int tmp_index);*/
+/* Генерация трехадресного кода */
+/*int codegenBinary(FILE* outputFile, int operatorCode, NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result);
+int codegenUnary(FILE* outputFile, int operatorCode, NodeAST* operand, NodeAST* result);
+int codegenGoto(FILE* outputFile, int operatorCode,int labelREALCONST, NodeAST* optionalExpression);
+int codegenLabel(FILE* outputFile, int labelREALCONST);*/
+
+/* Обработка таблицы меток. Используется стековая организация */
+static int g_LastLabelREALCONST = 0;
+static int g_LabelStackPointer = 0;
+static int Labels[256];
+static void PushLabelREALCONST(int);
+static int PopLabelREALCONST(void);
+static void EmptyLabels(void);
+
+std::string ErrorMessageVariableNotDeclared(std::string);
+std::string ErrorMessageVariableDoublyDeclared(std::string);
+
+extern int lno;
+extern int yyerror(std::string);
+extern int parserlex();
+extern char g_outFileName[256]; /* Имя выходного файла */
+
 
 %}
 
-// Here we can define some custom variable types.
-// The custom types must be of static size.
-%union {
-    QVariant *QVariant_t;
-}
-
-// Define the types for terminal expressions.
-%token <QVariant_t> TOKEN_INTIGER
-%token <QVariant_t> TOKEN_FLOAT
-%token <QVariant_t> TOKEN_BOOLEAN
-%token <QVariant_t> TOKEN_STRING
-
-// Define the tokens for the symbols.
-%token TOKEN_LEFTPAREN
-%token TOKEN_RIGHTPAREN
-%token TOKEN_LEFTCURLYBRACKET
-%token TOKEN_RIGHTCURLYBRACKET
-%token TOKEN_LEFTBRACKET
-%token TOKEN_RIGHTBRACKET
-%token TOKEN_COMMA
-%token TOKEN_COLON
-
-// Define the tokens for the keywords.
-%token TOKEN_SIZE
-%token TOKEN_SIZEF
-%token TOKEN_POINT
-%token TOKEN_POINTF
-%token TOKEN_RECT
-%token TOKEN_RECTF
-%token TOKEN_LINE
-%token TOKEN_LINEF
-%token TOKEN_DATE
-%token TOKEN_TIME
-%token TOKEN_DATETIME
-%token TOKEN_COLOR
-%token TOKEN_BYTES
-%token TOKEN_URL
-
-// Define the types for non-terminal expressions.
-%type <QVariant_t> variant
-%type <QVariant_t> size
-%type <QVariant_t> sizeF
-%type <QVariant_t> point
-%type <QVariant_t> pointF
-%type <QVariant_t> rect
-%type <QVariant_t> rectF
-%type <QVariant_t> line
-%type <QVariant_t> lineF
-%type <QVariant_t> date
-%type <QVariant_t> time
-%type <QVariant_t> dateTime
-%type <QVariant_t> color
-%type <QVariant_t> bytes
-%type <QVariant_t> url
-%type <QVariant_t> number
-%type <QVariant_t> variantListItems
-%type <QVariant_t> variantList
-%type <QVariant_t> variantMapPair
-%type <QVariant_t> variantMapItems
-%type <QVariant_t> variantMap
-
-// Prevents memory leak in non-terminal expressions.
-%destructor {delete $$;} variant
-%destructor {delete $$;} size
-%destructor {delete $$;} sizeF
-%destructor {delete $$;} point
-%destructor {delete $$;} pointF
-%destructor {delete $$;} rect
-%destructor {delete $$;} rectF
-%destructor {delete $$;} line
-%destructor {delete $$;} lineF
-%destructor {delete $$;} date
-%destructor {delete $$;} time
-%destructor {delete $$;} dateTime
-%destructor {delete $$;} color
-%destructor {delete $$;} bytes
-%destructor {delete $$;} url
-%destructor {delete $$;} number
-%destructor {delete $$;} variantListItems
-%destructor {delete $$;} variantList
-%destructor {delete $$;} variantMapPair
-%destructor {delete $$;} variantMapItems
-%destructor {delete $$;} variantMap
-
-%%
-
-/* Main expression to check. */
-start: variant {qDebug() << *$1;};
-
-variant: number
-       | TOKEN_BOOLEAN
-       | size
-       | sizeF
-       | point
-       | pointF
-       | rect
-       | rectF
-       | line
-       | lineF
-       | date
-       | time
-       | dateTime
-       | color
-       | bytes
-       | url
-       | TOKEN_STRING
-       | variantList
-       | variantMap
-       ;
-
-rect: TOKEN_RECT TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QRect());}
-    | TOKEN_RECT TOKEN_LEFTPAREN point TOKEN_COMMA point TOKEN_RIGHTPAREN {
-          // $$ is a reference to the result of the espression.
-          // $1, $2, $3, ..., $N are references to each expression.
-          $$ = new QVariant();
-          *$$ = QRect($3->toPoint(), $5->toPoint());
-      }
-    | TOKEN_RECT TOKEN_LEFTPAREN point TOKEN_COMMA size TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QRect($3->toPoint(), $5->toSize());
-      }
-    | TOKEN_RECT TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QRect($3->toFloat(), $5->toFloat(), $7->toFloat(), $9->toFloat());
-      }
-    ;
-
-rectF: TOKEN_RECTF TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QRectF());}
-     | TOKEN_RECTF TOKEN_LEFTPAREN pointF TOKEN_COMMA pointF TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QRectF($3->toPointF(), $5->toPointF());
-       }
-     | TOKEN_RECTF TOKEN_LEFTPAREN pointF TOKEN_COMMA sizeF TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QRectF($3->toPointF(), $5->toSizeF());
-       }
-     | TOKEN_RECTF TOKEN_LEFTPAREN rect TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QRectF($3->toRect());
-       }
-     | TOKEN_RECTF TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QRectF($3->toFloat(), $5->toFloat(), $7->toFloat(), $9->toFloat());
-       }
-     ;
-
-line: TOKEN_LINE TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QLine());}
-    | TOKEN_LINE TOKEN_LEFTPAREN point TOKEN_COMMA point TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QLine($3->toPoint(), $5->toPoint());
-      }
-    | TOKEN_LINE TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QLine($3->toFloat(), $5->toFloat(), $7->toFloat(), $9->toFloat());
-      }
-    ;
-
-lineF: TOKEN_LINEF TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QLineF());}
-     | TOKEN_LINEF TOKEN_LEFTPAREN pointF TOKEN_COMMA pointF TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QLineF($3->toPointF(), $5->toPointF());
-       }
-     | TOKEN_LINEF TOKEN_LEFTPAREN line TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QLineF($3->toLine());
-       }
-     | TOKEN_LINEF TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QLineF($3->toFloat(), $5->toFloat(), $7->toFloat(), $9->toFloat());
-       }
-     ;
-
-point: TOKEN_POINT TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QPoint());}
-     | TOKEN_POINT TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QPoint($3->toFloat(), $5->toFloat());
-       }
-     ;
-
-pointF: TOKEN_POINTF TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QPointF());}
-      | TOKEN_POINTF TOKEN_LEFTPAREN point TOKEN_RIGHTPAREN {
-            $$ = new QVariant();
-            *$$ = QPointF($3->toPoint());
-        }
-      | TOKEN_POINTF TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-            $$ = new QVariant();
-            *$$ = QPointF($3->toFloat(), $5->toFloat());
-        }
-      ;
-
-size: TOKEN_SIZE TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QSize());}
-    | TOKEN_SIZE TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QSize($3->toFloat(), $5->toFloat());
-      }
-    ;
-
-sizeF: TOKEN_SIZEF TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QSizeF());}
-     | TOKEN_SIZEF TOKEN_LEFTPAREN size TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QSizeF($3->toSize());
-       }
-     | TOKEN_SIZEF TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QSizeF($3->toFloat(), $5->toFloat());
-       }
-     ;
-
-dateTime: TOKEN_DATETIME TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QDateTime());}
-        | TOKEN_DATETIME TOKEN_LEFTPAREN date TOKEN_RIGHTPAREN {
-              $$ = new QVariant();
-              *$$ = QDateTime($3->toDate());
-          }
-        | TOKEN_DATETIME TOKEN_LEFTPAREN date TOKEN_COMMA time TOKEN_RIGHTPAREN {
-              $$ = new QVariant();
-              *$$ = QDateTime($3->toDate(), $5->toTime());
-          }
-        ;
-
-date: TOKEN_DATE TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QDate());}
-    | TOKEN_DATE TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QDate($3->toFloat(), $5->toFloat(), $7->toFloat());
-      }
-    ;
-
-time: TOKEN_TIME TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QTime());}
-    | TOKEN_TIME TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QTime($3->toFloat(), $5->toFloat());
-      }
-    | TOKEN_TIME TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QTime($3->toFloat(), $5->toFloat(), $7->toFloat());
-      }
-    | TOKEN_TIME TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-          $$ = new QVariant();
-          *$$ = QTime($3->toFloat(), $5->toFloat(), $7->toFloat(), $9->toFloat());
-      }
-    ;
-
-color: TOKEN_COLOR TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QColor());}
-     | TOKEN_COLOR TOKEN_LEFTPAREN TOKEN_STRING TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QColor($3->toString());
-       }
-     | TOKEN_COLOR TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QColor($3->toFloat(), $5->toFloat(), $7->toFloat());
-       }
-     | TOKEN_COLOR TOKEN_LEFTPAREN number TOKEN_COMMA number TOKEN_COMMA number TOKEN_COMMA number TOKEN_RIGHTPAREN {
-           $$ = new QVariant();
-           *$$ = QColor($3->toFloat(), $5->toFloat(), $7->toFloat(), $9->toFloat());
-       }
-     ;
-
-bytes: TOKEN_BYTES TOKEN_STRING  {
-           $$ = new QVariant();
-           *$$ = $2->toString().toUtf8();
-       }
-     ;
-
-url: TOKEN_URL TOKEN_LEFTPAREN TOKEN_RIGHTPAREN {$$ = new QVariant(QUrl());}
-   | TOKEN_URL TOKEN_LEFTPAREN TOKEN_STRING TOKEN_RIGHTPAREN {
-         $$ = new QVariant();
-         *$$ = QUrl($3->toString());
-     }
-   ;
-
-variantList: TOKEN_LEFTBRACKET TOKEN_RIGHTBRACKET {$$ = new QVariant(QVariantList());}
-           | TOKEN_LEFTBRACKET variantListItems TOKEN_RIGHTBRACKET {
-                 $$ = new QVariant();
-                 *$$ = $2->toList();
-             }
-           ;
-
-variantListItems: variant {
-                      $$ = new QVariant();
-
-                      QVariantList variantList;
-
-                      variantList << *$1;
-
-                      *$$ = variantList;
-                  }
-                | variantListItems TOKEN_COMMA variant {
-                      $$ = new QVariant();
-
-                      QVariantList variantList($1->toList());
-
-                      variantList << *$3;
-
-                      *$$ = variantList;
-                  }
-                ;
-
-variantMap: TOKEN_LEFTCURLYBRACKET TOKEN_RIGHTCURLYBRACKET {$$ = new QVariant(QVariantMap());}
-          | TOKEN_LEFTCURLYBRACKET variantMapItems TOKEN_RIGHTCURLYBRACKET {
-                $$ = new QVariant();
-                *$$ = $2->toMap();
-            }
-          ;
-
-variantMapItems: variantMapPair {
-                     $$ = new QVariant();
-
-                     QVariantMap variantMap;
-                     QVariantList pair = $1->toList();
-
-                     variantMap[pair[0].toString()] = pair[1];
-
-                     *$$ = variantMap;
-                 }
-               | variantMapItems TOKEN_COMMA variantMapPair {
-                     $$ = new QVariant();
-
-                     QVariantMap variantMap($1->toMap());
-                     QVariantList pair = $3->toList();
-
-                     variantMap[pair[0].toString()] = pair[1];
-
-                     *$$ = variantMap;
-                 }
-               ;
-
-variantMapPair: TOKEN_STRING TOKEN_COLON variant {
-                    $$ = new QVariant();
-
-                    QVariantList variantList;
-
-                    variantList << $1->toString() << *$3;
-
-                    *$$ = variantList;
-                }
-              ;
-
-number: TOKEN_INTIGER
-      | TOKEN_FLOAT
-      ;
-
-%%
-
-void yyerror(const char *s)
+%code requires
 {
-    qDebug() << "error:" << s;
+    //#include "myast.h"
+
+
+    //typedef std::tuple<std::string, std::string, int> TokenTableRow;
+
+    //extern std::vector <TokenTableRow> TokenTable;
+
+    //void dumpTokenTable(std::string firstColName, std::string secondColName, std::string thirdColName);
+
+
 }
+
+/* The parsing context */
+//%param { Simpl_driver& driver }
+
+//%locations
+//%initial-action
+//{
+  // Initialize the initial location.
+//  @$.begin.filename = @$.end.filename = &driver.filename;
+//};
+
+//%define parse.trace
+//%define parse.error verbose*/
+
+%code
+{
+//#undef yyerror
+//#define yyerror driver.error
+
+    std::string ErrorMessageVariableNotDeclared(std::string);
+    std::string ErrorMessageVariableDoublyDeclared(std::string);
+
+    int g_LoopNestingCounter = 0;
+
+    static TSymbolTable* g_TopLevelUserVariableTable = CreateUserVariableTable(NULL);
+    static TSymbolTable* currentTable = g_TopLevelUserVariableTable;
+}
+
+%union
+{
+    NodeAST *a; // узел абс.синт. дерева
+    double d;
+    int i;
+    std::string *var; // переменная
+    char s[3]; // имя оператора
+    std::string *str; // строкова константа
+    char other;
+    SubexpressionValueTypeEnum type;
+}
+
+// Declare tokens.
+%token       EOFILE 0   "end of file"
+%token <d>   REALCONST  "floating point double precision"
+%token <i>   INTCONST   "integer"
+%token <var> IDENTIFIER "name"
+%token <str> STRCONST     "string"
+%token <s>   RELOP      "relop"
+%token <s>   ADDUOP     "adduop"
+%token       PLUS       "plus"
+%token       MINUS      "minus"
+%token <s>   MULOP      "mulop"
+%token <s>   BOOLOP     "boolop"
+%token       OPENBRACE  "{"
+%token       CLOSEBRACE "}"
+%token       OPENPAREN  "("
+%token       CLOSEPAREN ")"
+%token       OPENBRACKET    "["
+%token       CLOSEBRACKET   "]"
+%token       ASSIGN     "="
+%token       SEMICOLON  ";"
+%token       COLON      ":"
+%token       COMA       ","
+%token       DOT "."
+// Control constructions.
+%token       IF         "if"
+%token       ELSE       "else"
+%token       FOR        "for"
+%token       WHILE      "while"
+%token       DO         "do"
+%token       SWITCH     "switch"
+%token       CASE       "case"
+%token       DEFAULT    "default"
+%token       CONTINUE   "continue"
+%token       BREAK      "break"
+%token       GOTO       "goto"
+// Types of data.
+%token      INT        "int"
+%token     DOUBLE     "double"
+%token      FLOAT      "float"
+%token      BOOL       "bool"
+%token      CHAR       "char"
+%token      SHORT      "short"
+%token       ENUM       "enum"
+%token       VOID       "void"
+%token       STRUCT     "struct"
+// Functions.
+%token       SCAN       "scan"
+%token       PRINT      "print"
+//
+%token       TRUE       "true"
+%token       FALSE      "false"
+
+%token       RETURN     "return"
+
+
+
+/*%token IFX */
+
+%type <a>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt loop_head for_head switch_stmt
+goto_stmt call_stmt descr_stmt case_stmt
+
+%type <type> numeric_data_types
+
+/* Priority */
+%nonassoc IF
+%nonassoc ELSE
+%right ASSIGN
+%left BOOLOP
+%left RELOP
+%left PLUS MINUS
+%left MULOP
+%left ADDUOP
+%right UMINUS
+%left OPENPAREN CLOSEPAREN OPENBRACKET CLOSEBRACKET
+
+%start prog
+
+%printer {
+    yyoutput << $$;
+} <*>
+
+%destructor {
+    delete $$;
+} IDENTIFIER
+%%
+
+prog : stmtlist
+{
+    /*     if (driver.AST_dumping)
+      { */
+    PrintAST($1, 0);
+    /*      } */
+    FreeAST($1);
+    DestroyUserVariableTable(currentTable);
+    /*   driver.result = 0;*/
+};
+
+stmtlist : statement stmtlist_tail
+{
+    if ($2 == NULL)
+        $$ = $1;
+    else
+        $$ = CreateNodeAST(typeList, "L", $1, $2);
+};
+
+stmtlist_tail : %empty   {
+    $$ = NULL;
+}
+| stmtlist {
+    $$ = $1;
+};
+
+
+statement : assignment | cond_stmt | declaration_number | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | case_stmt |BREAK SEMICOLON
+{
+    if (g_LoopNestingCounter <= 0)
+        yyerror("'break' not inside loop");
+    $$ = CreateControlFlowNode(typeJumpStatement, NULL, NULL, NULL);
+};
+
+
+compound_statement :
+OPENBRACE  { // {
+    currentTable = CreateUserVariableTable(currentTable);
+}
+stmtlist
+CLOSEBRACE { // }
+    $$ = $3;
+    HideUserVariableTable(currentTable); currentTable = currentTable->parentTable;
+};
+
+descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_statement {};
+
+call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
+
+
+assignment : IDENTIFIER ASSIGN exp SEMICOLON
+{
+    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, *$1);
+    if (NULL == var)
+    {
+        yyerror(ErrorMessageVariableNotDeclared(*$1));
+    }
+    else if ($3->valueType != var->table->data[var->index].valueType)
+    {
+        yyerror("warning - types incompatible in assignment");
+    }
+    $$ = CreateAssignmentNode(var, $3);
+}
+|IDENTIFIER ASSIGN call_stmt {}
+;
+
+numeric_data_types : INT {
+    $$ = typeInt;
+}
+| DOUBLE {
+    $$ = typeDouble;
+}
+| FLOAT {
+    $$ = typeFloat;
+}
+| BOOL {
+    $$ = typeBool;
+}
+| CHAR {
+    $$ = typeChar;
+}
+| SHORT {
+    $$ = typeShort;
+};
+
+declaration_number : numeric_data_types IDENTIFIER SEMICOLON
+{
+    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
+    if (NULL != var)
+    {
+        yyerror(ErrorMessageVariableDoublyDeclared(*$2));
+    }
+    else
+    {
+        SubexpressionValueTypeEnum type;
+
+        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        if (!isInserted)
+            yyerror("Memory allocation or access error");
+    }
+    $$ = CreateAssignmentNode(var, CreateNumberNode(0));
+}
+| numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
+{
+    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
+    if (NULL != var)
+    {
+        yyerror(ErrorMessageVariableDoublyDeclared(*$2));
+    }
+    else
+    {
+        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        if (!isInserted)
+            yyerror("Memory allocation or access error");
+    }
+
+    if ($4->valueType != var->table->data[var->index].valueType)
+    {
+        yyerror("warning - types incompatible in assignment");
+    }
+    $$ = CreateAssignmentNode(var, $4);
+
+}
+| numeric_data_types IDENTIFIER OPENBRACKET CLOSEBRACKET ASSIGN exp SEMICOLON
+{
+    TSymbolTableElementPtr var = LookupUserVariableTable(currentTable, *$2);
+    if (NULL != var)
+    {
+        yyerror(ErrorMessageVariableDoublyDeclared(*$2));
+    }
+    else
+    {
+        bool isInserted = InsertUserVariableTable(currentTable, *$2, $1, var);
+        if (!isInserted)
+            yyerror("Memory allocation or access error");
+    }
+
+    if ($6->valueType != var->table->data[var->index].valueType)
+    {
+        yyerror("warning - types incompatible in assignment");
+    }
+    $$ = CreateAssignmentNode(var, $6);
+
+}
+| IDENTIFIER COLON {
+
+}
+| %empty   {
+    $$ = NULL;
+}
+;
+
+goto_stmt: GOTO IDENTIFIER SEMICOLON {};
+
+case_stmt: CASE IDENTIFIER COLON statement {}
+    | CASE INTCONST COLON statement {}
+    | DEFAULT COLON statement {}
+;
+
+switch_stmt: SWITCH OPENPAREN exp CLOSEPAREN statement CASE IDENTIFIER COLON statement {}
+{};
+
+print_stmt: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
+{};
+
+scan_stmt: SCAN OPENPAREN exp CLOSEPAREN
+{};
+
+cond_stmt: IF OPENPAREN exp CLOSEPAREN statement %prec IF
+{
+    $$ = CreateControlFlowNode(typeIfStatement, $3, $5, NULL);
+}
+| IF OPENPAREN exp CLOSEPAREN statement ELSE statement
+{
+    $$ = CreateControlFlowNode(typeIfStatement, $3, $5, $7);
+};
+
+loop_stmt : loop_head statement
+{
+    $$ = CreateControlFlowNode(typeWhileStatement, $1, $2, NULL);
+    --g_LoopNestingCounter;
+}
+| for_head statement
+{
+    $$ = CreateControlFlowNode(typeWhileStatement, $1, $2, NULL);
+    --g_LoopNestingCounter;
+}
+| DO statement loop_head {}
+;
+
+loop_head : WHILE OPENPAREN exp CLOSEPAREN
+{
+    $$ = $3;
+    ++g_LoopNestingCounter;
+};
+
+for_head : FOR OPENPAREN assignment exp SEMICOLON exp CLOSEPAREN
+{
+    //$$ = $3;
+    ++g_LoopNestingCounter;
+}
+| FOR OPENPAREN declaration_number exp SEMICOLON exp CLOSEPAREN
+{
+    //$$ = $3;
+    ++g_LoopNestingCounter;
+}
+| FOR OPENPAREN SEMICOLON  SEMICOLON CLOSEPAREN
+{
+    //$$ = $3;
+    ++g_LoopNestingCounter;
+}
+;
+
+// Expression
+exp : exp RELOP exp
+{
+    if ($1->valueType != $3->valueType)
+    {
+        yyerror("warning - types in relop incompatible");
+        if ($1->valueType == typeInt)
+            $$ = CreateNodeAST(typeBinaryOp, $2, CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+        else
+            $$ = CreateNodeAST(typeBinaryOp, $2, $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+    }
+    else
+        $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
+}
+| exp PLUS exp
+{
+    if ($1->valueType != $3->valueType)
+    {
+        yyerror("warning - types in addop incompatible");
+        if ($1->valueType == typeInt)
+            $$ = CreateNodeAST(typeBinaryOp, "+", CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+        else
+            $$ = CreateNodeAST(typeBinaryOp, "+", $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+    }
+    else
+        $$ = CreateNodeAST(typeBinaryOp, "+", $1, $3);
+}
+| exp MINUS exp
+{
+    if ($1->valueType != $3->valueType)
+    {
+        yyerror("warning - types in subop incompatible");
+        if ($1->valueType == typeInt)
+            $$ = CreateNodeAST(typeBinaryOp, "-", CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+        else
+            $$ = CreateNodeAST(typeBinaryOp, "-", $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+    }
+    else
+        $$ = CreateNodeAST(typeBinaryOp, "-", $1, $3);
+}
+| exp MULOP exp
+{
+    if ($1->valueType != $3->valueType)
+    {
+        yyerror("warning - types in mulop incompatible");
+        if ($1->valueType == typeInt)
+            $$ = CreateNodeAST(typeBinaryOp, "+", CreateNodeAST(typeUnaryOp, "td", $1, NULL), $3);
+        else
+            $$ = CreateNodeAST(typeBinaryOp, "+", $1, CreateNodeAST(typeUnaryOp, "td", $3, NULL));
+    }
+    else
+        $$ = CreateNodeAST(typeBinaryOp, $2, $1, $3);
+}
+| MINUS exp %prec UMINUS
+{
+    $$ = CreateNodeAST(typeUnaryOp, "-", $2, NULL);
+}
+| ADDUOP exp
+{
+}
+| exp ADDUOP
+{
+}
+| OPENPAREN exp CLOSEPAREN
+{
+    $$ = $2;
+}
+| exp ASSIGN exp
+{
+   // $$ = $2;
+}
+| REALCONST
+{
+    $$ = CreateNumberNode($1);
+}
+| INTCONST
+{
+    $$ = CreateNumberNode($1);
+}
+| STRCONST
+{
+}
+| IDENTIFIER
+{
+    TSymbolTableElementPtr var = LookupUserVariableTableRecursive(currentTable, *$1);
+    if (NULL == var)
+    {
+        yyerror(ErrorMessageVariableNotDeclared(*$1));
+    }
+    $$ = CreateReferenceNode(var);
+}
+| %empty   {
+    $$ = NULL;
+}
+;
+
+%%
+void yyerror(const char *s) {
+    std::cout << "EEK, parse error!  Message: " << s << std::endl;
+    // might as well halt now:
+    exit(-1);
+}
+
+std::string ErrorMessageVariableNotDeclared(std::string name)
+{
+    std::string errorDeclaration = "warning - Variable " + name + " isn't declared";
+    return errorDeclaration;
+}
+
+std::string ErrorMessageVariableDoublyDeclared(std::string name)
+{
+    std::string errorDeclaration = "warning - Variable " + name + " is already declared";
+    return errorDeclaration;
+}
+
+/*
+int codegenBinary(FILE* outputFile, int operatorCode,
+                  NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result)
+{
+    fprintf(outputFile, "\t$t%u\t:=\t", result->opValue);
+    switch (leftOperand->nodetype)
+    {
+    case typeIdentifier:
+        fprintf(outputFile, "%c", leftOperand->opValue);
+        break;
+    case typeList:
+        fprintf(outputFile, "$t%d", leftOperand->opValue);
+        break;
+    case typeConst:
+        fprintf(outputFile, "%g", leftOperand->opValue);
+        break;
+    }
+    switch (operatorCode)
+    {
+    case ADDITION_OPERATOR:
+        fprintf(outputFile, "+");
+        break;
+    case SUBTRACTION_OPERATOR:
+        fprintf(outputFile, "-");
+        break;
+    case MULTIPLICATION_OPERATOR:
+        fprintf(outputFile, "*");
+        break;
+    case DIVISION_OPERATOR:
+        fprintf(outputFile, "/");
+        break;
+    }
+    switch (rightOperand->nodetype)
+    {
+    case typeIdentifier:
+        fprintf(outputFile, "%c", rightOperand->opValue);
+        break;
+    case typeList:
+        fprintf(outputFile, "$t%d", rightOperand->opValue);
+        break;
+    case typeConst:
+        fprintf(outputFile, "%g", rightOperand->opValue);
+        break;
+    }
+    fprintf(outputFile, "\n");
+
+    return 0;
+}
+int codegenUnary(FILE* outputFile, int operatorCode,
+                 NodeAST* operand, NodeAST* result)
+{
+    if (operatorCode == OUTPUT_OPERATOR)
+    {
+        fprintf (outputFile, "\toutput\t");
+    }
+    else if (operatorCode == ASSIGN_OPERATOR)
+    {
+        fprintf(outputFile, "\t%c\t:=\t", result->opValue);
+    }
+    else
+    {
+        fprintf(outputFile, "\t$t%u\t:=\t", result->opValue);
+        switch (operatorCode)
+        {
+        case UNPLUS_OPERATOR:
+            fprintf(outputFile, "+");
+            break;
+        case NEGATION_OPERATOR:
+            fprintf(outputFile, "-");
+        }
+    }
+    switch (operand->nodetype)
+    {
+    case typeIdentifier:
+        fprintf(outputFile, "%c", operand->opValue);
+        break;
+    case typeList:
+        fprintf(outputFile, "$t%d", operand->opValue);
+        break;
+    case typeConst:
+        fprintf(outputFile, "%g", operand->opValue);
+        break;
+    }
+    fprintf(outputFile, "\n");
+
+    return 0;
+}
+int codegenGoto(FILE* outputFile, int operatorCode,
+                int labelREALCONST, NodeAST* optionalExpression)
+{
+    if (operatorCode != GOTO_OPERATOR)
+    {
+        if(operatorCode == IF_FALSE_GOTO_OPERATOR)
+            fprintf(outputFile, "\tiffalse\t");
+        else if(operatorCode == IF_TRUE_GOTO_OPERATOR)
+            fprintf(outputFile, "\tiftrue\t");
+        switch (optionalExpression->nodetype)
+        {
+        case typeIdentifier:
+            fprintf(outputFile, "%c", optionalExpression->opValue);
+            break;
+        case typeList:
+            fprintf(outputFile, "$t%d", optionalExpression->opValue);
+            break;
+        case typeConst:
+            fprintf(outputFile, "%g", optionalExpression->opValue);
+            break;
+        default: break;
+        }
+    }
+    fprintf(outputFile, "\tgoto\t$L%d", labelREALCONST);
+    fprintf(outputFile, "\n");
+
+    return 0;
+}
+int codegenLabel(FILE* outputFile, int labelREALCONST)
+{
+    fprintf (outputFile, "$L%d:", labelREALCONST);
+    return 0;
+}
+static void PushLabelREALCONST(int labelREALCONST)
+{
+    Labels[g_LabelStackPointer] = labelREALCONST;
+    ++g_LabelStackPointer;
+}
+static int PopLabelREALCONST(void)
+{
+    if (g_LabelStackPointer > 0)
+    {
+        --g_LabelStackPointer;
+        return Labels[g_LabelStackPointer];
+    }
+    g_LabelStackPointer = 0;
+    return -1;
+}
+static void EmptyLabels(void)
+{
+    g_LabelStackPointer = 0;
+}
+
+*/
+
+int yyerror (std::string s) {
+    printf ("Line %d: %s.\n", lno, s.c_str());
+    //fprintf(stderr, "Line %d: %s.\n", lno, s);
+    // g_ErrorStatus = !0;
+    return !0;
+}
+
+
