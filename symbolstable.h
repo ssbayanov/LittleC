@@ -12,7 +12,7 @@ class SymbolsTable;
 // Symbols table record definition
 typedef struct
 {
-  SubexpressionValueTypeEnum valueType; /* Type of a variable or expression */
+  ValueTypeEnum valueType; /* Type of a variable or expression */
   QVariant value;   /* Currently not used, reserved to the future */
   QString name;
   SymbolsTable *table;
@@ -83,7 +83,7 @@ public:
      * @return pointer to struct of this variable
      */
     SymbolsTableRecord *insertValue(QString name,
-                      SubexpressionValueTypeEnum type,
+                      ValueTypeEnum type,
                       QVariant value);
     /**
      * @brief getVariable find variable into values list by name in current table

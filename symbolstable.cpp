@@ -7,6 +7,7 @@ SymbolsTable::SymbolsTable(SymbolsTable *p) :
     if(parent != NULL)
         parent->childs.append(this);
     childs.clear();
+
 }
 
 SymbolsTable::~SymbolsTable()
@@ -19,7 +20,7 @@ SymbolsTable::~SymbolsTable()
 }
 
 SymbolsTableRecord * SymbolsTable::insertValue(QString name,
-                               SubexpressionValueTypeEnum type,
+                               ValueTypeEnum type,
                                QVariant value)
 {
     SymbolsTableRecord *record;

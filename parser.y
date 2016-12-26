@@ -17,21 +17,41 @@
     // Errors
     enum {  ERROR_DOUBLE_DECLARED,
             ERROR_NOT_DECLARED,
-            WARNING_TYPES_INCOMPATIBLE,
+            ERROR_TYPES_INCOMPATIBLE,
             ERROR_BREAK_NOT_INSIDE_LOOP,
             ERROR_MEMORY_ALLOCATION,
             ERROR_UNRECOGNIZED_TOKEN,
             ERROR_UNFINISHED_STRING,
-            ERROR_UNCLOSED_COMMENT};
+            ERROR_UNCLOSED_COMMENT,
+            ERROR_COMPARSION_NOT_APPLICABLE,
+            ERROR_COMPARSION_ON_DIFFERENCE_TYPES,
+            ERROR_INCREMENT_WRONG_TYPE};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared."
                               << "error: Variable %1 was not declared."
-                              << "warning: types in %1 opertion incompatible."
+                              << "error: can not convert %1 to %2"
                               << "error: 'break' not inside loop."
                               << "error: memory allocation or access error."
                               << "error: %1 - unrecognized token."
                               << "error: unfinished string."
-                              << "error: nonclosed comment";
+                              << "error: nonclosed comment"
+                              << "error: comparison oparation %1 not applicable for %2"
+                              << "error: comparison oparation %1 not applicable on %2 and %3"
+                              << "error: increment not applicable for %1 variable %2";
+
+}
+
+%code requires
+{
+
+    //typedef std::tuple<std::string, std::string, int> TokenTableRow;
+
+    //extern std::vector <TokenTableRow> TokenTable;
+
+    //void dumpTokenTable(std::string firstColName, std::string secondColName, std::string thirdColName);
+
+    bool isNumberType(ValueTypeEnum type);
+    SymbolsTableRecord *getVariableByName(QString name);
 
 }
 
@@ -75,13 +95,12 @@
 #define YYERROR_VERBOSE         1
 
 
-/*#define YYDEBUG 1
-#define yyoutput std::cout*/
-
 /* описание структуры синтаксического дерева */
-int g_tmpvar_upper_index = 0;
 
-/*NodeAST* constants(double value);
+
+/*
+int g_tmpvar_upper_index = 0;
+NodeAST* constants(double value);
 NodeAST* idents (int index);
 NodeAST* tmpvars (int tmp_index);*/
 /* Генерация трехадресного кода */
@@ -91,16 +110,18 @@ int codegenGoto(FILE* outputFile, int operatorCode,int labelREALCONST, NodeAST* 
 int codegenLabel(FILE* outputFile, int labelREALCONST);*/
 
 /* Обработка таблицы меток. Используется стековая организация */
+/*
 static int g_LastLabelREALCONST = 0;
 static int g_LabelStackPointer = 0;
 static int Labels[256];
 static void PushLabelREALCONST(int);
 static int PopLabelREALCONST(void);
 static void EmptyLabels(void);
+*/
 
 extern int lno;
 extern int parserlex();
-extern char g_outFileName[256]; /* Имя выходного файла */
+//extern char g_outFileName[256]; /* Имя выходного файла */
 
 //#undef yyerror
 //#define yyerror driver.error
@@ -110,24 +131,9 @@ int g_LoopNestingCounter = 0;
 static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
 static SymbolsTable* currentTable = topLevelVariableTable;
 
-//static TSymbolTable* g_TopLevelUserVariableTable = CreateUserVariableTable(NULL);
-//static TSymbolTable* currentTable = g_TopLevelUserVariableTable;
-
 %}
 
-%code requires
-{
-    //#include "myast.h"
 
-
-    //typedef std::tuple<std::string, std::string, int> TokenTableRow;
-
-    //extern std::vector <TokenTableRow> TokenTable;
-
-    //void dumpTokenTable(std::string firstColName, std::string secondColName, std::string thirdColName);
-
-
-}
 
 /* The parsing context */
 //%param { Simpl_driver& driver }
@@ -151,19 +157,19 @@ static SymbolsTable* currentTable = topLevelVariableTable;
     char opName[3]; // имя оператора
     QString *strValue; // строкова константа
     char other;
-    SubexpressionValueTypeEnum type;
+    ValueTypeEnum type;
 }
 
 // Declare tokens.
 %token       EOFILE 0   "end of file"
 %token <doubleValue>   REALCONST  "floating point double precision"
 %token <intValue>   INTCONST   "integer"
-%token <var>        IDENTIFIER "name"
+%token <var>        IDENTIFIER "indentifer"
 %token <strValue>   STRING     "string"
 %token <opName>   RELOP      "relop"
-%token <opName>   ADDUOP     "adduop"
-%token <opName>   PLUS       "plus"
-%token <opName>   MINUS      "minus"
+%token <opName>   INCREMENT  "increment (decrement)"
+%token <opName>   PLUS       "+"
+%token <opName>   MINUS      "-"
 %token <opName>   MULOP      "mulop"
 %token <opName>   BOOLOP     "boolop"
 %token       OPENBRACE  "{"
@@ -225,6 +231,7 @@ goto_stmt call_stmt descr_stmt case_stmt
 %left MULOP
 %left ADDUOP
 %right UMINUS
+%left INCREMENT
 %left OPENPAREN CLOSEPAREN OPENBRACKET CLOSEBRACKET
 
 %start prog
@@ -275,13 +282,17 @@ statement : assignment
 | call_stmt
 | descr_stmt
 | case_stmt
-|BREAK SEMICOLON
+| exp SEMICOLON
+| BREAK SEMICOLON
 {
     if (g_LoopNestingCounter <= 0)
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
     $$ = createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
 }
 | error SEMICOLON // Restore after error
+{
+    yyerrok;
+}
 ;
 
 
@@ -302,15 +313,10 @@ call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
 
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
 {    
-    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$1);
-    if (var == NULL)
+    SymbolsTableRecord *var = getVariableByName(*$1);
+    if ($3->valueType != var->valueType)
     {
-        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
-        YYERROR;
-    }
-    else if ($3->valueType != var->valueType)
-    {
-        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg("assign"));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at($3->valueType)).arg(var->valueType));
     }
     $$ = createAssignmentNode(var, $3);
 }
@@ -371,7 +377,8 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 
     if ($4->valueType != var->valueType)
     {
-        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg(*$2));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at($4->valueType)).arg(var->valueType));
+        YYERROR;
     }
     $$ = createAssignmentNode(var, $4);
 
@@ -421,22 +428,34 @@ while_head : WHILE OPENPAREN exp CLOSEPAREN
 // Expression
 exp : exp RELOP exp
 {
-    if ($1->valueType != $3->valueType)
-    {
-        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
-        if ($1->valueType == typeInt)
-            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
+
+    if(isNumberType($1->valueType) && isNumberType($3->valueType)){ //Type of variables is number
+        if ($1->valueType != $3->valueType) //if exp have diffrence type
+        {
+            if ($1->valueType == typeInt)
+                $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
+            else
+                $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
+        }
         else
-            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
+            $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
     }
-    else
-        $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+    else{
+        if($1->valueType == $3->valueType){
+            if($2 == "==")
+                $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+            else
+                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg($1->valueType));
+        }
+        parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg($1->valueType).arg($3->valueType));
+    }
+
 }
 | exp PLUS exp
 {
     if ($1->valueType != $3->valueType)
     {
-        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -449,7 +468,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -462,7 +481,7 @@ exp : exp RELOP exp
 {
     if ($1->valueType != $3->valueType)
     {
-        parsererror(errorList.at(WARNING_TYPES_INCOMPATIBLE).arg($2));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg($2));
         if ($1->valueType == typeInt)
             $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
@@ -501,17 +520,19 @@ exp : exp RELOP exp
 }
 | IDENTIFIER
 {
-    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$1);
-
-    if (var == NULL)
-    {
-        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
-        YYERROR;
-                    //ErrorMessageVariableNotDeclared(*$1).c_str());
-    }
+    SymbolsTableRecord *var = getVariableByName(*$1);
     $$ = createReferenceNode(var);
 }
-;
+| IDENTIFIER INCREMENT
+{
+    SymbolsTableRecord *var = getVariableByName(*$1);
+
+    if(isNumberType(var->valueType))
+        $$ = createNodeAST(NT_UnaryOperation, "++", createReferenceNode(var), NULL);
+    else
+        parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->valueType)).arg(*$1));
+
+};
 
 %%
 void yyerror(QString s) {
@@ -521,6 +542,31 @@ void yyerror(QString s) {
     // might as well halt now:
     //exit(-1);
 }
+
+SymbolsTableRecord *getVariableByName(QString name){
+    SymbolsTableRecord *var = currentTable->getVariableGlobal(name);
+
+    if (var == NULL)
+    {
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(name));
+        //YYERROR;
+    }
+    return var;
+}
+
+bool isNumberType(ValueTypeEnum type)
+{
+    if(type == typeInt ||
+            type == typeBool ||
+            type == typeDouble ||
+            type == typeFloat ||
+            type == typeShort ||
+            type == typeChar)
+        return true;
+
+    return false;
+}
+
 
 /*
 int codegenBinary(FILE* outputFile, int operatorCode,

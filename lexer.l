@@ -32,7 +32,7 @@
 #include "parser_yacc.h"
 //#include "myast.h"
 
-//extern void yyerror(QString);
+
 bool multilineComment();
 
 #define lexerlex parserlex
@@ -75,6 +75,11 @@ stringch      [^"\n]
                                 //TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno));
                                 return ASSIGN;
                             }
+\+{2}|\-{2}                     {
+                                TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return INCREMENT;
+                            }
 
 \+                          {
                                 //TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
@@ -86,12 +91,6 @@ stringch      [^"\n]
                                 //TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
                                 return MINUS;
-                            }
-
-\++|\--                     {
-                                TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno));
-                                strcpy(parserlval.opName, yytext);
-                                return ADDUOP;
                             }
 
     /*  */

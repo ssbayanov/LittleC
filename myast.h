@@ -28,7 +28,7 @@ typedef enum
 typedef struct TAbstractSyntaxTreeNode
 {
   NodeTypeEnum nodetype;
-  SubexpressionValueTypeEnum valueType;
+  ValueTypeEnum valueType;
   char opValue[256];
   struct TAbstractSyntaxTreeNode* left;
   struct TAbstractSyntaxTreeNode* right;
@@ -45,7 +45,7 @@ typedef struct
 typedef struct
 {
   NodeTypeEnum nodetype;			/* Type K */
-  SubexpressionValueTypeEnum valueType;
+  ValueTypeEnum valueType;
   union
   {
     int    iNumber;
@@ -58,7 +58,7 @@ typedef struct
 typedef struct
 {
   NodeTypeEnum nodetype;
-  SubexpressionValueTypeEnum valueType;
+  ValueTypeEnum valueType;
   union
   {
     char    cNumber;
@@ -68,14 +68,14 @@ typedef struct
 typedef struct
 {
   NodeTypeEnum nodetype;
-  SubexpressionValueTypeEnum valueType;
+  ValueTypeEnum valueType;
   SymbolsTableRecord *variable;
 } TSymbolTableReference;
 
 typedef struct
 {
   NodeTypeEnum nodetype;
-  SubexpressionValueTypeEnum valueType;
+  ValueTypeEnum valueType;
   int Index;
 } TTmpValueNode;
 
