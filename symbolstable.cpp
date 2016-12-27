@@ -1,4 +1,5 @@
 #include "symbolstable.h"
+#include <QDebug>
 
 SymbolsTable::SymbolsTable(SymbolsTable *p) :
     QHash()
@@ -7,7 +8,6 @@ SymbolsTable::SymbolsTable(SymbolsTable *p) :
     if(parent != NULL)
         parent->childs.append(this);
     childs.clear();
-
 }
 
 SymbolsTable::~SymbolsTable()

@@ -7,6 +7,7 @@
 #include <QList>
 #include "subexpression.h"
 
+
 class SymbolsTable;
 
 // Symbols table record definition

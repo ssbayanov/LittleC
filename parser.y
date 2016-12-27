@@ -8,7 +8,7 @@
 #include <QString>
 #include <QStringList>
 #include "symbolstable.h"
-#include "myast.h"
+#include "astnode.h"
 }
 
 %code provides {
@@ -150,7 +150,7 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 
 %union
 {
-    NodeAST *astNode; // узел абс.синт. дерева
+    AbstractASTNode *astNode; // узел абс.синт. дерева
     double doubleValue;
     int intValue;
     QString *var; // переменная
@@ -249,9 +249,11 @@ prog : stmtlist
 {
     /*     if (driver.AST_dumping)
       { */
-    printAST($1, 0);
+    //printAST($1, 0);
+    $1->printNode(0);
     /*      } */
-    freeAST($1);
+    //freeAST($1);
+    //$1->~AbstractASTNode();
     topLevelVariableTable->~SymbolsTable();
     /*   driver.result = 0;*/
 };
@@ -261,7 +263,8 @@ stmtlist : statement stmtlist_tail
     if ($2 == NULL)
         $$ = $1;
     else
-        $$ = createNodeAST(NT_List, "L", $1, $2);
+        $$ = new ListNode($1, $2);
+        //$$ = createNodeAST(NT_List, "L", $1, $2);
 };
 
 stmtlist_tail : %empty   {
@@ -287,7 +290,7 @@ statement : assignment
 {
     if (g_LoopNestingCounter <= 0)
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
-    $$ = createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
+    $$ = NULL;//createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
 }
 | error SEMICOLON // Restore after error
 {
@@ -314,11 +317,12 @@ call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
 {    
     SymbolsTableRecord *var = getVariableByName(*$1);
-    if ($3->valueType != var->valueType)
+    if (((AbstractValueASTNode *)$3)->getType() != var->valueType)
     {
-        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at($3->valueType)).arg(var->valueType));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(((AbstractValueASTNode *)$3)->getType())).arg(var->valueType));
     }
-    $$ = createAssignmentNode(var, $3);
+    $$ = new AssignmentNode(var, $3);
+    //$$ = createAssignmentNode(var, $3);
 }
 |IDENTIFIER ASSIGN call_stmt {}
 ;
@@ -357,7 +361,8 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
         if (var == NULL)
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
-    $$ = createAssignmentNode(var, createNumberNode(0));
+    $$ = new AssignmentNode(var, new ValueNode(var->valueType, 0));
+    //$$ = createAssignmentNode(var, createNumberNode(0));
 }
 | numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
 {
@@ -375,12 +380,13 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
 
-    if ($4->valueType != var->valueType)
+    if (((AbstractValueASTNode *)$4)->getType() != var->valueType)
     {
-        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at($4->valueType)).arg(var->valueType));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(((AbstractValueASTNode *)$4)->getType())).arg(var->valueType));
         YYERROR;
     }
-    $$ = createAssignmentNode(var, $4);
+    $$ = new AssignmentNode(var, $4);
+    //$$ = createAssignmentNode(var, $4);
 
 }
 | IDENTIFIER COLON {
@@ -406,16 +412,19 @@ print_stmt: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
 
 cond_stmt: IF OPENPAREN exp CLOSEPAREN statement %prec IF
 {
-    $$ = createControlFlowNode(NT_IfStatement, $3, $5, NULL);
+    $$ = new IfNode($3, $5, NULL);
+    //$$ = createControlFlowNode(NT_IfStatement, $3, $5, NULL);
 }
 | IF OPENPAREN exp CLOSEPAREN statement ELSE statement
 {
-    $$ = createControlFlowNode(NT_IfStatement, $3, $5, $7);
+    $$ = new IfNode($3, $5, $7);
+    //$$ = createControlFlowNode(NT_IfStatement, $3, $5, $7);
 };
 
 loop_stmt : while_head statement
 {
-    $$ = createControlFlowNode(NT_WhileStatement, $1, $2, NULL);
+    $$ = new WhileNode($1, $2);
+ //   $$ = createControlFlowNode(NT_WhileStatement, $1, $2, NULL);
     --g_LoopNestingCounter;
 };
 
@@ -429,70 +438,84 @@ while_head : WHILE OPENPAREN exp CLOSEPAREN
 exp : exp RELOP exp
 {
 
-    if(isNumberType($1->valueType) && isNumberType($3->valueType)){ //Type of variables is number
-        if ($1->valueType != $3->valueType) //if exp have diffrence type
+    if(isNumberType(((AbstractValueASTNode *)$1)->getType()) && isNumberType(((AbstractValueASTNode *)$3)->getType())){ //Type of variables is number
+        if (((AbstractValueASTNode *)$1)->getType() != ((AbstractValueASTNode *)$3)->getType()) //if exp have diffrence type
         {
-            if ($1->valueType == typeInt)
-                $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
+            if (((AbstractValueASTNode *)$1)->getType() == typeInt)
+                $$ = new BinarNode(new UnaryNode(ToDouble, $1), $3, $2);
+                //$$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
             else
-                $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
+                $$ = new BinarNode($1, new UnaryNode(ToDouble, $3), $2);
+                //$$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
         }
         else
-            $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+            $$ = new BinarNode($1, $3, $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
     }
     else{
-        if($1->valueType == $3->valueType){
+        if(((AbstractValueASTNode *)$1)->getType() == ((AbstractValueASTNode *)$3)->getType()){
             if($2 == "==")
-                $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+                $$ = new BinarNode($1, $3, $2);
+                //$$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
             else
-                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg($1->valueType));
+                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(((AbstractValueASTNode *)$1)->getType()));
         }
-        parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg($1->valueType).arg($3->valueType));
+        parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(((AbstractValueASTNode *)$1)->getType()).arg(((AbstractValueASTNode *)$3)->getType()));
     }
 
 }
 | exp PLUS exp
 {
-    if ($1->valueType != $3->valueType)
+    if (((AbstractValueASTNode *)$1)->getType() != ((AbstractValueASTNode *)$3)->getType())
     {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg($2));
-        if ($1->valueType == typeInt)
-            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
+        if (((AbstractValueASTNode *)$1)->getType() == typeInt)
+            $$ = new BinarNode(new UnaryNode(ToDouble, $1), $3, $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
+            $$ = new BinarNode($1, new UnaryNode(ToDouble, $3), $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+        $$ = new BinarNode($1, $3, $2);
+        //$$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
 }
 | exp MINUS exp
 {
-    if ($1->valueType != $3->valueType)
+    if (((AbstractValueASTNode *)$1)->getType() != ((AbstractValueASTNode *)$3)->getType())
     {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg($2));
-        if ($1->valueType == typeInt)
-            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
+        if (((AbstractValueASTNode *)$1)->getType() == typeInt)
+            $$ = new BinarNode(new UnaryNode(ToDouble, $1), $3, $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
+            $$ = new BinarNode($1, new UnaryNode(ToDouble, $3), $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = createNodeAST(NT_BinaryOperation, "-", $1, $3);
+        $$ = new BinarNode($1, $3, $2);
+        //$$ = createNodeAST(NT_BinaryOperation, "-", $1, $3);
 }
 | exp MULOP exp
 {
-    if ($1->valueType != $3->valueType)
+    if (((AbstractValueASTNode *)$1)->getType() != ((AbstractValueASTNode *)$3)->getType())
     {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg($2));
-        if ($1->valueType == typeInt)
-            $$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
+        if (((AbstractValueASTNode *)$1)->getType() == typeInt)
+            $$ = new BinarNode(new UnaryNode(ToDouble, $1), $3, $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
         else
-            $$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
+            $$ = new BinarNode($1, new UnaryNode(ToDouble, $3), $2);
+            //$$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
     }
     else
-        $$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+        $$ = new BinarNode($1, $3, $2);
+        //$$ = createNodeAST(NT_BinaryOperation, "-", $1, $3);
 }
 | MINUS exp %prec UMINUS
 {
-    $$ = createNodeAST(NT_UnaryOperation, "-", $2, NULL);
+    $$ = new UnaryNode(UnarMinus, $2);
+    //$$ = createNodeAST(NT_UnaryOperation, "-", $2, NULL);
 }
 | OPENPAREN exp CLOSEPAREN // ( exp )
 {
@@ -504,35 +527,44 @@ exp : exp RELOP exp
 }
 | REALCONST
 {
-    $$ = createNumberNode($1);
+    $$ = new ValueNode(typeDouble, $1);
+    //$$ = createNumberNode($1);
 }
 | INTCONST
 {
-    $$ = createNumberNode($1);
+    $$ = new ValueNode(typeInt, $1);
+    //$$ = createNumberNode($1);
 }
 | TRUE
 {
-    $$ = createNumberNode(1);
+    $$ = new ValueNode(typeBool, 1);
+    //$$ = createNumberNode(1);
 }
 | FALSE
 {
-    $$ = createNumberNode(0);
+    $$ = new ValueNode(typeBool, 0);
+    //$$ = createNumberNode(0);
 }
 | IDENTIFIER
 {
     SymbolsTableRecord *var = getVariableByName(*$1);
-    $$ = createReferenceNode(var);
+    $$ = new ReferenceNode(var);
+    //$$ = createReferenceNode(var);
 }
-| IDENTIFIER INCREMENT
+/*
+ * Not in 2016.
+ * | IDENTIFIER INCREMENT
 {
     SymbolsTableRecord *var = getVariableByName(*$1);
 
     if(isNumberType(var->valueType))
-        $$ = createNodeAST(NT_UnaryOperation, "++", createReferenceNode(var), NULL);
+        $$ = createNodeAST(NT_UnaryOperation, $2, createReferenceNode(var), NULL);
     else
         parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->valueType)).arg(*$1));
 
-};
+}
+*/
+;
 
 %%
 void yyerror(QString s) {

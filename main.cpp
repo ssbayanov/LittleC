@@ -3,12 +3,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "myast.h"
+//#include "myast.h"
 #include <map>
 #include <tuple>
 #include <vector>
 
-extern int yyparse();
+//extern int yyparse();
+extern std::vector <std::tuple<std::string, std::string, int> > TokenTable;
 
 FILE* outfile;
 char g_outFileName[256];

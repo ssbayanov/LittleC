@@ -75,11 +75,13 @@ stringch      [^"\n]
                                 //TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno));
                                 return ASSIGN;
                             }
-\+{2}|\-{2}                     {
+    /*
+     * Not in 2016.
+     * \+{2}|\-{2}                     {
                                 TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
                                 return INCREMENT;
-                            }
+                            }*/
 
 \+                          {
                                 //TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
