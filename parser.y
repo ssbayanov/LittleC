@@ -189,8 +189,8 @@ extern char g_outFileName[256]; /* Имя выходного файла */
 
 /*%token IFX */
 
-%type <a>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt loop_head for_head switch_stmt
-goto_stmt call_stmt descr_stmt case_stmt
+%type <a>  exp cond_stmt assignment statement compound_statement stmtlist prog declaration_number loop_stmt loop_head for_head switch_stmt
+goto_stmt call_stmt descr_stmt case_stmt print_stmt scan_stmt declaration_numbers call_param
 
 %type <type> numeric_data_types
 
@@ -228,7 +228,24 @@ prog : stmtlist
     /*   driver.result = 0;*/
 };
 
-stmtlist : statement stmtlist_tail
+stmtlist : statement { $$ = $1;}
+| statement EOFILE {  $$ = $1; YYACCEPT; }
+| statement stmtlist {
+if ($2 == NULL)
+$$ = $1;
+else
+$$ = CreateNodeAST(typeList, "L", $1, $2);
+}
+| statement stmtlist EOFILE {
+if ($2 == NULL)
+$$ = $1;
+else
+$$ = CreateNodeAST(typeList, "L", $1, $2);
+YYACCEPT;
+}
+| EOFILE { $$ = NULL; YYACCEPT; }
+;
+/*stmtlist : statement stmtlist_tail
 {
     if ($2 == NULL)
         $$ = $1;
@@ -241,10 +258,10 @@ stmtlist_tail : %empty   {
 }
 | stmtlist {
     $$ = $1;
-};
+};*/
 
 
-statement : assignment | cond_stmt | declaration_number | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | case_stmt |BREAK SEMICOLON
+statement : assignment | cond_stmt | declaration_number | compound_statement | loop_stmt | switch_stmt | goto_stmt | call_stmt | descr_stmt | print_stmt | scan_stmt | BREAK SEMICOLON
 {
     if (g_LoopNestingCounter <= 0)
         yyerror("'break' not inside loop");
@@ -253,18 +270,32 @@ statement : assignment | cond_stmt | declaration_number | compound_statement | l
 
 
 compound_statement :
-OPENBRACE  { // {
+OPENBRACE  {
     currentTable = CreateUserVariableTable(currentTable);
 }
 stmtlist
-CLOSEBRACE { // }
+CLOSEBRACE {
     $$ = $3;
     HideUserVariableTable(currentTable); currentTable = currentTable->parentTable;
 };
 
-descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_statement {};
+descr_stmt: numeric_data_types IDENTIFIER OPENPAREN declaration_numbers CLOSEPAREN compound_statement {};
 
-call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
+declaration_numbers: numeric_data_types IDENTIFIER {}
+| numeric_data_types IDENTIFIER COMA declaration_numbers {}
+| %empty   {
+    $$ = NULL;
+}
+;
+call_param: IDENTIFIER {}
+| IDENTIFIER COMA call_param {}
+| IDENTIFIER OPENPAREN call_param CLOSEPAREN
+| %empty   {
+    $$ = NULL;
+}
+;
+call_stmt: IDENTIFIER OPENPAREN call_param CLOSEPAREN SEMICOLON {}
+;
 
 
 assignment : IDENTIFIER ASSIGN exp SEMICOLON
@@ -361,6 +392,8 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
     $$ = CreateAssignmentNode(var, $6);
 
 }
+| numeric_data_types IDENTIFIER OPENPAREN declaration_numbers CLOSEPAREN SEMICOLON {}
+| VOID IDENTIFIER OPENPAREN declaration_numbers CLOSEPAREN SEMICOLON {}
 | IDENTIFIER COLON {
 
 }
@@ -371,18 +404,21 @@ declaration_number : numeric_data_types IDENTIFIER SEMICOLON
 
 goto_stmt: GOTO IDENTIFIER SEMICOLON {};
 
-case_stmt: CASE IDENTIFIER COLON statement {}
-    | CASE INTCONST COLON statement {}
-    | DEFAULT COLON statement {}
+case_stmt: CASE IDENTIFIER COLON stmtlist case_stmt{}
+| CASE INTCONST COLON stmtlist case_stmt {}
+| DEFAULT COLON stmtlist {}
+| %empty   {
+    $$ = NULL;
+}
 ;
 
-switch_stmt: SWITCH OPENPAREN exp CLOSEPAREN statement CASE IDENTIFIER COLON statement {}
-{};
+switch_stmt: SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE statement case_stmt statement CLOSEBRACE {}
+;
 
 print_stmt: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
 {};
 
-scan_stmt: SCAN OPENPAREN exp CLOSEPAREN
+scan_stmt: SCAN OPENPAREN exp CLOSEPAREN SEMICOLON
 {};
 
 cond_stmt: IF OPENPAREN exp CLOSEPAREN statement %prec IF
@@ -399,12 +435,12 @@ loop_stmt : loop_head statement
     $$ = CreateControlFlowNode(typeWhileStatement, $1, $2, NULL);
     --g_LoopNestingCounter;
 }
-| for_head statement
+| for_head statement SEMICOLON
 {
     $$ = CreateControlFlowNode(typeWhileStatement, $1, $2, NULL);
     --g_LoopNestingCounter;
 }
-| DO statement loop_head {}
+| DO statement loop_head SEMICOLON {}
 ;
 
 loop_head : WHILE OPENPAREN exp CLOSEPAREN
@@ -520,9 +556,6 @@ exp : exp RELOP exp
         yyerror(ErrorMessageVariableNotDeclared(*$1));
     }
     $$ = CreateReferenceNode(var);
-}
-| %empty   {
-    $$ = NULL;
 }
 ;
 
