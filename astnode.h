@@ -19,7 +19,8 @@ typedef enum
     NT_IfStatement,       // If statement.
     NT_WhileStatement,    // While statement.
     NT_ForStatement,    // For statement
-    NT_JumpStatement,     // Goto, Break or Continue statement.
+    NT_GoToStatement,     // Goto, Break or Continue statement.
+    NT_LabelStatement,  // Label
     NT_SwitchStatement,     // Switch-Case statement.
     NT_InOutStatement,     // Print-Scan statement.
     NT_List               // Expression or statement list.
@@ -188,6 +189,9 @@ private:
     QString _operation;
 };
 
+/**
+ * @brief The UnaryNode class node for storage unary operations
+ */
 class UnaryNode : public AbstractValueASTNode
 {
 public:
@@ -202,5 +206,64 @@ public:
 private:
     AbstractASTNode *_left;
     TypeUnary _uType;
+    ValueTypeEnum _typeValue;
 };
+
+/**
+ * @brief The LabelNode class
+ */
+class LabelNode : public AbstractASTNode
+{
+public:
+    LabelNode(SymbolsTableRecord *variable);
+
+    void printNode(int level);
+
+    ~LabelNode();
+
+private:
+    SymbolsTableRecord *_variable;
+};
+
+
+class GoToNode : public AbstractASTNode
+{
+public:
+    GoToNode(QString nameLabel);
+
+    void printNode(int level);
+
+    ~GoToNode();
+
+private:
+    QString _nameLabel;
+};
+
+/*class CaseNode : public AbstractASTNode
+{
+public:
+    CaseNode(TypeUnary uType, AbstractASTNode *value);
+
+    void printNode(int level);
+
+    ~CaseNode();
+
+private:
+    AbstractASTNode *_value;
+};
+
+class SwitchNode : public AbstractASTNode
+{
+public:
+    SwitchNode(AbstractASTNode *value);
+
+    void printNode(int level);
+
+    ~SwitchNode();
+
+private:
+    AbstractASTNode *_value;
+    QList<> _cases;
+
+};*/
 #endif // ASTNODE_H

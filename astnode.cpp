@@ -100,6 +100,89 @@ ReferenceNode::~ReferenceNode()
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+//BinarNode
+//----------------------------------------------------------------------------------------------------------------------
+BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation)
+    : AbstractValueASTNode(NT_BinaryOperation)
+{
+    _left = left;
+    _right = right;
+    _operation = operation;
+}
+
+void BinarNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Binar operation:"
+              << std::endl;
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Left:"
+              << std::endl;
+    _left->printNode(level+1);
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Right:"
+              << std::endl;
+    _right->printNode(level+1);
+}
+
+ValueTypeEnum BinarNode::getType()
+{
+    return typeDouble;
+}
+
+BinarNode::~BinarNode()
+{
+    _left->~AbstractASTNode();
+    _right->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//UnaryNode
+//----------------------------------------------------------------------------------------------------------------------
+UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
+    : AbstractValueASTNode(NT_UnaryOperation)
+{
+    _uType = uType;
+    _left = left;
+    switch (_uType) {
+    case ToInt:
+        _typeValue = typeInt;
+        break;
+    case ToDouble:
+        _typeValue = typeDouble;
+        break;
+    case ToBool:
+        _typeValue = typeBool;
+    default:
+        _typeValue = ((AbstractValueASTNode *)_left)->getType();
+    }
+}
+
+ValueTypeEnum UnaryNode::getType()
+{
+    return _typeValue;
+}
+
+void UnaryNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << QString("Unar operation. Type of result: %1")
+                 .arg(typeName.at(_uType)).toStdString()
+              << std::endl;
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Left:"
+              << std::endl;
+    _left->printNode(level+1);
+
+}
+
+UnaryNode::~UnaryNode()
+{
+    _left->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 //ListNode
 //----------------------------------------------------------------------------------------------------------------------
 ListNode::ListNode(AbstractASTNode *left, AbstractASTNode *right)
@@ -230,74 +313,44 @@ AssignmentNode::~AssignmentNode()
     _value->~AbstractASTNode();
 }
 
-
 //----------------------------------------------------------------------------------------------------------------------
-//BinarNode
+//LabelNode
 //----------------------------------------------------------------------------------------------------------------------
-BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation)
-    : AbstractValueASTNode(NT_BinaryOperation)
+LabelNode::LabelNode(SymbolsTableRecord *variable)
+    : AbstractASTNode(NT_LabelStatement)
 {
-    _left = left;
-    _right = right;
-    _operation = operation;
+    _variable = variable;
 }
 
-void BinarNode::printNode(int level)
+void LabelNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << "Binar operation:"
+              << QString("Label: %1").arg(_variable->name).toStdString()
               << std::endl;
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Left:"
-              << std::endl;
-    _left->printNode(level+1);
-
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Right:"
-              << std::endl;
-    _right->printNode(level+1);
 }
 
-ValueTypeEnum BinarNode::getType()
+LabelNode::~LabelNode()
 {
-    return typeDouble;
-}
 
-BinarNode::~BinarNode()
-{
-    _left->~AbstractASTNode();
-    _right->~AbstractASTNode();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-//UnaryNode
+//GoToNode
 //----------------------------------------------------------------------------------------------------------------------
-UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
-    : AbstractValueASTNode(NT_UnaryOperation)
+GoToNode::GoToNode(QString nameLabel)
+    : AbstractASTNode(NT_GoToStatement)
 {
-    _uType = uType;
-    _left = left;
+    _nameLabel = nameLabel;
 }
 
-ValueTypeEnum UnaryNode::getType()
-{
-    return typeDouble;
-}
-
-void UnaryNode::printNode(int level)
+void GoToNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Unar operation. Type: %1")
-                 .arg(typeName.at(_uType)).toStdString()
+              << QString("Go to label: %1").arg(_nameLabel).toStdString()
               << std::endl;
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Left:"
-              << std::endl;
-    _left->printNode(level+1);
-
 }
 
-UnaryNode::~UnaryNode()
+GoToNode::~GoToNode()
 {
-    _left->~AbstractASTNode();
+
 }

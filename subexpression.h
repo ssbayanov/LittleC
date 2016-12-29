@@ -5,10 +5,11 @@
 
 typedef enum
 {
-    typeInt,         /* Integer number */
+    typeInt,
     typeShort,
     typeFloat,
     typeDouble,
+    typeLabel,
     typeVoid,
     typeChar,
     typeBool,
@@ -26,6 +27,7 @@ static QStringList typeName = QStringList() << "int"
                                             << "bool"
                                             << "struct"
                                             << "mass"
-                                            << "enum";
+                                            << "enum"
+                                            << "label";
 #endif // SUBEXPRESSION_H
 
