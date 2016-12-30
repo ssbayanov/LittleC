@@ -113,7 +113,7 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
 void BinarNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << "Binar operation:"
+              << QString("Binar operation: %1").arg(_operation).toStdString()
               << std::endl;
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Left:"
@@ -353,4 +353,97 @@ void GoToNode::printNode(int level)
 GoToNode::~GoToNode()
 {
 
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//CaseNode
+//----------------------------------------------------------------------------------------------------------------------
+CaseNode::CaseNode(AbstractASTNode *value, AbstractASTNode *expressions)
+    : AbstractASTNode(NT_CaseStatement)
+{
+    _value = value;
+    _expressions = expressions;
+}
+
+void CaseNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << QString("%1:").arg(_value != NULL ? "case" : "default").toStdString()
+              << std::endl;
+
+    if(_value != NULL) {
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Value:"
+              << std::endl;
+    _value->printNode(level+1);
+    }
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Expressions:"
+              << std::endl;
+    _expressions->printNode(level+1);
+}
+
+CaseNode::~CaseNode()
+{
+    _expressions->~AbstractASTNode();
+    _value->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//SwitchNode
+//----------------------------------------------------------------------------------------------------------------------
+SwitchNode::SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList)
+    : AbstractASTNode(NT_SwitchStatement)
+{
+    _value = value;
+    _caseList = caseList;
+}
+
+void SwitchNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Switch:"
+              << std::endl;
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Value:"
+              << std::endl;
+    _value->printNode(level+1);
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Case list:"
+              << std::endl;
+    _caseList->printNode(level+1);
+}
+
+SwitchNode::~SwitchNode()
+{
+    _caseList->~AbstractASTNode();
+    _value->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//PrintNode
+//----------------------------------------------------------------------------------------------------------------------
+PrintNode::PrintNode(AbstractASTNode *expression)
+    : AbstractASTNode(NT_PintStatement)
+{
+    _expression = expression;
+}
+
+void PrintNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Print:"
+              << std::endl;
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Expression:"
+              << std::endl;
+    _expression->printNode(level+1);
+}
+
+PrintNode::~PrintNode()
+{
+    _expression->~AbstractASTNode();
 }

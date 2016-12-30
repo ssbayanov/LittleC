@@ -222,8 +222,15 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 
 /*%token IFX */
 
-%type <astNode>  exp cond_stmt assignment statement compound_statement stmtlist stmtlist_tail prog declaration_number loop_stmt while_head switch_stmt
-goto_stmt call_stmt descr_stmt case_stmt break_statement label_statement
+%type <astNode>  program statement statement_list statement_tail
+numeric_declaration
+assignment compound_statement exp
+condition_statement
+switch_statement case_statement case_list case_tail
+loop_statement while_head break_statement
+goto_statement label_statement
+call_stmt descr_stmt
+print_statement
 
 %type <type> numeric_data_types
 
@@ -240,7 +247,7 @@ goto_stmt call_stmt descr_stmt case_stmt break_statement label_statement
 %left INCREMENT
 %left OPENPAREN CLOSEPAREN OPENBRACKET CLOSEBRACKET
 
-%start prog
+%start program
 
 /*%printer {
     yyoutput << $$;
@@ -251,7 +258,7 @@ goto_stmt call_stmt descr_stmt case_stmt break_statement label_statement
 } IDENTIFIER
 %%
 
-prog : stmtlist
+program : statement_list
 {
     /*     if (driver.AST_dumping)
       { */
@@ -264,7 +271,7 @@ prog : stmtlist
     /*   driver.result = 0;*/
 };
 
-stmtlist : statement stmtlist_tail
+statement_list : statement statement_tail
 {
     if ($2 == NULL)
         $$ = $1;
@@ -273,26 +280,26 @@ stmtlist : statement stmtlist_tail
         //$$ = createNodeAST(NT_List, "L", $1, $2);
 };
 
-stmtlist_tail : %empty   {
+statement_tail : %empty   {
     $$ = NULL;
 }
-| stmtlist {
+| statement_list {
     $$ = $1;
 };
 
 
 statement : assignment
-| cond_stmt
-| declaration_number
+| condition_statement
+| numeric_declaration
 | compound_statement
 | break_statement
-| loop_stmt
-| switch_stmt
-| goto_stmt
+| loop_statement
+| switch_statement
+| goto_statement
 | label_statement
 | call_stmt
 | descr_stmt
-| case_stmt
+| print_statement
 | exp SEMICOLON
 {
     //if ($1->getType() == NT_UnaryOperation)
@@ -314,7 +321,7 @@ compound_statement :
 OPENBRACE  { // {
     currentTable = currentTable->appendChildTable();
 }
-stmtlist
+statement_list
 CLOSEBRACE { // }
     $$ = $3;
     currentTable->setHidden();
@@ -375,7 +382,7 @@ numeric_data_types : INT {
     $$ = typeShort;
 };
 
-declaration_number : numeric_data_types IDENTIFIER SEMICOLON
+numeric_declaration : numeric_data_types IDENTIFIER SEMICOLON
 {
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
     if (var != NULL)
@@ -449,7 +456,7 @@ label_statement: IDENTIFIER COLON {
 
 }
 
-goto_stmt: GOTO IDENTIFIER SEMICOLON {
+goto_statement: GOTO IDENTIFIER SEMICOLON {
     if (currentTable->containsGlobal(*$2)) {
             $$ = new GoToNode(*$2);
     }
@@ -459,21 +466,53 @@ goto_stmt: GOTO IDENTIFIER SEMICOLON {
     }
 };
 
-case_stmt: CASE IDENTIFIER COLON statement {}
-    | CASE INTCONST COLON statement {}
-    | DEFAULT COLON statement {}
+case_list : case_statement case_tail
+{
+    if ($2 == NULL)
+        $$ = $1;
+    else
+        $$ = new ListNode($1, $2);
+};
+
+case_tail : %empty   {
+    $$ = NULL;
+}
+| case_list {
+    $$ = $1;
+};
+
+
+case_statement: CASE IDENTIFIER COLON statement_list {
+    SymbolsTableRecord *var = getVariableByName(*$2);
+    if(var != NULL)
+        $$ = new CaseNode(new ReferenceNode(var), $4);
+    else
+        $$ = NULL;
+}
+| CASE INTCONST COLON statement_list {
+    $$ = new CaseNode(new ValueNode(typeInt, $2), $4);
+}
+| DEFAULT COLON statement_list {
+    $$ = new CaseNode(NULL, $3);
+}
 ;
 
-switch_stmt: SWITCH OPENPAREN exp CLOSEPAREN statement CASE IDENTIFIER COLON statement {}
-{};
+switch_statement: SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {}
+{
 
-print_stmt: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
-{};
+    $$ = new SwitchNode($3, $6);
+
+};
+
+print_statement: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
+{
+    $$ = new PrintNode($3);
+};
 
 /*scan_stmt: SCAN OPENPAREN exp CLOSEPAREN
 {};*/
 
-cond_stmt: IF OPENPAREN exp CLOSEPAREN statement %prec IF
+condition_statement: IF OPENPAREN exp CLOSEPAREN statement %prec IF
 {
     $$ = new IfNode($3, $5, NULL);
     //$$ = createControlFlowNode(NT_IfStatement, $3, $5, NULL);
@@ -484,7 +523,7 @@ cond_stmt: IF OPENPAREN exp CLOSEPAREN statement %prec IF
     //$$ = createControlFlowNode(NT_IfStatement, $3, $5, $7);
 };
 
-loop_stmt : while_head statement
+loop_statement : while_head statement
 {
     $$ = new WhileNode($1, $2);
  //   $$ = createControlFlowNode(NT_WhileStatement, $1, $2, NULL);

@@ -21,8 +21,9 @@ typedef enum
     NT_ForStatement,    // For statement
     NT_GoToStatement,     // Goto, Break or Continue statement.
     NT_LabelStatement,  // Label
-    NT_SwitchStatement,     // Switch-Case statement.
-    NT_InOutStatement,     // Print-Scan statement.
+    NT_SwitchStatement,     // Switch statement.
+    NT_CaseStatement,   // Case statement
+    NT_PintStatement,     // Print statement.
     NT_List               // Expression or statement list.
 } ASTNodeTypeEnum;
 
@@ -225,7 +226,9 @@ private:
     SymbolsTableRecord *_variable;
 };
 
-
+/**
+ * @brief The GoToNode class
+ */
 class GoToNode : public AbstractASTNode
 {
 public:
@@ -239,10 +242,13 @@ private:
     QString _nameLabel;
 };
 
-/*class CaseNode : public AbstractASTNode
+/**
+ * @brief The CaseNode class
+ */
+class CaseNode : public AbstractASTNode
 {
 public:
-    CaseNode(TypeUnary uType, AbstractASTNode *value);
+    CaseNode(AbstractASTNode *value, AbstractASTNode *expressions);
 
     void printNode(int level);
 
@@ -250,12 +256,16 @@ public:
 
 private:
     AbstractASTNode *_value;
+    AbstractASTNode *_expressions;
 };
 
+/**
+ * @brief The SwitchNode class
+ */
 class SwitchNode : public AbstractASTNode
 {
 public:
-    SwitchNode(AbstractASTNode *value);
+    SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList);
 
     void printNode(int level);
 
@@ -263,7 +273,20 @@ public:
 
 private:
     AbstractASTNode *_value;
-    QList<> _cases;
+    AbstractASTNode *_caseList;
 
-};*/
+};
+
+class PrintNode : public AbstractASTNode
+{
+public:
+    PrintNode(AbstractASTNode *expression);
+
+    void printNode(int level);
+
+    ~PrintNode();
+
+private:
+    AbstractASTNode *_expression;
+};
 #endif // ASTNODE_H
