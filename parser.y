@@ -574,9 +574,12 @@ loop_statement : while_head statement
 
 while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
 {
-    AbstractValueASTNode *cond = (AbstractValueASTNode *)$condition;
-    if(cond->getType() != typeBool)
-        cond = new UnaryNode(ToBool, cond);
+    AbstractValueASTNode *cond = NULL;
+    if($condition != NULL) {
+        cond = (AbstractValueASTNode *)$condition;
+        if(cond->getType() != typeBool)
+            cond = new UnaryNode(ToBool, cond);
+    }
 
     $$ = new WhileNode(cond);
     ++g_LoopNestingCounter;
@@ -585,9 +588,12 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
 
 for_head : FOR OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
 {
-    AbstractValueASTNode *cond = (AbstractValueASTNode *)$condition;
-    if(cond->getType() != typeBool)
-        cond = new UnaryNode(ToBool, cond);
+    AbstractValueASTNode *cond = NULL;
+    if($condition != NULL) {
+        cond = (AbstractValueASTNode *)$condition;
+        if(cond->getType() != typeBool)
+            cond = new UnaryNode(ToBool, cond);
+    }
 
     $$ = new ForNode($init, cond, $increment);
     ++g_LoopNestingCounter;
@@ -681,7 +687,7 @@ exp : exp RELOP exp
 }
 | %empty
 {
-    NULL;
+    $$ = NULL;
 }
 
 /*

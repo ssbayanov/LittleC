@@ -273,9 +273,10 @@ void WhileNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
               << (_isDoWhile == false ? "While:" : "Do-While")
-                                      << std::endl;
+              << std::endl;
 
-    if(!_isDoWhile) {
+
+    if(!_isDoWhile && _condition != NULL) {
         std::cout << QString().fill(' ',level*2).toStdString()
                   << "Condition:"
                   << std::endl;
@@ -288,7 +289,7 @@ void WhileNode::printNode(int level)
                   << std::endl;
         _body->printNode(level+1);
     }
-    if(_isDoWhile) {
+    if(_isDoWhile && _condition != NULL) {
         std::cout << QString().fill(' ',level*2).toStdString()
                   << "Condition:"
                   << std::endl;
@@ -303,7 +304,8 @@ void WhileNode::setIsDoWhile(bool isDoWhile)
 
 WhileNode::~WhileNode()
 {
-    _condition->~AbstractASTNode();
+    if(_condition != NULL)
+        _condition->~AbstractASTNode();
     _body->~AbstractASTNode();
 }
 
@@ -351,17 +353,22 @@ void ForNode::printNode(int level)
         _increment->printNode(level+1);
     }
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Body:"
-              << std::endl;
-    _body->printNode(level+1);
+    if(_body != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Body:"
+                  << std::endl;
+        _body->printNode(level+1);
+    }
 }
 
 ForNode::~ForNode()
 {
-    _init->~AbstractASTNode();
-    _condition->~AbstractASTNode();
-    _increment->~AbstractASTNode();
+    if(_init != NULL)
+        _init->~AbstractASTNode();
+    if(_condition != NULL)
+        _condition->~AbstractASTNode();
+    if(_increment != NULL)
+        _increment->~AbstractASTNode();
     _body->~AbstractASTNode();
 }
 
