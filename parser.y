@@ -277,7 +277,6 @@ statement_list : statement statement_tail
         $$ = $1;
     else
         $$ = new ListNode($1, $2);
-        //$$ = createNodeAST(NT_List, "L", $1, $2);
 };
 
 statement_tail : %empty   {
@@ -546,38 +545,58 @@ print : PRINT OPENPAREN exp CLOSEPAREN
 condition_statement: IF OPENPAREN exp CLOSEPAREN statement %prec IF
 {
     $$ = new IfNode($3, $5, NULL);
-    //$$ = createControlFlowNode(NT_IfStatement, $3, $5, NULL);
 }
 | IF OPENPAREN exp CLOSEPAREN statement ELSE statement
 {
     $$ = new IfNode($3, $5, $7);
-    //$$ = createControlFlowNode(NT_IfStatement, $3, $5, $7);
 };
 
 loop_statement : while_head statement
 {
-    $$ = new WhileNode($1, $2);
- //   $$ = createControlFlowNode(NT_WhileStatement, $1, $2, NULL);
+    ((WhileNode *)$1)->setBody($2);
+    $$ = $1;
     --g_LoopNestingCounter;
 }
 | for_head statement
 {
     ((ForNode *)$1)->setBody($2);
     $$ = $1;
-};
-
-while_head : WHILE OPENPAREN exp CLOSEPAREN
+    --g_LoopNestingCounter;
+}
+| do_head statement while_head
 {
+    ((WhileNode *)$while_head)->setBody($2);
+    ((WhileNode *)$while_head)->setIsDoWhile(true);
     $$ = $3;
+    --g_LoopNestingCounter;
+}
+;
+
+while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
+{
+    AbstractValueASTNode *cond = (AbstractValueASTNode *)$condition;
+    if(cond->getType() != typeBool)
+        cond = new UnaryNode(ToBool, cond);
+
+    $$ = new WhileNode(cond);
     ++g_LoopNestingCounter;
 };
 
 
 for_head : FOR OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
 {
-    $$ = new ForNode($init, $condition, $increment);
+    AbstractValueASTNode *cond = (AbstractValueASTNode *)$condition;
+    if(cond->getType() != typeBool)
+        cond = new UnaryNode(ToBool, cond);
+
+    $$ = new ForNode($init, cond, $increment);
     ++g_LoopNestingCounter;
 };
+
+do_head : DO
+{
+    ++g_LoopNestingCounter;
+}
 
 // Expression
 exp : exp RELOP exp
@@ -588,20 +607,17 @@ exp : exp RELOP exp
         {
             if (((AbstractValueASTNode *)$1)->getType() == typeInt)
                 $$ = new BinarNode(new UnaryNode(ToDouble, $1), $3, $2);
-                //$$ = createNodeAST(NT_BinaryOperation, $2, createNodeAST(NT_UnaryOperation, "td", $1, NULL), $3);
             else
                 $$ = new BinarNode($1, new UnaryNode(ToDouble, $3), $2);
-                //$$ = createNodeAST(NT_BinaryOperation, $2, $1, createNodeAST(NT_UnaryOperation, "td", $3, NULL));
         }
         else
             $$ = new BinarNode($1, $3, $2);
-            //$$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
+
     }
     else {
         if (((AbstractValueASTNode *)$1)->getType() == ((AbstractValueASTNode *)$3)->getType()){
             if ($2 == "==")
                 $$ = new BinarNode($1, $3, $2);
-                //$$ = createNodeAST(NT_BinaryOperation, $2, $1, $3);
             else
                 parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(((AbstractValueASTNode *)$1)->getType()));
         }
@@ -633,7 +649,6 @@ exp : exp RELOP exp
 | MINUS exp %prec UMINUS
 {
     $$ = new UnaryNode(UnarMinus, $2);
-    //$$ = createNodeAST(NT_UnaryOperation, "-", $2, NULL);
 }
 | OPENPAREN exp CLOSEPAREN // ( exp )
 {
@@ -646,33 +661,29 @@ exp : exp RELOP exp
 | REALCONST
 {
     $$ = new ValueNode(typeDouble, $1);
-    //$$ = createNumberNode($1);
 }
 | INTCONST
 {
     $$ = new ValueNode(typeInt, $1);
-    //$$ = createNumberNode($1);
 }
 | TRUE
 {
     $$ = new ValueNode(typeBool, 1);
-    //$$ = createNumberNode(1);
 }
 | FALSE
 {
     $$ = new ValueNode(typeBool, 0);
-    //$$ = createNumberNode(0);
 }
 | IDENTIFIER
 {
     SymbolsTableRecord *var = getVariableByName(*$1);
     $$ = new ReferenceNode(var);
-    //$$ = createReferenceNode(var);
 }
 | %empty
 {
     NULL;
 }
+
 /*
  * Not in 2016.
  * | IDENTIFIER INCREMENT

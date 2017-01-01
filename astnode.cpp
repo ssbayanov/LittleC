@@ -261,22 +261,44 @@ WhileNode::WhileNode(AbstractASTNode *condition, AbstractASTNode *body)
 {
     _condition = condition;
     _body = body;
+    _isDoWhile = false;
+}
+
+void WhileNode::setBody(AbstractASTNode *body)
+{
+    _body = body;
 }
 
 void WhileNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << "While:"
-              << std::endl;
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Condition:"
-              << std::endl;
-    _condition->printNode(level+1);
+              << (_isDoWhile == false ? "While:" : "Do-While")
+                                      << std::endl;
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Body:"
-              << std::endl;
-    _body->printNode(level+1);
+    if(!_isDoWhile) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Condition:"
+                  << std::endl;
+        _condition->printNode(level+1);
+    }
+
+    if(_body != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Body:"
+                  << std::endl;
+        _body->printNode(level+1);
+    }
+    if(_isDoWhile) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Condition:"
+                  << std::endl;
+        _condition->printNode(level+1);
+    }
+}
+
+void WhileNode::setIsDoWhile(bool isDoWhile)
+{
+    _isDoWhile = isDoWhile;
 }
 
 WhileNode::~WhileNode()
@@ -429,10 +451,10 @@ void CaseNode::printNode(int level)
               << std::endl;
 
     if(_value != NULL) {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Value:"
-              << std::endl;
-    _value->printNode(level+1);
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Value:"
+                  << std::endl;
+        _value->printNode(level+1);
     }
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Expressions:"

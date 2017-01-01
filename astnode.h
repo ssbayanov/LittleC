@@ -141,15 +141,20 @@ private:
 class WhileNode : public AbstractASTNode
 {
 public:
-    WhileNode(AbstractASTNode *condition, AbstractASTNode *body);
+    WhileNode(AbstractASTNode *condition, AbstractASTNode *body = NULL);
+
+    void setBody(AbstractASTNode *body);
 
     void printNode(int level);
+
+    void setIsDoWhile(bool isDoWhile = true);
 
     ~WhileNode();
 
 private:
     AbstractASTNode *_condition;
     AbstractASTNode *_body;
+    bool _isDoWhile;
 };
 
 /**
