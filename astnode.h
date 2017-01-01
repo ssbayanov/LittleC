@@ -152,6 +152,27 @@ private:
     AbstractASTNode *_body;
 };
 
+/**
+ * @brief The ForNode class
+ */
+class ForNode : public AbstractASTNode
+{
+public:
+    ForNode(AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *increment, AbstractASTNode *body = NULL);
+
+    void setBody(AbstractASTNode *body);
+
+    void printNode(int level);
+
+    ~ForNode();
+
+private:
+    AbstractASTNode *_init;
+    AbstractASTNode *_condition;
+    AbstractASTNode *_increment;
+    AbstractASTNode *_body;
+};
+
 
 /**
  * @brief The AssignmentNode class
@@ -265,18 +286,40 @@ private:
 class SwitchNode : public AbstractASTNode
 {
 public:
+    /**
+     * @brief SwitchNode construcotr of class
+     * @param value pointer to value node
+     * @param caseList pointer to cases list node
+     */
     SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList);
 
+    /**
+     * @brief printNode printing switch node to stdout
+     * @param level
+     */
     void printNode(int level);
 
+    /**
+      * @brief ~SwitchNode destruction class and call destrucor of _value and _caseList
+      */
     ~SwitchNode();
 
 private:
+    /**
+     * @brief _value pointer to switching value or expression
+     */
     AbstractASTNode *_value;
+
+    /**
+     * @brief _caseList pointer to cases list
+     */
     AbstractASTNode *_caseList;
 
 };
 
+/**
+ * @brief The PrintNode class
+ */
 class PrintNode : public AbstractASTNode
 {
 public:
@@ -289,4 +332,6 @@ public:
 private:
     AbstractASTNode *_expression;
 };
+
 #endif // ASTNODE_H
+

@@ -256,7 +256,6 @@ IfNode::~IfNode()
 //----------------------------------------------------------------------------------------------------------------------
 //WhileNode
 //----------------------------------------------------------------------------------------------------------------------
-
 WhileNode::WhileNode(AbstractASTNode *condition, AbstractASTNode *body)
     : AbstractASTNode(NT_WhileStatement)
 {
@@ -283,6 +282,64 @@ void WhileNode::printNode(int level)
 WhileNode::~WhileNode()
 {
     _condition->~AbstractASTNode();
+    _body->~AbstractASTNode();
+}
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//ForNode
+//----------------------------------------------------------------------------------------------------------------------
+ForNode::ForNode(AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *increment, AbstractASTNode *body)
+    : AbstractASTNode(NT_ForStatement)
+{
+    _init = init;
+    _condition = condition;
+    _increment = increment;
+    _body = body;
+}
+
+void ForNode::setBody(AbstractASTNode *body)
+{
+    _body = body;
+}
+
+void ForNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "For:"
+              << std::endl;
+    if(_init != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Initialisation:"
+                  << std::endl;
+        _init->printNode(level+1);
+    }
+
+    if(_condition != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Condition:"
+                  << std::endl;
+        _condition->printNode(level+1);
+    }
+
+    if(_increment != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Increment:"
+                  << std::endl;
+        _increment->printNode(level+1);
+    }
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Body:"
+              << std::endl;
+    _body->printNode(level+1);
+}
+
+ForNode::~ForNode()
+{
+    _init->~AbstractASTNode();
+    _condition->~AbstractASTNode();
+    _increment->~AbstractASTNode();
     _body->~AbstractASTNode();
 }
 
@@ -447,3 +504,5 @@ PrintNode::~PrintNode()
 {
     _expression->~AbstractASTNode();
 }
+
+

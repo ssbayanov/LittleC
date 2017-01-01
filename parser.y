@@ -222,15 +222,15 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 
 /*%token IFX */
 
-%type <astNode>  program statement statement_list statement_tail
-numeric_declaration
-assignment compound_statement exp
+%type <astNode>  program statement utterance statement_list statement_tail
+numeric_declaration_statement numeric_declaration
+assignment assignment_statement compound_statement exp
 condition_statement
 switch_statement case_statement case_list case_tail
-loop_statement while_head break_statement
+loop_statement while_head break_statement for_head
 goto_statement label_statement
 call_stmt descr_stmt
-print_statement
+print print_statement
 
 %type <type> numeric_data_types
 
@@ -266,7 +266,7 @@ program : statement_list
     $1->printNode(0);
     /*      } */
     //freeAST($1);
-    //$1->~AbstractASTNode();
+    $1->~AbstractASTNode();
     topLevelVariableTable->~SymbolsTable();
     /*   driver.result = 0;*/
 };
@@ -287,10 +287,26 @@ statement_tail : %empty   {
     $$ = $1;
 };
 
-
-statement : assignment
-| condition_statement
+utterance : print
+{
+    $$ = $1;
+}
+| exp
+{
+    $$ = $1;
+}
+| assignment
+{
+    $$ = $1;
+}
 | numeric_declaration
+{
+    $$ = $1;
+};
+
+statement : assignment_statement
+| condition_statement
+| numeric_declaration_statement
 | compound_statement
 | break_statement
 | loop_statement
@@ -332,8 +348,14 @@ descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_stat
 
 call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
 
-assignment : IDENTIFIER ASSIGN exp SEMICOLON
+assignment_statement : assignment SEMICOLON
 {    
+    $$ = $1;
+}
+;
+
+assignment : IDENTIFIER ASSIGN exp
+{
     SymbolsTableRecord *var = getVariableByName(*$1);
     if (!isNumberType((AbstractValueASTNode *)$3))
     {
@@ -382,7 +404,12 @@ numeric_data_types : INT {
     $$ = typeShort;
 };
 
-numeric_declaration : numeric_data_types IDENTIFIER SEMICOLON
+numeric_declaration_statement : numeric_declaration SEMICOLON
+{
+
+};
+
+numeric_declaration : numeric_data_types IDENTIFIER
 {
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
     if (var != NULL)
@@ -400,7 +427,7 @@ numeric_declaration : numeric_data_types IDENTIFIER SEMICOLON
     $$ = new AssignmentNode(var, new ValueNode(var->valueType, 0));
 
 }
-| numeric_data_types IDENTIFIER ASSIGN exp SEMICOLON
+| numeric_data_types IDENTIFIER ASSIGN exp
 {
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
     if (var != NULL)
@@ -442,8 +469,7 @@ numeric_declaration : numeric_data_types IDENTIFIER SEMICOLON
     }
 
 
-}
-;
+};
 
 label_statement: IDENTIFIER COLON {
     SymbolsTableRecord *label = NULL;
@@ -497,14 +523,19 @@ case_statement: CASE IDENTIFIER COLON statement_list {
 }
 ;
 
-switch_statement: SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {}
+switch_statement : SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {}
 {
 
     $$ = new SwitchNode($3, $6);
 
 };
 
-print_statement: PRINT OPENPAREN exp CLOSEPAREN SEMICOLON
+print_statement : print SEMICOLON
+{
+    $$ = $1;
+};
+
+print : PRINT OPENPAREN exp CLOSEPAREN
 {
     $$ = new PrintNode($3);
 };
@@ -528,11 +559,23 @@ loop_statement : while_head statement
     $$ = new WhileNode($1, $2);
  //   $$ = createControlFlowNode(NT_WhileStatement, $1, $2, NULL);
     --g_LoopNestingCounter;
+}
+| for_head statement
+{
+    ((ForNode *)$1)->setBody($2);
+    $$ = $1;
 };
 
 while_head : WHILE OPENPAREN exp CLOSEPAREN
 {
     $$ = $3;
+    ++g_LoopNestingCounter;
+};
+
+
+for_head : FOR OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
+{
+    $$ = new ForNode($init, $condition, $increment);
     ++g_LoopNestingCounter;
 };
 
@@ -625,6 +668,10 @@ exp : exp RELOP exp
     SymbolsTableRecord *var = getVariableByName(*$1);
     $$ = new ReferenceNode(var);
     //$$ = createReferenceNode(var);
+}
+| %empty
+{
+    NULL;
 }
 /*
  * Not in 2016.
