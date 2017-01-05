@@ -204,28 +204,30 @@ print    { TokenTable.push_back(TokenTableRow("PRINT", yytext, lno)); return PRI
 scan     { TokenTable.push_back(TokenTableRow("SCAN", yytext, lno)); return SCAN; }
 
     /* Real constants. */
-[0-9]+\.[0-9]+ {TokenTable.push_back(TokenTableRow("REALCONST", yytext, lno)); parserlval.doubleValue = atof(yytext);
+[0-9]+\.[0-9]+ {TokenTable.push_back(TokenTableRow("REALCONST", yytext, lno)); parserlval.value = new QVariant(yytext);
             return REALCONST;}
 
     /* Integer constanst. */
-[0-9]+ {TokenTable.push_back(TokenTableRow("INTCONST", yytext, lno)); parserlval.intValue = atoi(yytext);
+[0-9]+ {TokenTable.push_back(TokenTableRow("INTCONST", yytext, lno)); parserlval.value = new QVariant(yytext);
             return INTCONST;}
 
     /* Identifiers. */
-[:alpha:]|[[:alnum:]_]* {TokenTable.push_back(TokenTableRow("IDENTIFIER", yytext, lno)); parserlval.var = new QString(yytext);
+[:alpha:]|[[:alnum:]_]* {TokenTable.push_back(TokenTableRow("IDENTIFIER", yytext, lno)); parserlval.variableName = new QString(yytext);
 return IDENTIFIER;}
 
     /* Errors strings (without ") */
  \"{stringch}*$  {
-     parsererror(errorList.at(ERROR_UNFINISHED_STRING));
-          }
+     parsererror(errorList.at(ERROR_UNFINISHED_STRING));}
 
+    /* Char */
+\'{stringch}{1}\' {
+    TokenTable.push_back(TokenTableRow("CHARCONST", yytext, lno)); parserlval.value = new QVariant(yytext);
+    return CHARCONST;}
 
-     /* Strings */
- \"{stringch}*\" {
-     TokenTable.push_back(TokenTableRow("STRING", yytext, lno)); parserlval.var = new QString(yytext);
-     return STRING;}
-
+    /* String */
+\"{stringch}*\" {
+     TokenTable.push_back(TokenTableRow("STRING", yytext, lno)); parserlval.value = new QVariant(yytext);
+     }
 
     /* Undefined token. */
 .       {
@@ -234,7 +236,8 @@ return IDENTIFIER;}
 
 
 <<EOF>> {
-        return EOFILE; }
+        return EOFILE;
+        }
 
 
 %%

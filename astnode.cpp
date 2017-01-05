@@ -59,7 +59,8 @@ ValueNode::ValueNode(ValueTypeEnum typeValue, QVariant value)
 void ValueNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Value: %1").arg(_value.toString()).toStdString()
+              << QString("Value: %1, type: %2").arg(_value.toString())
+                 .arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
 }
 
@@ -80,12 +81,13 @@ ReferenceNode::ReferenceNode(SymbolsTableRecord *variable)
     : AbstractValueASTNode(NT_Reference)
 {
     _variable = variable;
+    _typeValue = _variable->valueType;
 }
 
 void ReferenceNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Reference: %1").arg(_variable->name).toStdString()
+              << QString("Reference: %1, type: %2").arg(_variable->name).arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
 }
 
@@ -108,12 +110,22 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
     _left = left;
     _right = right;
     _operation = operation;
+    _typeValue = ((AbstractValueASTNode *)left)->getType();
+}
+
+BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation, ValueTypeEnum typeValue)
+    : AbstractValueASTNode(NT_BinaryOperation)
+{
+    _left = left;
+    _right = right;
+    _operation = operation;
+    _typeValue = typeValue;
 }
 
 void BinarNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Binar operation: %1").arg(_operation).toStdString()
+              << QString("Binar operation: %1, type: %2").arg(_operation).arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Left:"
@@ -146,13 +158,13 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     _uType = uType;
     _left = left;
     switch (_uType) {
-    case ToInt:
+    case UnarToInt:
         _typeValue = typeInt;
         break;
-    case ToDouble:
+    case UnarToDouble:
         _typeValue = typeDouble;
         break;
-    case ToBool:
+    case UnarToBool:
         _typeValue = typeBool;
     default:
         _typeValue = ((AbstractValueASTNode *)_left)->getType();
@@ -168,7 +180,7 @@ void UnaryNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
               << QString("Unar operation. Type of result: %1")
-                 .arg(typeName.at(_uType)).toStdString()
+                 .arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Left:"

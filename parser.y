@@ -16,6 +16,7 @@
 
     // Errors
     enum {  ERROR_DOUBLE_DECLARED,
+            WARNING_DOUBLE_DECLARED,
             ERROR_NOT_DECLARED,
             ERROR_TYPES_INCOMPATIBLE,
             ERROR_BREAK_NOT_INSIDE_LOOP,
@@ -27,17 +28,18 @@
             ERROR_COMPARSION_ON_DIFFERENCE_TYPES,
             ERROR_INCREMENT_WRONG_TYPE};
 
-    static QStringList errorList = QStringList() << "error: Variable %1 is already declared."
-                              << "error: Variable %1 was not declared."
-                              << "error: can not convert %1 to %2"
-                              << "error: 'break' not inside loop."
-                              << "error: memory allocation or access error."
-                              << "error: %1 - unrecognized token."
-                              << "error: unfinished string."
-                              << "error: nonclosed comment"
-                              << "error: comparison oparation %1 not applicable for %2"
-                              << "error: comparison oparation %1 not applicable on %2 and %3"
-                              << "error: increment not applicable for %1 variable %2";
+    static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
+                                                 << "warning: Variable %1 is already declared."
+                                                 << "error: Variable %1 was not declared."
+                                                 << "error: can not convert %1 to %2"
+                                                 << "error: 'break' not inside loop."
+                                                 << "error: memory allocation or access error."
+                                                 << "error: %1 - unrecognized token."
+                                                 << "error: unfinished string."
+                                                 << "error: nonclosed comment"
+                                                 << "error: comparison oparation %1 not applicable for %2"
+                                                 << "error: comparison oparation %1 not applicable on %2 and %3"
+                                                 << "error: increment not applicable for %1 variable %2";
 
 }
 
@@ -157,27 +159,29 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 %union
 {
     AbstractASTNode *astNode; // узел абс.синт. дерева
-    double doubleValue;
-    int intValue;
-    QString *var; // переменная
+    QString *variableName; // переменная
     char opName[3]; // имя оператора
-    QString *strValue; // строкова константа
-    char other;
+    QVariant *value;
     ValueTypeEnum type;
 }
 
 // Declare tokens.
 %token       EOFILE 0   "end of file"
-%token <doubleValue>   REALCONST  "floating point double precision"
-%token <intValue>   INTCONST   "integer"
-%token <var>        IDENTIFIER "indentifer"
-%token <strValue>   STRING     "string"
+%token <value>   REALCONST  "floating point double precision"
+%token <value>   INTCONST   "integer"
+%token <value>  CHARCONST "char"
+%token <value>   STRING     "string"
+%token <variableName>        IDENTIFIER "indentifer"
 %token <opName>   RELOP      "relop"
 %token <opName>   INCREMENT  "increment (decrement)"
 %token <opName>   PLUS       "+"
 %token <opName>   MINUS      "-"
 %token <opName>   MULOP      "mulop"
-%token <opName>   BOOLOP     "boolop"
+//%token <opName>   BOOLOP     "boolop"
+%token      AND
+%token      OR
+%token      NOT
+%token      XOR
 %token       OPENBRACE  "{"
 %token       CLOSEBRACE "}"
 %token       OPENPAREN  "("
@@ -363,16 +367,16 @@ assignment : IDENTIFIER ASSIGN exp
     }
     else
     {
-        if (((AbstractValueASTNode *)$3)->getType() != var->valueType){
-            switch(var->valueType){
+        if (((AbstractValueASTNode *)$3)->getType() != var->valueType) {
+            switch(var->valueType) {
             case typeBool:
-                $$ = new AssignmentNode(var, new UnaryNode(ToBool, $3));
+                $$ = new AssignmentNode(var, new UnaryNode(UnarToBool, $3));
                 break;
             case typeInt:
-                $$ = new AssignmentNode(var, new UnaryNode(ToInt, $3));
+                $$ = new AssignmentNode(var, new UnaryNode(UnarToInt, $3));
                 break;
             case typeDouble:
-                $$ = new AssignmentNode(var, new UnaryNode(ToDouble, $3));
+                $$ = new AssignmentNode(var, new UnaryNode(UnarToDouble, $3));
                 break;
             }
         }
@@ -410,32 +414,37 @@ numeric_declaration_statement : numeric_declaration SEMICOLON
 
 numeric_declaration : numeric_data_types IDENTIFIER
 {
+    //numeric_declaration without assign
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
-    if (var != NULL)
-    {
+    if (!currentTable->contains(*$2)) {
+        if (var != NULL)
+        {
+            parsererror(errorList.at(WARNING_DOUBLE_DECLARED).arg(*$2));
+        }
+        else {
+
+            var = currentTable->insertValue(*$2, $1, 0);
+            if (var == NULL)
+                parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+        }
+    }
+    else {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
         YYERROR;
-    }
-    else
-    {
-
-        var = currentTable->insertValue(*$2, $1, 0);
-        if (var == NULL)
-            parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
     }
     $$ = new AssignmentNode(var, new ValueNode(var->valueType, 0));
 
 }
 | numeric_data_types IDENTIFIER ASSIGN exp
 {
+    //numeric_declaration with assign
     SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
     if (var != NULL)
     {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
-        YYERROR;
+        //YYERROR;
     }
-    else
-    {
+    else {
 
         var = currentTable->insertValue(*$2, $1, 0);
         if (var == NULL)
@@ -444,21 +453,22 @@ numeric_declaration : numeric_data_types IDENTIFIER
 
     if (!isNumberType((AbstractValueASTNode *)$4))
     {
-        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(((AbstractValueASTNode *)$4)->getType())).arg(typeName.at(var->valueType)));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
+                    .arg(typeName.at(((AbstractValueASTNode *)$4)->getType()))
+                    .arg(typeName.at(var->valueType)));
         YYERROR;
     }
-    else
-    {
-        if (((AbstractValueASTNode *)$4)->getType() != var->valueType){
-            switch(var->valueType){
+    else {
+        if (((AbstractValueASTNode *)$4)->getType() != var->valueType) {
+            switch(var->valueType) {
             case typeBool:
-                $$ = new AssignmentNode(var, new UnaryNode(ToBool, $4));
+                $$ = new AssignmentNode(var, new UnaryNode(UnarToBool, $4));
                 break;
             case typeInt:
-                $$ = new AssignmentNode(var, new UnaryNode(ToInt, $4));
+                $$ = new AssignmentNode(var, new UnaryNode(UnarToInt, $4));
                 break;
             case typeDouble:
-                $$ = new AssignmentNode(var, new UnaryNode(ToDouble, $4));
+                $$ = new AssignmentNode(var, new UnaryNode(UnarToDouble, $4));
                 break;
             }
         }
@@ -466,14 +476,13 @@ numeric_declaration : numeric_data_types IDENTIFIER
             $$ = new AssignmentNode(var, $4);
         }
     }
-
-
 };
 
 label_statement: IDENTIFIER COLON {
     SymbolsTableRecord *label = NULL;
-    if (currentTable->containsGlobal(*$1))
+    if (currentTable->containsGlobal(*$1)) {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$1));
+    }
     else {
         label = currentTable->insertValue(*$1, typeLabel, *$1);
     }
@@ -493,13 +502,15 @@ goto_statement: GOTO IDENTIFIER SEMICOLON {
 
 case_list : case_statement case_tail
 {
-    if ($2 == NULL)
+    if ($2 == NULL) {
         $$ = $1;
-    else
+    }
+    else {
         $$ = new ListNode($1, $2);
+    }
 };
 
-case_tail : %empty   {
+case_tail : %empty {
     $$ = NULL;
 }
 | case_list {
@@ -507,15 +518,18 @@ case_tail : %empty   {
 };
 
 
-case_statement: CASE IDENTIFIER COLON statement_list {
+case_statement : CASE IDENTIFIER COLON statement_list {
     SymbolsTableRecord *var = getVariableByName(*$2);
-    if(var != NULL)
+    if (var != NULL) {
+
         $$ = new CaseNode(new ReferenceNode(var), $4);
-    else
+    }
+    else {
         $$ = NULL;
+    }
 }
 | CASE INTCONST COLON statement_list {
-    $$ = new CaseNode(new ValueNode(typeInt, $2), $4);
+    $$ = new CaseNode(new ValueNode(typeInt, $2->toInt()), $4);
 }
 | DEFAULT COLON statement_list {
     $$ = new CaseNode(NULL, $3);
@@ -562,6 +576,9 @@ loop_statement : while_head statement
     ((ForNode *)$1)->setBody($2);
     $$ = $1;
     --g_LoopNestingCounter;
+
+    currentTable->setHidden();
+    currentTable = currentTable->getParent();
 }
 | do_head statement while_head
 {
@@ -575,24 +592,28 @@ loop_statement : while_head statement
 while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
 {
     AbstractValueASTNode *cond = NULL;
-    if($condition != NULL) {
+    if ($condition != NULL) {
         cond = (AbstractValueASTNode *)$condition;
-        if(cond->getType() != typeBool)
-            cond = new UnaryNode(ToBool, cond);
+        if (cond->getType() != typeBool)
+            cond = new UnaryNode(UnarToBool, cond);
     }
 
     $$ = new WhileNode(cond);
     ++g_LoopNestingCounter;
 };
 
+for_w : FOR
+{
+    currentTable = currentTable->appendChildTable();
+};
 
-for_head : FOR OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
+for_head : for_w OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
 {
     AbstractValueASTNode *cond = NULL;
-    if($condition != NULL) {
+    if ($condition != NULL) {
         cond = (AbstractValueASTNode *)$condition;
-        if(cond->getType() != typeBool)
-            cond = new UnaryNode(ToBool, cond);
+        if (cond->getType() != typeBool)
+            cond = new UnaryNode(UnarToBool, cond);
     }
 
     $$ = new ForNode($init, cond, $increment);
@@ -604,53 +625,97 @@ do_head : DO
     ++g_LoopNestingCounter;
 }
 
+bool_exp : exp AND exp
+{
+    if (isNumberType(((AbstractValueASTNode *)$1)->getType()))
+}
+| exp AND AND exp
+{
+
+}
+| exp OR exp
+{
+
+}
+| exp OR OR exp
+{
+
+}
+| exp XOR exp
+{
+
+}
+| NOT exp
+{
+
+}
+
 // Expression
-exp : exp RELOP exp
+exp : exp[left] RELOP exp[right]
 {
     // Relation exp
-    if (isNumberType(((AbstractValueASTNode *)$1)->getType()) && isNumberType(((AbstractValueASTNode *)$3)->getType())){ //Type of variables is number
-        if (((AbstractValueASTNode *)$1)->getType() != ((AbstractValueASTNode *)$3)->getType()) //if exp have diffrence type
-        {
-            if (((AbstractValueASTNode *)$1)->getType() == typeInt)
-                $$ = new BinarNode(new UnaryNode(ToDouble, $1), $3, $2);
-            else
-                $$ = new BinarNode($1, new UnaryNode(ToDouble, $3), $2);
+
+    AbstractValueASTNode *left = ((AbstractValueASTNode *)$left);
+    AbstractValueASTNode *right = ((AbstractValueASTNode *)$right);
+
+    if (isNumberType(left) && isNumberType(right)) { // Type of variables is number.
+        if (left->getType() != right->getType()) {// If exp have diffrence type.
+            if (left->getType() == typeDouble || right->getType() == typeDouble) { // If left or right expression have type Double add to double
+                if (left->getType() == typeDouble) {
+                    $$ = new BinarNode($left, new UnaryNode(UnarToDouble, $right), $2, typeBool);
+                }
+                else {
+                    $$ = new BinarNode(new UnaryNode(UnarToDouble, $left), $right, $2, typeBool);
+                }
+            }
+            else { // if left or right expression have diffrent type of int converting to int
+                if (left->getType() != typeInt)
+                    left = new UnaryNode(UnarToInt, $left);
+                if (right->getType() != typeInt)
+                    right = new UnaryNode(UnarToInt, $right);
+
+                $$ = new BinarNode($left, $right, $2, typeBool);
+            }
         }
         else
-            $$ = new BinarNode($1, $3, $2);
-
+            $$ = new BinarNode($left, $right, $2, typeBool);
     }
     else {
-        if (((AbstractValueASTNode *)$1)->getType() == ((AbstractValueASTNode *)$3)->getType()){
+        if (left->getType() == right->getType()) {
             if ($2 == "==")
-                $$ = new BinarNode($1, $3, $2);
+                $$ = new BinarNode($left, $right, $2, typeBool);
             else
-                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(((AbstractValueASTNode *)$1)->getType()));
+                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(left->getType()));
         }
-        parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(((AbstractValueASTNode *)$1)->getType()).arg(((AbstractValueASTNode *)$3)->getType()));
+        parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(left->getType()).arg(right->getType()));
     }
-
 }
 | exp PLUS exp
 {
     // PLUS exp
     AbstractASTNode *p = appendBinarMath((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
-    if (p != NULL)
-        $$ = p;
+    if (p == NULL)
+        YYERROR;
+
+    $$ = p;
 }
 | exp MINUS exp
 {
     // MINUS exp
     AbstractASTNode *p = appendBinarMath((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
-    if (p != NULL)
-        $$ = p;
+    if (p == NULL)
+        YYERROR;
+
+    $$ = p;
 }
 | exp MULOP exp
 {
     // MULOP exp
     AbstractASTNode *p = appendBinarMath((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
-    if (p != NULL)
-        $$ = p;
+    if (p == NULL)
+        YYERROR;
+
+    $$ = p;
 }
 | MINUS exp %prec UMINUS
 {
@@ -666,11 +731,15 @@ exp : exp RELOP exp
 }
 | REALCONST
 {
-    $$ = new ValueNode(typeDouble, $1);
+    $$ = new ValueNode(typeDouble, $1->toDouble());
 }
 | INTCONST
 {
-    $$ = new ValueNode(typeInt, $1);
+    $$ = new ValueNode(typeInt, $1->toInt());
+}
+| CHARCONST
+{
+    $$ = new ValueNode(typeChar, $1->toChar());
 }
 | TRUE
 {
@@ -714,7 +783,7 @@ void yyerror(QString s) {
     //exit(-1);
 }
 
-SymbolsTableRecord *getVariableByName(QString name){
+SymbolsTableRecord *getVariableByName(QString name) {
     SymbolsTableRecord *var = currentTable->getVariableGlobal(name);
 
     if (var == NULL)
@@ -745,13 +814,13 @@ bool isNumberType(AbstractValueASTNode *node)
 
 AbstractASTNode *appendBinarMath(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
 {
-    if (isNumberType(left) && isNumberType(right)){
+    if (isNumberType(left) && isNumberType(right)) {
         if (left->getType() != right->getType())
         {
             if (left->getType() == typeInt)
-                return new BinarNode(new UnaryNode(ToDouble, left), right, operation);
+                return new BinarNode(new UnaryNode(UnarToDouble, left), right, operation);
             else
-                return new BinarNode(left, new UnaryNode(ToDouble, right), operation);
+                return new BinarNode(left, new UnaryNode(UnarToDouble, right), operation);
         }
         else
             return new BinarNode(left, right, operation);

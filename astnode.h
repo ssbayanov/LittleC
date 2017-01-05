@@ -29,10 +29,11 @@ typedef enum
 
 typedef enum
 {
-    ToDouble,
-    ToInt,
-    ToBool,
-    UnarMinus
+    UnarToDouble,
+    UnarToInt,
+    UnarToBool,
+    UnarMinus,
+    UnarNot
 }TypeUnary;
 
 static QStringList typeString = QStringList() << "To double"
@@ -203,6 +204,8 @@ class BinarNode : public AbstractValueASTNode
 {
 public:
     BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation);
+
+    BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation, ValueTypeEnum typeValue);
 
     void printNode(int level);
 

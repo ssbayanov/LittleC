@@ -22,12 +22,12 @@ static QStringList typeName = QStringList() << "int"
                                             << "short"
                                             << "float"
                                             << "double"
+                                            << "label"
                                             << "void"
                                             << "char"
                                             << "bool"
                                             << "struct"
                                             << "mass"
-                                            << "enum"
-                                            << "label";
+                                            << "enum";
 #endif // SUBEXPRESSION_H
 
