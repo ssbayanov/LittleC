@@ -103,10 +103,25 @@ stringch      [^"\n]
                             }
 
     /* Boolean operations */
-"&"|"|"|"^"|"!"             {
+"&"                         {
                                 TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
-                                return BOOLOP;
+                                return AND;
+                            }
+"|"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return OR;
+                            }
+"^"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return XOR;
+                            }
+"!"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return NOT;
                             }
 
     /* Comparison and relation operator tokens */

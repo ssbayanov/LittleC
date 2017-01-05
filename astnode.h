@@ -36,7 +36,7 @@ typedef enum
     UnarNot
 }TypeUnary;
 
-static QStringList typeString = QStringList() << "To double"
+static QStringList unarTypeString = QStringList() << "To double"
                                               << "To integer"
                                               << "To bool"
                                               << "Unar \"-\""

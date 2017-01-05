@@ -125,8 +125,11 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
 void BinarNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Binar operation: %1, type: %2").arg(_operation).arg(typeName.at(_typeValue)).toStdString()
+              << QString("Binar operation: %1, type: %2")
+                 .arg(_operation)
+                 .arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
+
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Left:"
               << std::endl;
@@ -166,6 +169,7 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
         break;
     case UnarToBool:
         _typeValue = typeBool;
+        break;
     default:
         _typeValue = ((AbstractValueASTNode *)_left)->getType();
     }
@@ -179,7 +183,8 @@ ValueTypeEnum UnaryNode::getType()
 void UnaryNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Unar operation. Type of result: %1")
+              << QString("Unar operation. Type: %1. Type of result: %2")
+                 .arg(unarTypeString.at(_uType))
                  .arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
     std::cout << QString().fill(' ',level*2).toStdString()
@@ -251,18 +256,20 @@ void IfNode::printNode(int level)
               << "True branch:"
               << std::endl;
     _trueBranch->printNode(level+1);
-
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "False branch:"
-              << std::endl;
-    _falseBranch->printNode(level+1);
+    if (_falseBranch != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "False branch:"
+                  << std::endl;
+        _falseBranch->printNode(level+1);
+    }
 }
 
 IfNode::~IfNode()
 {
     _condition->~AbstractASTNode();
     _trueBranch->~AbstractASTNode();
-    _falseBranch->~AbstractASTNode();
+    if (_falseBranch != NULL)
+        _falseBranch->~AbstractASTNode();
 }
 
 //----------------------------------------------------------------------------------------------------------------------

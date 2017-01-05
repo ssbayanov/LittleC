@@ -26,7 +26,8 @@
             ERROR_UNCLOSED_COMMENT,
             ERROR_COMPARSION_NOT_APPLICABLE,
             ERROR_COMPARSION_ON_DIFFERENCE_TYPES,
-            ERROR_INCREMENT_WRONG_TYPE};
+            ERROR_INCREMENT_WRONG_TYPE,
+            ERROR_CANNOT_CONVERT};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -39,7 +40,8 @@
                                                  << "error: nonclosed comment"
                                                  << "error: comparison oparation %1 not applicable for %2"
                                                  << "error: comparison oparation %1 not applicable on %2 and %3"
-                                                 << "error: increment not applicable for %1 variable %2";
+                                                 << "error: increment not applicable for %1 variable %2"
+                                                 << "error: can't convert %1 to %2";
 
 }
 
@@ -55,7 +57,8 @@
     bool isNumberType(ValueTypeEnum type);
     bool isNumberType(AbstractValueASTNode *node);
 
-    AbstractASTNode *appendBinarMath(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
+    AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
+    AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value = NULL);
     //SymbolsTable* currentSwitch = NULL;
 
@@ -178,7 +181,6 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 %token <opName>   PLUS       "+"
 %token <opName>   MINUS      "-"
 %token <opName>   MULOP      "mulop"
-//%token <opName>   BOOLOP     "boolop"
 %token      AND
 %token      OR
 %token      NOT
@@ -320,7 +322,7 @@ statement : assignment_statement
 | call_stmt
 | descr_stmt
 | print_statement
-| exp SEMICOLON
+//| exp SEMICOLON
 {
     //if ($1->getType() == NT_UnaryOperation)
 }
@@ -551,12 +553,11 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
     ++g_LoopNestingCounter;
 };
 
-for_w : FOR
+for_head : FOR
 {
     currentTable = currentTable->appendChildTable();
-};
-
-for_head : for_w OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
+}
+    OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
 {
     AbstractValueASTNode *cond = NULL;
     if ($condition != NULL) {
@@ -572,31 +573,6 @@ for_head : for_w OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON ut
 do_head : DO
 {
     ++g_LoopNestingCounter;
-}
-
-bool_exp : exp AND exp
-{
-    if (isNumberType(((AbstractValueASTNode *)$1)->getType()))
-}
-| exp AND AND exp
-{
-
-}
-| exp OR exp
-{
-
-}
-| exp OR OR exp
-{
-
-}
-| exp XOR exp
-{
-
-}
-| NOT exp
-{
-
 }
 
 // Expression
@@ -639,10 +615,62 @@ exp : exp[left] RELOP exp[right]
         parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(left->getType()).arg(right->getType()));
     }
 }
+| exp[left] AND exp[right]
+{
+    AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "&", (AbstractValueASTNode *)$right);
+    if (p == NULL)
+        YYERROR;
+    $$ = p;
+}
+| exp[left] AND AND exp[right]
+{
+    AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "&&", (AbstractValueASTNode *)$right);
+    if (p == NULL)
+        YYERROR;
+    $$ = p;
+}
+| exp[left] OR exp[right]
+{
+    AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "|", (AbstractValueASTNode *)$right);
+    if (p == NULL)
+        YYERROR;
+    $$ = p;
+}
+| exp[left] OR OR exp[right]
+{
+    AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "||", (AbstractValueASTNode *)$right);
+    if (p == NULL)
+        YYERROR;
+    $$ = p;
+}
+| exp[left] XOR exp[right]
+{
+    AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "^", (AbstractValueASTNode *)$right);
+    if (p == NULL)
+        YYERROR;
+    $$ = p;
+}
+| NOT exp
+{
+    AbstractValueASTNode *var = (AbstractValueASTNode *)$2;
+    if (isNumberType(var)) {
+        if (var->getType() != typeBool) {
+            var = new UnaryNode(UnarToBool, var);
+        }
+        $$ = new UnaryNode(UnarNot, var);
+    }
+    else {
+        parsererror(errorList.at(ERROR_CANNOT_CONVERT)
+                    .arg(typeName.at(var->getType()))
+                    .arg(typeName.at(typeBool)));
+        $$ = NULL;
+        YYERROR;
+    }
+}
 | exp PLUS exp
 {
     // PLUS exp
-    AbstractASTNode *p = appendBinarMath((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
+    AbstractASTNode *p = binarMathNode((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
     if (p == NULL)
         YYERROR;
 
@@ -651,7 +679,7 @@ exp : exp[left] RELOP exp[right]
 | exp MINUS exp
 {
     // MINUS exp
-    AbstractASTNode *p = appendBinarMath((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
+    AbstractASTNode *p = binarMathNode((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
     if (p == NULL)
         YYERROR;
 
@@ -660,7 +688,7 @@ exp : exp[left] RELOP exp[right]
 | exp MULOP exp
 {
     // MULOP exp
-    AbstractASTNode *p = appendBinarMath((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
+    AbstractASTNode *p = binarMathNode((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
     if (p == NULL)
         YYERROR;
 
@@ -761,7 +789,7 @@ bool isNumberType(AbstractValueASTNode *node)
     return isNumberType(((AbstractValueASTNode *)node)->getType());
 }
 
-AbstractASTNode *appendBinarMath(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
+AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
 {
     if (isNumberType(left) && isNumberType(right)) {
         if (left->getType() != right->getType())
@@ -776,6 +804,31 @@ AbstractASTNode *appendBinarMath(AbstractValueASTNode *left, QString operation, 
     }
     else {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(left->getType())).arg(typeName.at(right->getType())));
+        return NULL;
+    }
+}
+
+AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
+{
+    if(isNumberType(left) && isNumberType(right)) {
+        if (operation == "&&" || operation == "||") {
+        if (left->getType() != typeBool)
+            left = new UnaryNode(UnarToBool, left);
+        if (right->getType() != typeBool)
+            right = new UnaryNode(UnarToBool, right);
+        }
+
+        return new BinarNode(left, right, operation, typeBool);
+    }
+    else {
+        if(!isNumberType(left))
+            parsererror(errorList.at(ERROR_CANNOT_CONVERT)
+                        .arg(typeName.at(left->getType()))
+                        .arg(typeName.at(typeBool)));
+        if(!isNumberType(right))
+            parsererror(errorList.at(ERROR_CANNOT_CONVERT)
+                        .arg(typeName.at(right->getType()))
+                        .arg(typeName.at(typeBool)));
         return NULL;
     }
 }
