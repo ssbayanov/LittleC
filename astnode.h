@@ -39,7 +39,8 @@ typedef enum
 static QStringList typeString = QStringList() << "To double"
                                               << "To integer"
                                               << "To bool"
-                                              << "Unar \"-\"";
+                                              << "Unar \"-\""
+                                              << "Bool Not";
 
 class AbstractASTNode
 {

@@ -56,6 +56,7 @@
     bool isNumberType(AbstractValueASTNode *node);
 
     AbstractASTNode *appendBinarMath(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
+    AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value = NULL);
     //SymbolsTable* currentSwitch = NULL;
 
     SymbolsTableRecord *getVariableByName(QString name);
@@ -409,76 +410,25 @@ numeric_data_types : INT {
 
 numeric_declaration_statement : numeric_declaration SEMICOLON
 {
-
+    $$ = $1;
 };
 
 numeric_declaration : numeric_data_types IDENTIFIER
 {
-    //numeric_declaration without assign
-    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
-    if (!currentTable->contains(*$2)) {
-        if (var != NULL)
-        {
-            parsererror(errorList.at(WARNING_DOUBLE_DECLARED).arg(*$2));
-        }
-        else {
-
-            var = currentTable->insertValue(*$2, $1, 0);
-            if (var == NULL)
-                parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
-        }
-    }
-    else {
-        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
+    AbstractASTNode *var = numericDeclaration($1, *$2);
+    if(var == NULL)
         YYERROR;
-    }
-    $$ = new AssignmentNode(var, new ValueNode(var->valueType, 0));
-
+    $$ = var;
 }
 | numeric_data_types IDENTIFIER ASSIGN exp
 {
-    //numeric_declaration with assign
-    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$2);
-    if (var != NULL)
-    {
-        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$2));
-        //YYERROR;
-    }
-    else {
-
-        var = currentTable->insertValue(*$2, $1, 0);
-        if (var == NULL)
-            parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
-    }
-
-    if (!isNumberType((AbstractValueASTNode *)$4))
-    {
-        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
-                    .arg(typeName.at(((AbstractValueASTNode *)$4)->getType()))
-                    .arg(typeName.at(var->valueType)));
+    AbstractASTNode *var = numericDeclaration($1, *$2, (AbstractValueASTNode *)$4);
+    if(var == NULL)
         YYERROR;
-    }
-    else {
-        if (((AbstractValueASTNode *)$4)->getType() != var->valueType) {
-            switch(var->valueType) {
-            case typeBool:
-                $$ = new AssignmentNode(var, new UnaryNode(UnarToBool, $4));
-                break;
-            case typeInt:
-                $$ = new AssignmentNode(var, new UnaryNode(UnarToInt, $4));
-                break;
-            case typeDouble:
-                $$ = new AssignmentNode(var, new UnaryNode(UnarToDouble, $4));
-                break;
-            }
-        }
-        else {
-            $$ = new AssignmentNode(var, $4);
-        }
-    }
+    $$ = var;
 };
 
-label_statement: IDENTIFIER COLON {
+label_statement : IDENTIFIER COLON {
     SymbolsTableRecord *label = NULL;
     if (currentTable->containsGlobal(*$1)) {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$1));
@@ -487,10 +437,9 @@ label_statement: IDENTIFIER COLON {
         label = currentTable->insertValue(*$1, typeLabel, *$1);
     }
     $$ = new LabelNode(label);
-
 }
 
-goto_statement: GOTO IDENTIFIER SEMICOLON {
+goto_statement : GOTO IDENTIFIER SEMICOLON {
     if (currentTable->containsGlobal(*$2)) {
             $$ = new GoToNode(*$2);
     }
@@ -556,7 +505,7 @@ print : PRINT OPENPAREN exp CLOSEPAREN
 /*scan_stmt: SCAN OPENPAREN exp CLOSEPAREN
 {};*/
 
-condition_statement: IF OPENPAREN exp CLOSEPAREN statement %prec IF
+condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF
 {
     $$ = new IfNode($3, $5, NULL);
 }
@@ -827,6 +776,61 @@ AbstractASTNode *appendBinarMath(AbstractValueASTNode *left, QString operation, 
     }
     else {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(left->getType())).arg(typeName.at(right->getType())));
+        return NULL;
+    }
+}
+
+
+AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value)
+{
+    //numeric_declaration without assign
+    SymbolsTableRecord *var = NULL;
+    if (!currentTable->contains(name)) {
+        var = currentTable->getVariableGlobal(name);
+        if (var != NULL)
+        {
+            parsererror(errorList.at(WARNING_DOUBLE_DECLARED).arg(name));
+        }
+
+        var = currentTable->insertValue(name, type, 0);
+        if (var == NULL) {
+            parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+            return NULL;
+        }
+
+        if (value != NULL) {
+            if (!isNumberType(value))
+            {
+                parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
+                            .arg(typeName.at(value->getType()))
+                            .arg(typeName.at(var->valueType)));
+                return NULL;
+            }
+            else {
+                if (value->getType() != var->valueType) {
+                    switch(var->valueType) {
+                    case typeBool :
+                        value = new UnaryNode(UnarToBool, value);
+                        break;
+                    case typeFloat :
+                    case typeDouble :
+                        value = new UnaryNode(UnarToDouble, value);
+                        break;
+                    case typeInt :
+                    default :
+                        value = new UnaryNode(UnarToInt, value);
+                    }
+                }
+
+                return new AssignmentNode(var, value);
+            }
+        }
+        else {
+                return new AssignmentNode(var, new ValueNode(var->valueType, 0));
+        }
+    }
+    else {
+        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(name));
         return NULL;
     }
 }
