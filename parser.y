@@ -29,7 +29,8 @@
             ERROR_COMPARSION_ON_DIFFERENCE_TYPES,
             ERROR_INCREMENT_WRONG_TYPE,
             ERROR_CANNOT_CONVERT,
-            ERROR_DECLARATED_FUNCTION_NOT_GLOBAL};
+            ERROR_DECLARATED_FUNCTION_NOT_GLOBAL,
+            ERROR_CALL_UNDEFINED_FUNCTION};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -44,7 +45,8 @@
                                                  << "error: comparison oparation %1 not applicable on %2 and %3"
                                                  << "error: increment not applicable for %1 variable %2"
                                                  << "error: can't convert %1 to %2"
-                                                 << "error: function declarated is not in the global scope";
+                                                 << "error: function declarated is not in the global scope"
+                                                 << "error: call of undefined function %1";
 
 }
 
@@ -234,15 +236,15 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 
 %type <astNode>  program statement utterance statement_list statement_tail
 numeric_declaration_statement numeric_declaration numeric_declaration_tail numeric_declaration_list
-assignment assignment_statement compound_statement exp
+assignment assignment_statement compound_statement exp exp_list exp_tail
 condition_statement
 switch_statement case_statement case_list case_tail
 loop_statement while_head break_statement for_head
 goto_statement label_statement
-call_stmt description_function_statement
+function_call function_call_statement function_description_statement function_return_statement
 print print_statement
 
-%type <type> numeric_data_types
+%type <type> numeric_data_types function_types
 
 /* Priority */
 %nonassoc IF
@@ -311,6 +313,10 @@ utterance : print
 | numeric_declaration
 {
     $$ = $1;
+}
+| function_call
+{
+    $$ = $1;
 };
 
 statement : assignment_statement
@@ -322,8 +328,9 @@ statement : assignment_statement
 | switch_statement
 | goto_statement
 | label_statement
-| call_stmt
-| description_function_statement
+| function_call_statement
+| function_description_statement
+| function_return_statement
 | print_statement
 //| exp SEMICOLON
 {
@@ -345,7 +352,16 @@ CLOSEBRACE { // }
     currentTable = currentTable->getParent();
 };
 
-description_function_statement : numeric_data_types[type] IDENTIFIER[name] OPENPAREN {
+
+//Function --------------------------------------------------------------------------------
+function_types : numeric_data_types {
+    $$ = $1;
+}
+| VOID {
+    $$ = typeVoid;
+}
+
+function_description_statement : numeric_data_types[type] IDENTIFIER[name] OPENPAREN {
     if(currentTable->getParent() != NULL) {
         parsererror(errorList.at(ERROR_DECLARATED_FUNCTION_NOT_GLOBAL));
         YYERROR;
@@ -360,13 +376,38 @@ description_function_statement : numeric_data_types[type] IDENTIFIER[name] OPENP
         currentTable = currentTable->getParent();
         SymbolsTableRecord *function = currentTable->insertValue(*$name, $type, 0, paramsTable);
 
-        $$ = new FunctionNode(function, $params, $body);
+        $$ = new FunctionDeclareNode(function, $params, $body);
         qDebug() << "Function descripted";
     };
 
-call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
-//function_call :
+function_call_statement : function_call SEMICOLON
+{
 
+    $$ = $1;
+};
+function_call : IDENTIFIER[id] OPENPAREN exp_list[explist] CLOSEPAREN
+{
+    SymbolsTableRecord *function = getVariableByName(*$id);
+    if (function != NULL) {
+        if (function->params != NULL) {
+            $$ = new FunctionCallNode(function, $explist);
+        }
+        else {
+            parsererror(errorList.at(ERROR_CALL_UNDEFINED_FUNCTION).arg(*$id));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        parsererror(errorList.at(ERROR_CALL_UNDEFINED_FUNCTION).arg(*$id));
+        $$ = NULL;
+        YYERROR;
+    }
+};
+
+function_return_statement : RETURN exp SEMICOLON {
+    $$ = new FunctionReturnNode($exp);
+}
 // Numeric declaration ------------------------------------------------------------
 numeric_data_types : INT {
     $$ = typeInt;
@@ -624,11 +665,29 @@ do_head : DO
                 $$ = new AssignmentNode(var, $3);
             }
         }
-    }
-    |IDENTIFIER ASSIGN call_stmt {}
-    ;
+    };
 
 // Expressions --------------------------------------------------------------
+exp_list : exp exp_tail[tail]
+{
+    if ($tail == NULL) {
+        $$ = $1;
+    }
+    else {
+        $$ = new ListNode($1, $tail);
+    }
+};
+
+exp_tail : %empty {
+    $$ = NULL;
+}
+| exp_list COMA {
+    $$ = $1;
+}
+| exp_list {
+    $$ = $1;
+};
+
 exp : exp[left] RELOP exp[right]
 {
     // Relation exp
@@ -783,6 +842,10 @@ exp : exp[left] RELOP exp[right]
 {
     SymbolsTableRecord *var = getVariableByName(*$1);
     $$ = new ReferenceNode(var);
+}
+| function_call
+{
+    $$ = $1;
 }
 | %empty
 {

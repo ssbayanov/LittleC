@@ -102,17 +102,17 @@ ReferenceNode::~ReferenceNode()
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-//FunctionNode
+//FunctionDeclareNode
 //----------------------------------------------------------------------------------------------------------------------
-FunctionNode::FunctionNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body)
-    : AbstractValueASTNode(NT_Function)
+FunctionDeclareNode::FunctionDeclareNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body)
+    : AbstractValueASTNode(NT_FunctionDeclare)
 {
     _variable = variable;
     _paramList = paramList;
     _body = body;
 }
 
-void FunctionNode::printNode(int level)
+void FunctionDeclareNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
               << QString("Declaration function: %1, type: %2")
@@ -133,11 +133,72 @@ void FunctionNode::printNode(int level)
     _body->printNode(level+1);
 }
 
-FunctionNode::~FunctionNode()
+FunctionDeclareNode::~FunctionDeclareNode()
 {
     if (_paramList != NULL)
         _paramList->~AbstractASTNode();
     _body->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//FunctionCallNode
+//----------------------------------------------------------------------------------------------------------------------
+FunctionCallNode::FunctionCallNode(SymbolsTableRecord *variable, AbstractASTNode *paramList)
+    : AbstractValueASTNode(NT_FunctionCall)
+{
+    _variable = variable;
+    _paramList = paramList;
+}
+
+void FunctionCallNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << QString("Call function: %1, type: %2")
+                 .arg(_variable->name)
+                 .arg(typeName.at(_variable->valueType)).toStdString()
+              << std::endl;
+
+    if (_paramList != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Params:"
+                  << std::endl;
+        _paramList->printNode(level+1);
+    }
+}
+
+FunctionCallNode::~FunctionCallNode()
+{
+    if (_paramList != NULL)
+        _paramList->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//FunctionCallNode
+//----------------------------------------------------------------------------------------------------------------------
+FunctionReturnNode::FunctionReturnNode(AbstractASTNode *expression)
+    : AbstractValueASTNode(NT_FunctionReturn)
+{
+    _expression = expression;
+    _typeValue = ((AbstractValueASTNode *)expression)->getType();
+}
+
+void FunctionReturnNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << QString("Return type %1")
+                 .arg(typeName.at(_typeValue)).toStdString()
+              << std::endl;
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Expression:"
+              << std::endl;
+    _expression->printNode(level+1);
+
+}
+
+FunctionReturnNode::~FunctionReturnNode()
+{
+    _expression->~AbstractASTNode();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -256,12 +317,21 @@ void ListNode::printNode(int level)
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Left:"
               << std::endl;
-    _left->printNode(level+1);
+
+    if(_left != NULL)
+        _left->printNode(level+1);
+    else
+        std::cout << "BAD LEFT LIST NODE";
 
     std::cout << QString().fill(' ',level*2).toStdString()
               << "Right:"
               << std::endl;
-    _right->printNode(level+1);
+
+    if(_right != NULL)
+        _right->printNode(level+1);
+    else
+        std::cout << "BAD RIGHT LIST NODE";
+
 }
 
 ListNode::~ListNode()
@@ -591,3 +661,4 @@ PrintNode::~PrintNode()
 {
     _expression->~AbstractASTNode();
 }
+

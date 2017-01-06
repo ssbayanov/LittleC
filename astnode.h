@@ -25,7 +25,9 @@ typedef enum
     NT_CaseStatement,   // Case statement
     NT_PintStatement,     // Print statement.
     NT_List,               // Expression or statement list.
-    NT_Function             // Declaration function.
+    NT_FunctionDeclare,             // Declaration function.
+    NT_FunctionCall,
+    NT_FunctionReturn
 } ASTNodeTypeEnum;
 
 typedef enum
@@ -85,7 +87,6 @@ public:
 
 private:
     QVariant _value;
-
 };
 
 /**
@@ -106,18 +107,43 @@ private:
     SymbolsTableRecord *_variable;
 };
 
-class FunctionNode : public AbstractValueASTNode
+class FunctionDeclareNode : public AbstractValueASTNode
 {
 public:
-      FunctionNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body);
+      FunctionDeclareNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body);
 
       void printNode(int level);
 
-      ~FunctionNode();
+      ~FunctionDeclareNode();
 private:
       SymbolsTableRecord *_variable;
       AbstractASTNode *_paramList;
       AbstractASTNode *_body;
+};
+
+class FunctionCallNode : public AbstractValueASTNode
+{
+public:
+      FunctionCallNode(SymbolsTableRecord *variable, AbstractASTNode *paramList);
+
+      void printNode(int level);
+
+      ~FunctionCallNode();
+private:
+      SymbolsTableRecord *_variable;
+      AbstractASTNode *_paramList;
+};
+
+class FunctionReturnNode : public AbstractValueASTNode
+{
+public:
+      FunctionReturnNode(AbstractASTNode *expression);
+
+      void printNode(int level);
+
+      ~FunctionReturnNode();
+private:
+      AbstractASTNode *_expression;
 };
 
 /**
