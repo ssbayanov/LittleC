@@ -148,6 +148,7 @@ FunctionCallNode::FunctionCallNode(SymbolsTableRecord *variable, AbstractASTNode
 {
     _variable = variable;
     _paramList = paramList;
+    _typeValue = _variable->valueType;
 }
 
 void FunctionCallNode::printNode(int level)

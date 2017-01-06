@@ -235,8 +235,8 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 /*%token IFX */
 
 %type <astNode>  program statement utterance statement_list statement_tail
-numeric_declaration_statement numeric_declaration numeric_declaration_tail numeric_declaration_list
-assignment assignment_statement compound_statement exp exp_list exp_tail
+numeric_declaration_statement numeric_declaration numeric_declaration_list_element numeric_declaration_list
+assignment assignment_statement compound_statement exp exp_list exp_list_element
 condition_statement
 switch_statement case_statement case_list case_tail
 loop_statement while_head break_statement for_head
@@ -352,6 +352,24 @@ CLOSEBRACE { // }
     currentTable = currentTable->getParent();
 };
 
+numeric_data_types : INT {
+    $$ = typeInt;
+}
+| DOUBLE {
+    $$ = typeDouble;
+}
+| FLOAT {
+    $$ = typeFloat;
+}
+| BOOL {
+    $$ = typeBool;
+}
+| CHAR {
+    $$ = typeChar;
+}
+| SHORT {
+    $$ = typeShort;
+};
 
 //Function --------------------------------------------------------------------------------
 function_types : numeric_data_types {
@@ -390,6 +408,7 @@ function_call : IDENTIFIER[id] OPENPAREN exp_list[explist] CLOSEPAREN
     SymbolsTableRecord *function = getVariableByName(*$id);
     if (function != NULL) {
         if (function->params != NULL) {
+            //if()
             $$ = new FunctionCallNode(function, $explist);
         }
         else {
@@ -409,31 +428,14 @@ function_return_statement : RETURN exp SEMICOLON {
     $$ = new FunctionReturnNode($exp);
 }
 // Numeric declaration ------------------------------------------------------------
-numeric_data_types : INT {
-    $$ = typeInt;
-}
-| DOUBLE {
-    $$ = typeDouble;
-}
-| FLOAT {
-    $$ = typeFloat;
-}
-| BOOL {
-    $$ = typeBool;
-}
-| CHAR {
-    $$ = typeChar;
-}
-| SHORT {
-    $$ = typeShort;
-};
+
 
 numeric_declaration_statement : numeric_declaration SEMICOLON
 {
     $$ = $1;
 };
 
-numeric_declaration_list : numeric_declaration numeric_declaration_tail[tail]
+numeric_declaration_list : numeric_declaration_list_element numeric_declaration_list_element[tail]
 {
     if ($tail == NULL) {
         $$ = $1;
@@ -446,13 +448,13 @@ numeric_declaration_list : numeric_declaration numeric_declaration_tail[tail]
     }
 };
 
-numeric_declaration_tail : %empty {
+numeric_declaration_list_element : %empty {
     $$ = NULL;
 }
-| numeric_declaration_list COMA {
+| numeric_declaration COMA {
     $$ = $1;
 }
-| numeric_declaration_list {
+| numeric_declaration {
     $$ = $1;
 };
 
@@ -499,9 +501,13 @@ goto_statement : GOTO IDENTIFIER SEMICOLON {
 
 break_statement : BREAK SEMICOLON
 {
-    if (g_LoopNestingCounter <= 0)
+    if (g_LoopNestingCounter <= 0) {
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
-    $$ = new GoToNode("EndOfLoop");//NULL;//createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
+        $$ = NULL;
+    }
+    else {
+        $$ = new GoToNode("EndOfLoop");//NULL;//createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
+    }
 }
 
 
@@ -644,6 +650,7 @@ do_head : DO
         if (!isNumberType((AbstractValueASTNode *)$3))
         {
             parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(((AbstractValueASTNode *)$3)->getType())).arg(typeName.at(var->valueType)));
+            $$ = NULL;
             YYERROR;
         }
         else
@@ -668,7 +675,7 @@ do_head : DO
     };
 
 // Expressions --------------------------------------------------------------
-exp_list : exp exp_tail[tail]
+exp_list : exp_list_element exp_list_element[tail]
 {
     if ($tail == NULL) {
         $$ = $1;
@@ -678,13 +685,13 @@ exp_list : exp exp_tail[tail]
     }
 };
 
-exp_tail : %empty {
+exp_list_element : %empty {
     $$ = NULL;
 }
-| exp_list COMA {
+| exp COMA {
     $$ = $1;
 }
-| exp_list {
+| exp {
     $$ = $1;
 };
 
@@ -721,10 +728,17 @@ exp : exp[left] RELOP exp[right]
         if (left->getType() == right->getType()) {
             if ($2 == "==")
                 $$ = new BinarNode($left, $right, $2, typeBool);
-            else
+            else {
+                $$ = NULL;
                 parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(left->getType()));
+                YYERROR;
+            }
         }
-        parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(left->getType()).arg(right->getType()));
+        else {
+            $$ = NULL;
+            parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(left->getType()).arg(right->getType()));
+            YYERROR;
+        }
     }
 }
 | exp[left] AND exp[right]
