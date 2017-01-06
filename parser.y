@@ -9,6 +9,7 @@
 #include <QStringList>
 #include "symbolstable.h"
 #include "astnode.h"
+#include <QDebug>
 }
 
 %code provides {
@@ -27,7 +28,8 @@
             ERROR_COMPARSION_NOT_APPLICABLE,
             ERROR_COMPARSION_ON_DIFFERENCE_TYPES,
             ERROR_INCREMENT_WRONG_TYPE,
-            ERROR_CANNOT_CONVERT};
+            ERROR_CANNOT_CONVERT,
+            ERROR_DECLARATED_FUNCTION_NOT_GLOBAL};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -41,7 +43,8 @@
                                                  << "error: comparison oparation %1 not applicable for %2"
                                                  << "error: comparison oparation %1 not applicable on %2 and %3"
                                                  << "error: increment not applicable for %1 variable %2"
-                                                 << "error: can't convert %1 to %2";
+                                                 << "error: can't convert %1 to %2"
+                                                 << "error: function declarated is not in the global scope";
 
 }
 
@@ -230,13 +233,13 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 /*%token IFX */
 
 %type <astNode>  program statement utterance statement_list statement_tail
-numeric_declaration_statement numeric_declaration
+numeric_declaration_statement numeric_declaration numeric_declaration_tail numeric_declaration_list
 assignment assignment_statement compound_statement exp
 condition_statement
 switch_statement case_statement case_list case_tail
 loop_statement while_head break_statement for_head
 goto_statement label_statement
-call_stmt descr_stmt
+call_stmt description_function_statement
 print print_statement
 
 %type <type> numeric_data_types
@@ -320,7 +323,7 @@ statement : assignment_statement
 | goto_statement
 | label_statement
 | call_stmt
-| descr_stmt
+| description_function_statement
 | print_statement
 //| exp SEMICOLON
 {
@@ -329,15 +332,7 @@ statement : assignment_statement
 | error SEMICOLON // Restore after error
 {
     yyerrok;
-}
-;
-
-break_statement : BREAK SEMICOLON
-{
-    if (g_LoopNestingCounter <= 0)
-        parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
-    $$ = new GoToNode("EndOfLoop");//NULL;//createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
-}
+};
 
 compound_statement :
 OPENBRACE  { // {
@@ -350,47 +345,29 @@ CLOSEBRACE { // }
     currentTable = currentTable->getParent();
 };
 
-descr_stmt: numeric_data_types IDENTIFIER OPENPAREN exp CLOSEPAREN compound_statement {};
-
-call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
-
-assignment_statement : assignment SEMICOLON
-{    
-    $$ = $1;
-}
-;
-
-assignment : IDENTIFIER ASSIGN exp
-{
-    SymbolsTableRecord *var = getVariableByName(*$1);
-    if (!isNumberType((AbstractValueASTNode *)$3))
-    {
-        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(((AbstractValueASTNode *)$3)->getType())).arg(typeName.at(var->valueType)));
+description_function_statement : numeric_data_types[type] IDENTIFIER[name] OPENPAREN {
+    if(currentTable->getParent() != NULL) {
+        parsererror(errorList.at(ERROR_DECLARATED_FUNCTION_NOT_GLOBAL));
         YYERROR;
     }
-    else
-    {
-        if (((AbstractValueASTNode *)$3)->getType() != var->valueType) {
-            switch(var->valueType) {
-            case typeBool:
-                $$ = new AssignmentNode(var, new UnaryNode(UnarToBool, $3));
-                break;
-            case typeInt:
-                $$ = new AssignmentNode(var, new UnaryNode(UnarToInt, $3));
-                break;
-            case typeDouble:
-                $$ = new AssignmentNode(var, new UnaryNode(UnarToDouble, $3));
-                break;
-            }
-        }
-        else {
-            $$ = new AssignmentNode(var, $3);
-        }
-    }
-}
-|IDENTIFIER ASSIGN call_stmt {}
-;
+    currentTable = currentTable->appendChildTable();
 
+
+}
+    numeric_declaration_list[params] CLOSEPAREN compound_statement[body] {
+        currentTable->setHidden();
+        SymbolsTable *paramsTable = currentTable;
+        currentTable = currentTable->getParent();
+        SymbolsTableRecord *function = currentTable->insertValue(*$name, $type, 0, paramsTable);
+
+        $$ = new FunctionNode(function, $params, $body);
+        qDebug() << "Function descripted";
+    };
+
+call_stmt: IDENTIFIER OPENPAREN exp CLOSEPAREN SEMICOLON {};
+//function_call :
+
+// Numeric declaration ------------------------------------------------------------
 numeric_data_types : INT {
     $$ = typeInt;
 }
@@ -415,6 +392,29 @@ numeric_declaration_statement : numeric_declaration SEMICOLON
     $$ = $1;
 };
 
+numeric_declaration_list : numeric_declaration numeric_declaration_tail[tail]
+{
+    if ($tail == NULL) {
+        $$ = $1;
+    }
+    else {
+        if($1 == NULL)
+            $$ = NULL;
+        else
+            $$ = new ListNode($1, $tail);
+    }
+};
+
+numeric_declaration_tail : %empty {
+    $$ = NULL;
+}
+| numeric_declaration_list COMA {
+    $$ = $1;
+}
+| numeric_declaration_list {
+    $$ = $1;
+};
+
 numeric_declaration : numeric_data_types IDENTIFIER
 {
     AbstractASTNode *var = numericDeclaration($1, *$2);
@@ -428,8 +428,13 @@ numeric_declaration : numeric_data_types IDENTIFIER
     if(var == NULL)
         YYERROR;
     $$ = var;
+}
+| %empty
+{
+    $$ = NULL;
 };
 
+// GoTo Break and Label ------------------------------------------------------------------
 label_statement : IDENTIFIER COLON {
     SymbolsTableRecord *label = NULL;
     if (currentTable->containsGlobal(*$1)) {
@@ -451,6 +456,15 @@ goto_statement : GOTO IDENTIFIER SEMICOLON {
     }
 };
 
+break_statement : BREAK SEMICOLON
+{
+    if (g_LoopNestingCounter <= 0)
+        parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
+    $$ = new GoToNode("EndOfLoop");//NULL;//createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
+}
+
+
+//Switch - case -------------------------------------------------------------------
 case_list : case_statement case_tail
 {
     if ($2 == NULL) {
@@ -494,6 +508,7 @@ switch_statement : SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRAC
 
 };
 
+//Print and scan-------------------------------------------------------------------
 print_statement : print SEMICOLON
 {
     $$ = $1;
@@ -516,6 +531,7 @@ condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF
     $$ = new IfNode($3, $5, $7);
 };
 
+//Loops -------------------------------------------------------------------
 loop_statement : while_head statement
 {
     ((WhileNode *)$1)->setBody($2);
@@ -575,7 +591,44 @@ do_head : DO
     ++g_LoopNestingCounter;
 }
 
-// Expression
+// Assigments ---------------------------------------------------------------
+    assignment_statement : assignment SEMICOLON
+    {
+        $$ = $1;
+    };
+
+    assignment : IDENTIFIER ASSIGN exp
+    {
+        SymbolsTableRecord *var = getVariableByName(*$1);
+        if (!isNumberType((AbstractValueASTNode *)$3))
+        {
+            parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(((AbstractValueASTNode *)$3)->getType())).arg(typeName.at(var->valueType)));
+            YYERROR;
+        }
+        else
+        {
+            if (((AbstractValueASTNode *)$3)->getType() != var->valueType) {
+                switch(var->valueType) {
+                case typeBool:
+                    $$ = new AssignmentNode(var, new UnaryNode(UnarToBool, $3));
+                    break;
+                case typeInt:
+                    $$ = new AssignmentNode(var, new UnaryNode(UnarToInt, $3));
+                    break;
+                case typeDouble:
+                    $$ = new AssignmentNode(var, new UnaryNode(UnarToDouble, $3));
+                    break;
+                }
+            }
+            else {
+                $$ = new AssignmentNode(var, $3);
+            }
+        }
+    }
+    |IDENTIFIER ASSIGN call_stmt {}
+    ;
+
+// Expressions --------------------------------------------------------------
 exp : exp[left] RELOP exp[right]
 {
     // Relation exp

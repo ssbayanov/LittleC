@@ -24,7 +24,8 @@ typedef enum
     NT_SwitchStatement,     // Switch statement.
     NT_CaseStatement,   // Case statement
     NT_PintStatement,     // Print statement.
-    NT_List               // Expression or statement list.
+    NT_List,               // Expression or statement list.
+    NT_Function             // Declaration function.
 } ASTNodeTypeEnum;
 
 typedef enum
@@ -103,6 +104,20 @@ public:
 
 private:
     SymbolsTableRecord *_variable;
+};
+
+class FunctionNode : public AbstractValueASTNode
+{
+public:
+      FunctionNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body);
+
+      void printNode(int level);
+
+      ~FunctionNode();
+private:
+      SymbolsTableRecord *_variable;
+      AbstractASTNode *_paramList;
+      AbstractASTNode *_body;
 };
 
 /**
@@ -341,6 +356,8 @@ public:
 private:
     AbstractASTNode *_expression;
 };
+
+
 
 #endif // ASTNODE_H
 

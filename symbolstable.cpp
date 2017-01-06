@@ -20,8 +20,9 @@ SymbolsTable::~SymbolsTable()
 }
 
 SymbolsTableRecord * SymbolsTable::insertValue(QString name,
-                               ValueTypeEnum type,
-                               QVariant value)
+                                               ValueTypeEnum type,
+                                               QVariant value,
+                                               SymbolsTable *params)
 {
     SymbolsTableRecord *record;
     try {
@@ -35,6 +36,7 @@ SymbolsTableRecord * SymbolsTable::insertValue(QString name,
     record->value = value;
     record->name = name;
     record->table = this;
+    record->params = params;
 
     this->insert(name, record);
 

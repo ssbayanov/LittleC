@@ -102,6 +102,45 @@ ReferenceNode::~ReferenceNode()
 }
 
 //----------------------------------------------------------------------------------------------------------------------
+//FunctionNode
+//----------------------------------------------------------------------------------------------------------------------
+FunctionNode::FunctionNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body)
+    : AbstractValueASTNode(NT_Function)
+{
+    _variable = variable;
+    _paramList = paramList;
+    _body = body;
+}
+
+void FunctionNode::printNode(int level)
+{
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << QString("Declaration function: %1, type: %2")
+                 .arg(_variable->name)
+                 .arg(typeName.at(_variable->valueType)).toStdString()
+              << std::endl;
+
+    if (_paramList != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Params:"
+                  << std::endl;
+        _paramList->printNode(level+1);
+    }
+
+    std::cout << QString().fill(' ',level*2).toStdString()
+              << "Body:"
+              << std::endl;
+    _body->printNode(level+1);
+}
+
+FunctionNode::~FunctionNode()
+{
+    if (_paramList != NULL)
+        _paramList->~AbstractASTNode();
+    _body->~AbstractASTNode();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 //BinarNode
 //----------------------------------------------------------------------------------------------------------------------
 BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation)
@@ -552,5 +591,3 @@ PrintNode::~PrintNode()
 {
     _expression->~AbstractASTNode();
 }
-
-

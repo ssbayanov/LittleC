@@ -13,10 +13,11 @@ class SymbolsTable;
 // Symbols table record definition
 typedef struct
 {
-  ValueTypeEnum valueType; /* Type of a variable or expression */
-  QVariant value;   /* Currently not used, reserved to the future */
-  QString name;
-  SymbolsTable *table;
+    ValueTypeEnum valueType; /* Type of a variable or expression */
+    QVariant value;   /* Currently not used, reserved to the future */
+    QString name;
+    SymbolsTable *table;
+    SymbolsTable *params;
 } SymbolsTableRecord;
 
 /**
@@ -84,8 +85,10 @@ public:
      * @return pointer to struct of this variable
      */
     SymbolsTableRecord *insertValue(QString name,
-                      ValueTypeEnum type,
-                      QVariant value);
+                                    ValueTypeEnum type,
+                                    QVariant value,
+                                    SymbolsTable *params = NULL);
+
     /**
      * @brief getVariable find variable into values list by name in current table
      * @param name searching variable name
@@ -104,7 +107,6 @@ public:
      * @return true if variable found or false if variable not founded
      */
     bool containsGlobal(QString name);
-
 
 private:
     SymbolsTable *parent;
