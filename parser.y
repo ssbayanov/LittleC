@@ -30,7 +30,9 @@
             ERROR_INCREMENT_WRONG_TYPE,
             ERROR_CANNOT_CONVERT,
             ERROR_DECLARATED_FUNCTION_NOT_GLOBAL,
-            ERROR_CALL_UNDEFINED_FUNCTION};
+            ERROR_CALL_UNDEFINED_FUNCTION,
+            ERROR_UNKNOWN_TYPE,
+            WARNING_CONVERTING_TYPES};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -46,7 +48,9 @@
                                                  << "error: increment not applicable for %1 variable %2"
                                                  << "error: can't convert %1 to %2"
                                                  << "error: function declarated is not in the global scope"
-                                                 << "error: call of undefined function %1";
+                                                 << "error: call of undefined function %1"
+                                                 << "error: unknown type %1"
+                                                 << "warning: during conversion %1 to %2 can be errors";
 
 }
 
@@ -66,6 +70,8 @@
     AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value = NULL);
     AbstractASTNode *numericAssign(SymbolsTableRecord *var, AbstractValueASTNode *value = NULL);
+    AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
+    int getSizeType(ValueTypeEnum type);
     //SymbolsTable* currentSwitch = NULL;
 
     SymbolsTableRecord *getVariableByName(QString name);
@@ -702,7 +708,7 @@ exp : exp[left] RELOP exp[right]
     }
     else {
         if (left->getType() == right->getType()) {
-            if ($2 == "==")
+            if (QString("==").contains(*$2))
                 $$ = new BinarNode($left, $right, $2, typeBool);
             else {
                 $$ = NULL;
@@ -972,18 +978,7 @@ AbstractASTNode *numericAssign(SymbolsTableRecord *var, AbstractValueASTNode *va
         }
         else {
             if (value->getType() != var->valueType) {
-                switch(var->valueType) {
-                case typeBool :
-                    value = new UnaryNode(UnarToBool, value);
-                    break;
-                case typeFloat :
-                case typeDouble :
-                    value = new UnaryNode(UnarToDouble, value);
-                    break;
-                case typeInt :
-                default :
-                    value = new UnaryNode(UnarToInt, value);
-                }
+                value = convert(value, var->valueType);
             }
 
             return new AssignmentNode(var, value);
@@ -994,7 +989,73 @@ AbstractASTNode *numericAssign(SymbolsTableRecord *var, AbstractValueASTNode *va
     }
 }
 
+AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
+{
+    ValueTypeEnum whatType = what->getType();
+    if(isNumericType(whatType)) {
+        if(isNumericType(to)) {
+            switch(to){
+            case typeBool:
+                return new UnaryNode(UnarToBool, what);
+            case typeChar:
+                if(getSizeType(whatType) > getSizeType(to))
+                    parsererror(errorList.at(WARNING_CONVERTING_TYPES)
+                               .arg(typeName.at(whatType))
+                               .arg(typeName.at(to)));
+                return new UnaryNode(UnarToChar, what);
+            case typeDouble:
+                return new UnaryNode(UnarToDouble, what);;
+            case typeFloat:
+                if(getSizeType(whatType) > getSizeType(to))
+                    parsererror(errorList.at(WARNING_CONVERTING_TYPES)
+                               .arg(typeName.at(whatType))
+                               .arg(typeName.at(to)));
+                return new UnaryNode(UnarToFloat, what);
+            case typeInt:
+                if(getSizeType(whatType) > getSizeType(to))
+                    parsererror(errorList.at(WARNING_CONVERTING_TYPES)
+                               .arg(typeName.at(whatType))
+                               .arg(typeName.at(to)));
+                return new UnaryNode(UnarToInt, what);
+            case typeShort:
+                if(getSizeType(whatType) > getSizeType(to))
+                    parsererror(errorList.at(WARNING_CONVERTING_TYPES)
+                               .arg(typeName.at(whatType))
+                               .arg(typeName.at(to)));
+                return new UnaryNode(UnarToShort, what);
+            default:
+                parsererror(errorList.at(ERROR_UNKNOWN_TYPE).arg(to));
+                return NULL;
+            }
+        }
+    }
+    parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
+                .arg(typeName.at(what->getType()))
+                .arg(typeName.at(to)));
+    return NULL;
 
+}
+
+int getSizeType(ValueTypeEnum type)
+{
+    switch(type) {
+    case typeVoid:
+        return 0;
+    case typeBool:
+    case typeChar:
+        return 1;
+    case typeShort:
+        return 2;
+    case typeFloat:
+    case typeInt:
+        return 4;
+    case typeDouble:
+        return 8;
+    default:
+        parsererror(errorList.at(ERROR_UNKNOWN_TYPE).arg(type));
+        return 0;
+    }
+}
 /*
 int codegenBinary(FILE* outputFile, int operatorCode,
                   NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result)

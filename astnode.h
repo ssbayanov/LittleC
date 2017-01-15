@@ -35,6 +35,9 @@ typedef enum
     UnarToDouble,
     UnarToInt,
     UnarToBool,
+    UnarToChar,
+    UnarToFloat,
+    UnarToShort,
     UnarMinus,
     UnarNot
 }TypeUnary;
