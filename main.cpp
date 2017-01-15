@@ -40,8 +40,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     strcpy(g_outFileName, argv[2]);
-    parserparse();
-
+    try {
+        parserparse();
+    }
+    catch(std::exception& e)
+    {
+        std::cout << "Parse fail. Error: " << e.what();
+    }
     std::cout << "Dump token table.\n\n";
     if (0 < TokenTable.size())
     {
@@ -49,7 +54,7 @@ int main(int argc, char *argv[])
         std::cout.width(20);  std::cout << "firstColName";
         std::cout.width(20);  std::cout << "secondColName";
         std::cout.width(20);  std::cout << "thirdColName" << "\n";
-        for(int i = 0; i < TokenTable.size(); i++)
+        for(uint i = 0; i < TokenTable.size(); i++)
         {
             std::cout.width(20);
             std::cout << std::get<0>(TokenTable[i]);

@@ -63,14 +63,14 @@ bool SymbolsTable::isHidden()
     return _isHidden;
 }
 
-bool SymbolsTable::insertChild(SymbolsTable *c)
+void SymbolsTable::insertChild(SymbolsTable *c)
 {
     childs.append(c);
 }
 
 u_int SymbolsTable::getChildsCount()
 {
-    childs.count();
+    return childs.count();
 }
 
 SymbolsTable *SymbolsTable::appendChildTable()
@@ -91,7 +91,8 @@ SymbolsTableRecord *SymbolsTable::getVariable(QString name)
     SymbolsTable::iterator i = find(name);
     if(i != end())
         return (SymbolsTableRecord *) i.value();
-    else NULL;
+    else
+        return NULL;
 }
 
 SymbolsTableRecord *SymbolsTable::getVariableGlobal(QString name)

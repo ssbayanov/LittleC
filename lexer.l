@@ -236,12 +236,17 @@ return IDENTIFIER;}
 
     /* Char */
 \'{stringch}{1}\' {
-    TokenTable.push_back(TokenTableRow("CHARCONST", yytext, lno)); parserlval.value = new QVariant(yytext);
+    TokenTable.push_back(TokenTableRow("CHARCONST", yytext, lno));
+    QString c = QString(yytext);
+    parserlval.value = new QVariant(c.mid(1,c.length() - 1));
     return CHARCONST;}
 
     /* String */
 \"{stringch}*\" {
-     TokenTable.push_back(TokenTableRow("STRING", yytext, lno)); parserlval.value = new QVariant(yytext);
+     TokenTable.push_back(TokenTableRow("STRING", yytext, lno));
+     QString str = QString(yytext);
+     parserlval.value = new QVariant(str.mid(1,str.length() - 1));
+     return STRING;
      }
 
     /* Undefined token. */

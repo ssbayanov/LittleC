@@ -62,7 +62,7 @@ public:
      * @param c pointer to current table
      * @return true if insert accepted else return false
      */
-    bool insertChild(SymbolsTable *c);
+    void insertChild(SymbolsTable *c);
 
     /**
      * @brief getChildsCount
