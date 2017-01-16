@@ -238,7 +238,7 @@ return IDENTIFIER;}
 \'{stringch}{1}\' {
     TokenTable.push_back(TokenTableRow("CHARCONST", yytext, lno));
     QString c = QString(yytext);
-    parserlval.value = new QVariant(c.mid(1,c.length() - 1));
+    parserlval.value = new QVariant(c.at(1));
     return CHARCONST;}
 
     /* String */

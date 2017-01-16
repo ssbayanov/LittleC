@@ -58,6 +58,7 @@ ValueNode::ValueNode(ValueTypeEnum typeValue, QVariant value)
 
 void ValueNode::printNode(int level)
 {
+
     std::cout << QString().fill(' ',level*2).toStdString()
               << QString("Value: %1, type: %2").arg(_value.toString())
                  .arg(typeName.at(_typeValue)).toStdString()
@@ -77,23 +78,23 @@ ValueNode::~ValueNode()
 //----------------------------------------------------------------------------------------------------------------------
 //ReferenceNode
 //----------------------------------------------------------------------------------------------------------------------
-ReferenceNode::ReferenceNode(SymbolsTableRecord *variable)
+ReferenceNode::ReferenceNode(AbstractSymbolTableRecord *variable)
     : AbstractValueASTNode(NT_Reference)
 {
     _variable = variable;
-    _typeValue = _variable->valueType;
+    _typeValue = _variable->getValueType();
 }
 
 void ReferenceNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Reference: %1, type: %2").arg(_variable->name).arg(typeName.at(_typeValue)).toStdString()
+              << QString("Reference: %1, type: %2").arg(_variable->getName()).arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
 }
 
 ValueTypeEnum ReferenceNode::getType()
 {
-    return _variable->valueType;
+    return _typeValue;
 }
 
 ReferenceNode::~ReferenceNode()
@@ -104,7 +105,7 @@ ReferenceNode::~ReferenceNode()
 //----------------------------------------------------------------------------------------------------------------------
 //FunctionDeclareNode
 //----------------------------------------------------------------------------------------------------------------------
-FunctionDeclareNode::FunctionDeclareNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body)
+FunctionDeclareNode::FunctionDeclareNode(AbstractSymbolTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body)
     : AbstractValueASTNode(NT_FunctionDeclare)
 {
     _variable = variable;
@@ -116,8 +117,8 @@ void FunctionDeclareNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
               << QString("Declaration function: %1, type: %2")
-                 .arg(_variable->name)
-                 .arg(typeName.at(_variable->valueType)).toStdString()
+                 .arg(_variable->getName())
+                 .arg(typeName.at(_variable->getValueType())).toStdString()
               << std::endl;
 
     if (_paramList != NULL) {
@@ -143,20 +144,20 @@ FunctionDeclareNode::~FunctionDeclareNode()
 //----------------------------------------------------------------------------------------------------------------------
 //FunctionCallNode
 //----------------------------------------------------------------------------------------------------------------------
-FunctionCallNode::FunctionCallNode(SymbolsTableRecord *variable, AbstractASTNode *paramList)
+FunctionCallNode::FunctionCallNode(AbstractSymbolTableRecord *variable, AbstractASTNode *paramList)
     : AbstractValueASTNode(NT_FunctionCall)
 {
     _variable = variable;
     _paramList = paramList;
-    _typeValue = _variable->valueType;
+    _typeValue = _variable->getValueType();
 }
 
 void FunctionCallNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
               << QString("Call function: %1, type: %2")
-                 .arg(_variable->name)
-                 .arg(typeName.at(_variable->valueType)).toStdString()
+                 .arg(_variable->getName())
+                 .arg(typeName.at(_variable->getValueType())).toStdString()
               << std::endl;
 
     if (_paramList != NULL) {
@@ -504,7 +505,7 @@ ForNode::~ForNode()
 //----------------------------------------------------------------------------------------------------------------------
 //AssignmentNode
 //----------------------------------------------------------------------------------------------------------------------
-AssignmentNode::AssignmentNode(SymbolsTableRecord *variable, AbstractASTNode *value)
+AssignmentNode::AssignmentNode(AbstractSymbolTableRecord *variable, AbstractASTNode *value)
     : AbstractASTNode(NT_AssignmentOperation)
 {
     _variable = variable;
@@ -514,7 +515,7 @@ AssignmentNode::AssignmentNode(SymbolsTableRecord *variable, AbstractASTNode *va
 void AssignmentNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Assignment: %1").arg(_variable->name).toStdString()
+              << QString("Assignment: %1").arg(_variable->getName()).toStdString()
               << std::endl;
 
     std::cout << QString().fill(' ',level*2).toStdString()
@@ -531,7 +532,7 @@ AssignmentNode::~AssignmentNode()
 //----------------------------------------------------------------------------------------------------------------------
 //LabelNode
 //----------------------------------------------------------------------------------------------------------------------
-LabelNode::LabelNode(SymbolsTableRecord *variable)
+LabelNode::LabelNode(AbstractSymbolTableRecord *variable)
     : AbstractASTNode(NT_LabelStatement)
 {
     _variable = variable;
@@ -540,7 +541,7 @@ LabelNode::LabelNode(SymbolsTableRecord *variable)
 void LabelNode::printNode(int level)
 {
     std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Label: %1").arg(_variable->name).toStdString()
+              << QString("Label: %1").arg(_variable->getName()).toStdString()
               << std::endl;
 }
 

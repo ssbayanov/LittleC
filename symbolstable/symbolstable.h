@@ -6,24 +6,15 @@
 #include <QVariant>
 #include <QList>
 #include "subexpression.h"
+#include "variabletablerecord.h"
+#include "functiontablerecord.h"
+#include "symbolstable/abstractsymboltablerecord.h"
 
-
-class SymbolsTable;
-
-// Symbols table record definition
-typedef struct
-{
-    ValueTypeEnum valueType; /* Type of a variable or expression */
-    QVariant value;   /* Currently not used, reserved to the future */
-    QString name;
-    SymbolsTable *table;
-    SymbolsTable *params;
-} SymbolsTableRecord;
 
 /**
  * @brief The SymbolsTable class for store variables in diffrence scopes
  */
-class SymbolsTable : public QHash<QString, SymbolsTableRecord*>
+class SymbolsTable : public QHash<QString, AbstractSymbolTableRecord*>
 {
 public:
     SymbolsTable(SymbolsTable *p);
@@ -84,23 +75,27 @@ public:
      * @param value value of variable
      * @return pointer to struct of this variable
      */
-    SymbolsTableRecord *insertValue(QString name,
+    VariableTableRecord *insertVariable(QString name,
                                     ValueTypeEnum type,
-                                    QVariant value,
-                                    SymbolsTable *params = NULL);
+                                    QVariant value);
+
+    FunctionTableRecord *insertFunction(QString name,
+                                        ValueTypeEnum type,
+                                        QVariant value,
+                                        SymbolsTable *params);
 
     /**
      * @brief getVariable find variable into values list by name in current table
      * @param name searching variable name
      * @return pointer to struct of searching variable. If searching failed return NULL
      */
-    SymbolsTableRecord* getVariable(QString name);
+    AbstractSymbolTableRecord *getVariable(QString name);
     /**
      * @brief getVariableGlobal find variable into values list by name in current table and all parents
      * @param name searching variable name
      * @return pointer to struct of searching variable. If searching failed return NULL
      */
-    SymbolsTableRecord* getVariableGlobal(QString name);
+    AbstractSymbolTableRecord* getVariableGlobal(QString name);
     /**
      * @brief containsGlobal find variable into values list by name in current table and all parents
      * @param name searching variable name

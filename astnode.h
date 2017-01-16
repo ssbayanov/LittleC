@@ -5,7 +5,7 @@
 
 #include <QString>
 
-#include "symbolstable.h"
+#include "symbolstable/symbolstable.h"
 #include "subexpression.h"
 
 typedef enum
@@ -98,7 +98,7 @@ private:
 class ReferenceNode : public AbstractValueASTNode
 {
 public:
-    ReferenceNode(SymbolsTableRecord *variable);
+    ReferenceNode(AbstractSymbolTableRecord *variable);
 
     void printNode(int level);
 
@@ -107,19 +107,19 @@ public:
     ~ReferenceNode();
 
 private:
-    SymbolsTableRecord *_variable;
+    AbstractSymbolTableRecord *_variable;
 };
 
 class FunctionDeclareNode : public AbstractValueASTNode
 {
 public:
-      FunctionDeclareNode(SymbolsTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body);
+      FunctionDeclareNode(AbstractSymbolTableRecord *variable, AbstractASTNode *paramList, AbstractASTNode *body);
 
       void printNode(int level);
 
       ~FunctionDeclareNode();
 private:
-      SymbolsTableRecord *_variable;
+      AbstractSymbolTableRecord *_variable;
       AbstractASTNode *_paramList;
       AbstractASTNode *_body;
 };
@@ -127,13 +127,13 @@ private:
 class FunctionCallNode : public AbstractValueASTNode
 {
 public:
-      FunctionCallNode(SymbolsTableRecord *variable, AbstractASTNode *paramList);
+      FunctionCallNode(AbstractSymbolTableRecord *variable, AbstractASTNode *paramList);
 
       void printNode(int level);
 
       ~FunctionCallNode();
 private:
-      SymbolsTableRecord *_variable;
+      AbstractSymbolTableRecord *_variable;
       AbstractASTNode *_paramList;
 };
 
@@ -231,14 +231,14 @@ private:
 class AssignmentNode : public AbstractASTNode
 {
 public:
-    AssignmentNode(SymbolsTableRecord *variable, AbstractASTNode *value);
+    AssignmentNode(AbstractSymbolTableRecord *variable, AbstractASTNode *value);
 
     void printNode(int level);
 
     ~AssignmentNode();
 
 private:
-    SymbolsTableRecord *_variable;
+    AbstractSymbolTableRecord *_variable;
     AbstractASTNode *_value;
 };
 
@@ -290,14 +290,14 @@ private:
 class LabelNode : public AbstractASTNode
 {
 public:
-    LabelNode(SymbolsTableRecord *variable);
+    LabelNode(AbstractSymbolTableRecord *variable);
 
     void printNode(int level);
 
     ~LabelNode();
 
 private:
-    SymbolsTableRecord *_variable;
+    AbstractSymbolTableRecord *_variable;
 };
 
 /**

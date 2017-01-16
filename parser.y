@@ -7,7 +7,8 @@
 #include <vector>
 #include <QString>
 #include <QStringList>
-#include "symbolstable.h"
+
+#include "symbolstable/symbolstable.h"
 #include "astnode.h"
 #include <QDebug>
 }
@@ -69,12 +70,12 @@
     AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value = NULL);
-    AbstractASTNode *numericAssign(SymbolsTableRecord *var, AbstractValueASTNode *value = NULL);
+    AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value = NULL);
     AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
     int getSizeType(ValueTypeEnum type);
     //SymbolsTable* currentSwitch = NULL;
 
-    SymbolsTableRecord *getVariableByName(QString name);
+    AbstractSymbolTableRecord *getVariableByName(QString name);
 
 }
 
@@ -395,7 +396,7 @@ function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
         currentTable->setHidden();
         SymbolsTable *paramsTable = currentTable;
         currentTable = currentTable->getParent();
-        SymbolsTableRecord *function = currentTable->insertValue(*$name, $type, 0, paramsTable);
+        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, 0, paramsTable);
 
         $$ = new FunctionDeclareNode(function, $params, $body);
 };
@@ -406,9 +407,9 @@ function_call_statement : function_call SEMICOLON
 };
 function_call : IDENTIFIER[id] OPENPAREN exp_list[explist] CLOSEPAREN
 {
-    SymbolsTableRecord *function = getVariableByName(*$id);
+    AbstractSymbolTableRecord *function = getVariableByName(*$id);
     if (function != NULL) {
-        if (function->params != NULL) {
+        if (((FunctionTableRecord *)function)->getParams() != NULL) {
             //if()
             $$ = new FunctionCallNode(function, $explist);
         }
@@ -477,12 +478,12 @@ declaration : data_types[type] IDENTIFIER
 
 // GoTo Break and Label ------------------------------------------------------------------
 label_statement : IDENTIFIER COLON {
-    SymbolsTableRecord *label = NULL;
+    AbstractSymbolTableRecord *label = NULL;
     if (currentTable->containsGlobal(*$1)) {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$1));
     }
     else {
-        label = currentTable->insertValue(*$1, typeLabel, *$1);
+        label = currentTable->insertVariable(*$1, typeLabel, *$1);
     }
     $$ = new LabelNode(label);
 }
@@ -529,7 +530,7 @@ case_tail : %empty {
 
 
 case_statement : CASE IDENTIFIER COLON statement_list {
-    SymbolsTableRecord *var = getVariableByName(*$2);
+    AbstractSymbolTableRecord *var = getVariableByName(*$2);
     if (var != NULL) {
 
         $$ = new CaseNode(new ReferenceNode(var), $4);
@@ -643,7 +644,7 @@ assignment_statement : assignment SEMICOLON
 
 assignment : IDENTIFIER[name] ASSIGN exp[value]
 {
-    SymbolsTableRecord *var = currentTable->getVariableGlobal(*$name);
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
     if(var != NULL) {
         AbstractASTNode *node = numericAssign(var, (AbstractValueASTNode *)$value);
         if(node == NULL)
@@ -832,7 +833,7 @@ exp : exp[left] RELOP exp[right]
 }
 | IDENTIFIER
 {
-    SymbolsTableRecord *var = getVariableByName(*$1);
+    AbstractSymbolTableRecord *var = getVariableByName(*$1);
     $$ = new ReferenceNode(var);
 }
 | function_call
@@ -844,7 +845,7 @@ exp : exp[left] RELOP exp[right]
  * Not in 2016.
  * | IDENTIFIER INCREMENT
 {
-    SymbolsTableRecord *var = getVariableByName(*$1);
+    AbstractSymbolTableRecord *var = getVariableByName(*$1);
 
     if (isNumericType(var->valueType))
         $$ = createNodeAST(NT_UnaryOperation, $2, createReferenceNode(var), NULL);
@@ -864,8 +865,8 @@ void yyerror(QString s) {
     //exit(-1);
 }
 
-SymbolsTableRecord *getVariableByName(QString name) {
-    SymbolsTableRecord *var = currentTable->getVariableGlobal(name);
+AbstractSymbolTableRecord *getVariableByName(QString name) {
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(name);
 
     if (var == NULL)
     {
@@ -947,7 +948,7 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
         }
 
 
-        SymbolsTableRecord *var = currentTable->insertValue(name, type, 0);
+        AbstractSymbolTableRecord *var = currentTable->insertVariable(name, type, 0);
         if(var == NULL) {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
@@ -960,7 +961,7 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
     }
 }
 
-AbstractASTNode *numericAssign(SymbolsTableRecord *var, AbstractValueASTNode *value)
+AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value)
 {
 
     if (var == NULL) {
@@ -973,19 +974,19 @@ AbstractASTNode *numericAssign(SymbolsTableRecord *var, AbstractValueASTNode *va
         {
             parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
                         .arg(typeName.at(value->getType()))
-                        .arg(typeName.at(var->valueType)));
+                        .arg(typeName.at(var->getType())));
             return NULL;
         }
         else {
-            if (value->getType() != var->valueType) {
-                value = convert(value, var->valueType);
+            if (value->getType() != var->getType()) {
+                value = convert(value, var->getValueType());
             }
 
             return new AssignmentNode(var, value);
         }
     }
     else {
-            return new AssignmentNode(var, new ValueNode(var->valueType, 0));
+            return new AssignmentNode(var, new ValueNode(var->getValueType(), 0));
     }
 }
 

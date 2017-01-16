@@ -19,28 +19,36 @@ SymbolsTable::~SymbolsTable()
     childs.clear();
 }
 
-SymbolsTableRecord * SymbolsTable::insertValue(QString name,
+VariableTableRecord *SymbolsTable::insertVariable(QString name,
                                                ValueTypeEnum type,
-                                               QVariant value,
-                                               SymbolsTable *params)
+                                               QVariant value)
 {
-    SymbolsTableRecord *record;
+    VariableTableRecord *record;
     try {
-        record = new SymbolsTableRecord;
+        record = new VariableTableRecord(name, type, value, this);
     }
     catch (std::bad_alloc& ba) {
         return NULL;
     }
 
-    record->valueType = type;
-    record->value = value;
-    record->name = name;
-    record->table = this;
-    record->params = params;
-
     this->insert(name, record);
 
     return record;
+}
+
+FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum type, QVariant value, SymbolsTable *params)
+{
+    FunctionTableRecord *function;
+    try {
+        function = new FunctionTableRecord(name, type, value, this, params);
+    }
+    catch (std::bad_alloc& ba) {
+        return NULL;
+    }
+
+    this->insert(name, function);
+
+    return function;
 }
 
 void SymbolsTable::setParent(SymbolsTable *p)
@@ -86,16 +94,16 @@ SymbolsTable *SymbolsTable::appendChildTable()
     return newTable;
 }
 
-SymbolsTableRecord *SymbolsTable::getVariable(QString name)
+AbstractSymbolTableRecord *SymbolsTable::getVariable(QString name)
 {
     SymbolsTable::iterator i = find(name);
     if(i != end())
-        return (SymbolsTableRecord *) i.value();
+        return (AbstractSymbolTableRecord *) i.value();
     else
         return NULL;
 }
 
-SymbolsTableRecord *SymbolsTable::getVariableGlobal(QString name)
+AbstractSymbolTableRecord *SymbolsTable::getVariableGlobal(QString name)
 {
     SymbolsTable *ptr = this;
     while(ptr != NULL && !ptr->contains(name))
@@ -119,7 +127,4 @@ bool SymbolsTable::containsGlobal(QString name)
         return true;
     return false;
 }
-
-
-
 
