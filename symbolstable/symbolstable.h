@@ -81,7 +81,6 @@ public:
 
     FunctionTableRecord *insertFunction(QString name,
                                         ValueTypeEnum type,
-                                        QVariant value,
                                         SymbolsTable *params);
 
     /**

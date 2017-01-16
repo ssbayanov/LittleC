@@ -1,7 +1,6 @@
 #ifndef ABSTRACTSYMBOLTABLERECORD_H
 #define ABSTRACTSYMBOLTABLERECORD_H
 #include "subexpression.h"
-//#include "symbolstable.h"
 #include <QString>
 #include <QVariant>
 
@@ -15,18 +14,17 @@ typedef enum {
 class AbstractSymbolTableRecord
 {
 public:
-    AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, QVariant value, SymbolsTable *table);
+    AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, SymbolsTable *table);
     ~AbstractSymbolTableRecord();
 
     ValueTypeEnum getValueType();
     QString getName();
-    SymbolsTable *getTable();
 
+    SymbolsTable *getTable();
     SymbolsTableRecordType getType();
 
 private:
     ValueTypeEnum _valueType; /* Type of a variable or expression */
-    QVariant _value;   /* Currently not used, reserved to the future */
     QString _name;
     SymbolsTable *_table;
 

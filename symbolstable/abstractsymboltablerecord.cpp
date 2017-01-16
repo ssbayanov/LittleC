@@ -1,11 +1,10 @@
 #include "abstractsymboltablerecord.h"
 
-AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, QVariant value, SymbolsTable *table)
+AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, SymbolsTable *table)
 {
     _type = type;
     _name = name;
     _valueType = valueType;
-    _value = value;
     _table = table;
 }
 

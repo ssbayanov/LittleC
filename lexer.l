@@ -30,7 +30,6 @@
 #include <string.h>
 
 #include "parser_yacc.h"
-//#include "myast.h"
 
 
 bool multilineComment();

@@ -36,11 +36,11 @@ VariableTableRecord *SymbolsTable::insertVariable(QString name,
     return record;
 }
 
-FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum type, QVariant value, SymbolsTable *params)
+FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum type, SymbolsTable *params)
 {
     FunctionTableRecord *function;
     try {
-        function = new FunctionTableRecord(name, type, value, this, params);
+        function = new FunctionTableRecord(name, type, this, params);
     }
     catch (std::bad_alloc& ba) {
         return NULL;

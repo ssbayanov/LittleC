@@ -3,7 +3,6 @@
 
 #include "subexpression.h"
 #include "symbolstable/abstractsymboltablerecord.h"
-//#include "symbolstable/symbolstable.h"
 
 #include <QString>
 #include <QVariant>
@@ -15,6 +14,11 @@ class VariableTableRecord : public AbstractSymbolTableRecord
 public:
     VariableTableRecord(QString name, ValueTypeEnum valueType, QVariant value, SymbolsTable *table);
     ~VariableTableRecord();
+
+    QVariant getValue();
+
+private:
+    QVariant _value;   /* Currently not used, reserved to the future */
 };
 
 #endif // VARIABLETABLERECORD_H

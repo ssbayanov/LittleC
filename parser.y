@@ -9,7 +9,7 @@
 #include <QStringList>
 
 #include "symbolstable/symbolstable.h"
-#include "astnode.h"
+#include "abstracttree/ast.h"
 #include <QDebug>
 }
 
@@ -396,7 +396,7 @@ function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
         currentTable->setHidden();
         SymbolsTable *paramsTable = currentTable;
         currentTable = currentTable->getParent();
-        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, 0, paramsTable);
+        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, paramsTable);
 
         $$ = new FunctionDeclareNode(function, $params, $body);
 };
@@ -429,6 +429,8 @@ function_call : IDENTIFIER[id] OPENPAREN exp_list[explist] CLOSEPAREN
 function_return_statement : RETURN exp SEMICOLON {
     $$ = new FunctionReturnNode($exp);
 }
+// Arrays -------------------------------------------------------------------------
+
 // Numeric declaration ------------------------------------------------------------
 
 
@@ -1057,153 +1059,3 @@ int getSizeType(ValueTypeEnum type)
         return 0;
     }
 }
-/*
-int codegenBinary(FILE* outputFile, int operatorCode,
-                  NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result)
-{
-    fprintf(outputFile, "\t$t%u\t:=\t", result->opValue);
-    switch (leftOperand->nodetype)
-    {
-    case typeIdentifier:
-        fprintf(outputFile, "%c", leftOperand->opValue);
-        break;
-    case typeList:
-        fprintf(outputFile, "$t%d", leftOperand->opValue);
-        break;
-    case typeConst:
-        fprintf(outputFile, "%g", leftOperand->opValue);
-        break;
-    }
-    switch (operatorCode)
-    {
-    case ADDITION_OPERATOR:
-        fprintf(outputFile, "+");
-        break;
-    case SUBTRACTION_OPERATOR:
-        fprintf(outputFile, "-");
-        break;
-    case MULTIPLICATION_OPERATOR:
-        fprintf(outputFile, "*");
-        break;
-    case DIVISION_OPERATOR:
-        fprintf(outputFile, "/");
-        break;
-    }
-    switch (rightOperand->nodetype)
-    {
-    case typeIdentifier:
-        fprintf(outputFile, "%c", rightOperand->opValue);
-        break;
-    case typeList:
-        fprintf(outputFile, "$t%d", rightOperand->opValue);
-        break;
-    case typeConst:
-        fprintf(outputFile, "%g", rightOperand->opValue);
-        break;
-    }
-    fprintf(outputFile, "\n");
-
-    return 0;
-}
-int codegenUnary(FILE* outputFile, int operatorCode,
-                 NodeAST* operand, NodeAST* result)
-{
-    if (operatorCode == OUTPUT_OPERATOR)
-    {
-        fprintf (outputFile, "\toutput\t");
-    }
-    else if (operatorCode == ASSIGN_OPERATOR)
-    {
-        fprintf(outputFile, "\t%c\t:=\t", result->opValue);
-    }
-    else
-    {
-        fprintf(outputFile, "\t$t%u\t:=\t", result->opValue);
-        switch (operatorCode)
-        {
-        case UNPLUS_OPERATOR:
-            fprintf(outputFile, "+");
-            break;
-        case NEGATION_OPERATOR:
-            fprintf(outputFile, "-");
-        }
-    }
-    switch (operand->nodetype)
-    {
-    case typeIdentifier:
-        fprintf(outputFile, "%c", operand->opValue);
-        break;
-    case typeList:
-        fprintf(outputFile, "$t%d", operand->opValue);
-        break;
-    case typeConst:
-        fprintf(outputFile, "%g", operand->opValue);
-        break;
-    }
-    fprintf(outputFile, "\n");
-
-    return 0;
-}
-int codegenGoto(FILE* outputFile, int operatorCode,
-                int labelREALCONST, NodeAST* optionalExpression)
-{
-    if (operatorCode != GOTO_OPERATOR)
-    {
-        if (operatorCode == IF_FALSE_GOTO_OPERATOR)
-            fprintf(outputFile, "\tiffalse\t");
-        else if (operatorCode == IF_TRUE_GOTO_OPERATOR)
-            fprintf(outputFile, "\tiftrue\t");
-        switch (optionalExpression->nodetype)
-        {
-        case typeIdentifier:
-            fprintf(outputFile, "%c", optionalExpression->opValue);
-            break;
-        case typeList:
-            fprintf(outputFile, "$t%d", optionalExpression->opValue);
-            break;
-        case typeConst:
-            fprintf(outputFile, "%g", optionalExpression->opValue);
-            break;
-        default: break;
-        }
-    }
-    fprintf(outputFile, "\tgoto\t$L%d", labelREALCONST);
-    fprintf(outputFile, "\n");
-
-    return 0;
-}
-int codegenLabel(FILE* outputFile, int labelREALCONST)
-{
-    fprintf (outputFile, "$L%d:", labelREALCONST);
-    return 0;
-}
-static void PushLabelREALCONST(int labelREALCONST)
-{
-    Labels[g_LabelStackPointer] = labelREALCONST;
-    ++g_LabelStackPointer;
-}
-static int PopLabelREALCONST(void)
-{
-    if (g_LabelStackPointer > 0)
-    {
-        --g_LabelStackPointer;
-        return Labels[g_LabelStackPointer];
-    }
-    g_LabelStackPointer = 0;
-    return -1;
-}
-static void EmptyLabels(void)
-{
-    g_LabelStackPointer = 0;
-}
-
-*/
-
-/*int yyerror (std::string s) {
-    printf ("Line %d: %s.\n", lno, s.c_str());
-    //fprintf(stderr, "Line %d: %s.\n", lno, s);
-    //g_ErrorStatus = !0;
-    return !0;
-}*/
-
-
