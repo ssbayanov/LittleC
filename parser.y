@@ -33,7 +33,9 @@
             ERROR_DECLARATED_FUNCTION_NOT_GLOBAL,
             ERROR_CALL_UNDEFINED_FUNCTION,
             ERROR_UNKNOWN_TYPE,
-            WARNING_CONVERTING_TYPES};
+            WARNING_CONVERTING_TYPES,
+            ERROR_CANNOT_USE_AS_INDEX,
+            ERROR_VARIABLE_IS_NOT_ARRAY};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -51,7 +53,9 @@
                                                  << "error: function declarated is not in the global scope"
                                                  << "error: call of undefined function %1"
                                                  << "error: unknown type %1"
-                                                 << "warning: during conversion %1 to %2 can be errors";
+                                                 << "warning: during conversion %1 to %2 can be errors"
+                                                 << "error: can't use %1 type as index of array"
+                                                 << "error: variable %1 is not a array";
 
 }
 
@@ -245,6 +249,7 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 %type <astNode>  program statement utterance statement_list statement_tail
 declaration_statement declaration declaration_list_element declaration_list
 assignment assignment_statement compound_statement exp exp_list exp_list_element
+array_declaration array_declaration_statement
 condition_statement
 switch_statement case_statement case_list case_tail
 loop_statement while_head break_statement for_head
@@ -335,6 +340,7 @@ statement : assignment_statement
 | switch_statement
 | goto_statement
 | label_statement
+| array_declaration_statement
 | function_call_statement
 | function_description_statement
 | function_return_statement
@@ -430,7 +436,36 @@ function_return_statement : RETURN exp SEMICOLON {
     $$ = new FunctionReturnNode($exp);
 }
 // Arrays -------------------------------------------------------------------------
+array_declaration_statement : array_declaration SEMICOLON
+{
+    $$ = $1;
+};
 
+array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CLOSEBRACKET
+{
+    AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+    if(array != NULL) {
+        $$ = new ArrayDeclareNode(array, $values);
+    }
+    else {
+        parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+        $$ = NULL;
+        YYERROR;
+    }
+
+}
+| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN OPENBRACE exp_list[values] CLOSEBRACE
+{
+    AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+    if(array != NULL) {
+        $$ = new ArrayDeclareNode(array, $values);
+    }
+    else {
+        parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+        $$ = NULL;
+        YYERROR;
+    }
+};
 // Numeric declaration ------------------------------------------------------------
 
 
@@ -836,11 +871,45 @@ exp : exp[left] RELOP exp[right]
 | IDENTIFIER
 {
     AbstractSymbolTableRecord *var = getVariableByName(*$1);
-    $$ = new ReferenceNode(var);
+    if (var != NULL) {
+        $$ = new ReferenceNode(var);
+    }
+    else {
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        $$ = NULL;
+        YYERROR;
+    }
+
 }
 | function_call
 {
     $$ = $1;
+}
+| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET
+{
+    AbstractSymbolTableRecord *var = getVariableByName(*$name);
+    if (var != NULL) {
+        if (var->isArray()) {
+            if (isNumericType((AbstractValueASTNode *)($index))) {
+                $$ = new ArrayReferenceNode(var, ((AbstractValueASTNode *)$index));
+            }
+            else {
+                parsererror(errorList.at(ERROR_CANNOT_USE_AS_INDEX).arg((typeName.at(((AbstractValueASTNode *)$index)->getType()))));
+                $$ = NULL;
+                YYERROR;
+            }
+        }
+        else {
+            parsererror(errorList.at(ERROR_VARIABLE_IS_NOT_ARRAY).arg((typeName.at(((AbstractValueASTNode *)$index)->getType()))));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        $$ = NULL;
+        YYERROR;
+    }
 }
 
 /*
@@ -980,7 +1049,7 @@ AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTN
             return NULL;
         }
         else {
-            if (value->getType() != var->getType()) {
+            if (value->getType() != var->getValueType()) {
                 value = convert(value, var->getValueType());
             }
 

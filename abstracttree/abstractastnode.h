@@ -25,7 +25,9 @@ typedef enum
     NT_List,               // Expression or statement list.
     NT_FunctionDeclare,             // Declaration function.
     NT_FunctionCall,
-    NT_FunctionReturn
+    NT_FunctionReturn,
+    NT_ArrayReference,
+    NT_ArrayDeclare
 } ASTNodeTypeEnum;
 
 class AbstractASTNode

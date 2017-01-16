@@ -1,10 +1,8 @@
 #ifndef FUNCTIONTABLERECORD_H
 #define FUNCTIONTABLERECORD_H
 
-#include "subexpression.h"
 #include "symbolstable/abstractsymboltablerecord.h"
-#include <QString>
-#include <QVariant>
+
 
 class SymbolsTable;
 

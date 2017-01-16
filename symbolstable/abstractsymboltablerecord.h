@@ -8,7 +8,8 @@ class SymbolsTable;
 
 typedef enum {
     SymbolTableRecord_Function,
-    SymbolTableRecord_Variable
+    SymbolTableRecord_Variable,
+    SymbolTableRecord_Array
 } SymbolsTableRecordType;
 
 class AbstractSymbolTableRecord
@@ -22,6 +23,10 @@ public:
 
     SymbolsTable *getTable();
     SymbolsTableRecordType getType();
+
+    bool isFunction();
+    bool isArray();
+    bool isVariable();
 
 private:
     ValueTypeEnum _valueType; /* Type of a variable or expression */

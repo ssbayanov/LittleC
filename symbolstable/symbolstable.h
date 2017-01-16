@@ -76,12 +76,17 @@ public:
      * @return pointer to struct of this variable
      */
     VariableTableRecord *insertVariable(QString name,
-                                    ValueTypeEnum type,
-                                    QVariant value);
+                                        ValueTypeEnum type,
+                                        QVariant value,
+                                        SymbolsTableRecordType typeRecord = SymbolTableRecord_Variable);
+
+    VariableTableRecord *insertArray(QString name,
+                                     ValueTypeEnum type);
 
     FunctionTableRecord *insertFunction(QString name,
                                         ValueTypeEnum type,
                                         SymbolsTable *params);
+
 
     /**
      * @brief getVariable find variable into values list by name in current table

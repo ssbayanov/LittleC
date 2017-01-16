@@ -32,3 +32,18 @@ SymbolsTableRecordType AbstractSymbolTableRecord::getType()
 {
     return _type;
 }
+
+bool AbstractSymbolTableRecord::isFunction()
+{
+    return (_type == SymbolTableRecord_Function);
+}
+
+bool AbstractSymbolTableRecord::isArray()
+{
+    return (_type == SymbolTableRecord_Array);
+}
+
+bool AbstractSymbolTableRecord::isVariable()
+{
+    return (_type == SymbolTableRecord_Variable);
+}

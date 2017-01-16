@@ -16,6 +16,8 @@
 #include "abstracttree/listnode.h"
 #include "abstracttree/printnode.h"
 #include "abstracttree/referencenode.h"
+#include "abstracttree/arraydeclarenode.h"
+#include "abstracttree/arrayreferencenode.h"
 #include "abstracttree/switchnode.h"
 #include "abstracttree/unarynode.h"
 #include "abstracttree/valuenode.h"

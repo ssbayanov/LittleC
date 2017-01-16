@@ -20,12 +20,13 @@ SymbolsTable::~SymbolsTable()
 }
 
 VariableTableRecord *SymbolsTable::insertVariable(QString name,
-                                               ValueTypeEnum type,
-                                               QVariant value)
+                                                  ValueTypeEnum type,
+                                                  QVariant value,
+                                                  SymbolsTableRecordType typeRecord)
 {
     VariableTableRecord *record;
     try {
-        record = new VariableTableRecord(name, type, value, this);
+        record = new VariableTableRecord(name, type, value, this, typeRecord);
     }
     catch (std::bad_alloc& ba) {
         return NULL;
@@ -34,6 +35,11 @@ VariableTableRecord *SymbolsTable::insertVariable(QString name,
     this->insert(name, record);
 
     return record;
+}
+
+VariableTableRecord *SymbolsTable::insertArray(QString name, ValueTypeEnum type)
+{
+    return insertVariable(name, type, 0, SymbolTableRecord_Array);
 }
 
 FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum type, SymbolsTable *params)
