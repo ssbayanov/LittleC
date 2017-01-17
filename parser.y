@@ -247,15 +247,15 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 /*%token IFX */
 
 %type <astNode>  program statement utterance statement_list statement_tail
-declaration_statement declaration declaration_list_element declaration_list
-assignment assignment_statement compound_statement exp exp_list exp_list_element
+declaration declaration_list_element declaration_list
+assignment compound_statement exp exp_list
 array_declaration array_declaration_statement
 condition_statement
 switch_statement case_statement case_list case_tail
 loop_statement while_head break_statement for_head
 goto_statement label_statement
-function_call function_call_statement function_description_statement function_return_statement
-print print_statement
+function_call function_description_statement function_return_statement
+print
 
 %type <type> data_types
 
@@ -311,29 +311,11 @@ statement_tail : %empty   {
 };
 
 utterance : print
-{
-    $$ = $1;
-}
-| exp
-{
-    $$ = $1;
-}
 | assignment
-{
-    $$ = $1;
-}
 | declaration
-{
-    $$ = $1;
-}
-| function_call
-{
-    $$ = $1;
-};
+| function_call;
 
-statement : assignment_statement
-| condition_statement
-| declaration_statement
+statement : condition_statement
 | compound_statement
 | break_statement
 | loop_statement
@@ -341,10 +323,11 @@ statement : assignment_statement
 | goto_statement
 | label_statement
 | array_declaration_statement
-| function_call_statement
 | function_description_statement
 | function_return_statement
-| print_statement
+| utterance SEMICOLON {
+    $$ = $1;
+}
 /*| exp SEMICOLON
 {
     //if ($1->getType() == NT_UnaryOperation)
@@ -390,7 +373,7 @@ data_types : INT {
 
 //Function --------------------------------------------------------------------------------
 function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
-    if(currentTable->getParent() != NULL) {
+    if (currentTable->getParent() != NULL) {
         parsererror(errorList.at(ERROR_DECLARATED_FUNCTION_NOT_GLOBAL));
         YYERROR;
     }
@@ -407,16 +390,12 @@ function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
         $$ = new FunctionDeclareNode(function, $params, $body);
 };
 
-function_call_statement : function_call SEMICOLON
-{
-    $$ = $1;
-};
 function_call : IDENTIFIER[id] OPENPAREN exp_list[explist] CLOSEPAREN
 {
     AbstractSymbolTableRecord *function = getVariableByName(*$id);
     if (function != NULL) {
         if (((FunctionTableRecord *)function)->getParams() != NULL) {
-            //if()
+            //if ()
             $$ = new FunctionCallNode(function, $explist);
         }
         else {
@@ -436,15 +415,13 @@ function_return_statement : RETURN exp SEMICOLON {
     $$ = new FunctionReturnNode($exp);
 }
 // Arrays -------------------------------------------------------------------------
-array_declaration_statement : array_declaration SEMICOLON
-{
+array_declaration_statement : array_declaration SEMICOLON {
     $$ = $1;
 };
 
-array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CLOSEBRACKET
-{
+array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CLOSEBRACKET {
     AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
-    if(array != NULL) {
+    if (array != NULL) {
         $$ = new ArrayDeclareNode(array, $values);
     }
     else {
@@ -454,10 +431,9 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
     }
 
 }
-| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN OPENBRACE exp_list[values] CLOSEBRACE
-{
+| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN OPENBRACE exp_list[values] CLOSEBRACE {
     AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
-    if(array != NULL) {
+    if (array != NULL) {
         $$ = new ArrayDeclareNode(array, $values);
     }
     else {
@@ -465,17 +441,28 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
         $$ = NULL;
         YYERROR;
     }
+}
+| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN STRING[value] {
+    if ($type == typeChar) {
+        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+        if (array != NULL) {
+            $$ = new ArrayDeclareNode(array, new ValueNode(typeString, *$value));
+        }
+        else {
+            parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        parsererror(errorList.at(ERROR_CANNOT_CONVERT).arg(typeName.at(typeChar)).arg(typeName.at($type)));
+        $$ = NULL;
+        YYERROR;
+    }
 };
 // Numeric declaration ------------------------------------------------------------
 
-
-declaration_statement : declaration SEMICOLON
-{
-    $$ = $1;
-};
-
-declaration_list : declaration_list_element declaration_list_element[tail]
-{
+declaration_list : declaration_list_element declaration_list_element[tail] {
     if ($tail == NULL) {
         $$ = $1;
     }
@@ -498,7 +485,7 @@ declaration : data_types[type] IDENTIFIER
 {
     if (isNumericType( $type )) {
         AbstractASTNode *var = numericDeclaration($1, *$2);
-        if(var == NULL)
+        if (var == NULL)
             YYERROR;
         $$ = var; }
     else {
@@ -508,7 +495,7 @@ declaration : data_types[type] IDENTIFIER
 | data_types IDENTIFIER ASSIGN exp
 {
     AbstractASTNode *var = numericDeclaration($1, *$2, (AbstractValueASTNode *)$4);
-    if(var == NULL)
+    if (var == NULL)
         YYERROR;
     $$ = var;
 };
@@ -591,11 +578,6 @@ switch_statement : SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRAC
 };
 
 //Print and scan-------------------------------------------------------------------
-print_statement : print SEMICOLON
-{
-    $$ = $1;
-};
-
 print : PRINT OPENPAREN exp CLOSEPAREN
 {
     $$ = new PrintNode($3);
@@ -674,17 +656,13 @@ do_head : DO
 }
 
 // Assigments ---------------------------------------------------------------
-assignment_statement : assignment SEMICOLON
-{
-    $$ = $1;
-};
 
 assignment : IDENTIFIER[name] ASSIGN exp[value]
 {
     AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
-    if(var != NULL) {
+    if (var != NULL) {
         AbstractASTNode *node = numericAssign(var, (AbstractValueASTNode *)$value);
-        if(node == NULL)
+        if (node == NULL)
             YYERROR;
         $$ = node; }
     else {
@@ -695,28 +673,14 @@ assignment : IDENTIFIER[name] ASSIGN exp[value]
 };
 
 // Expressions --------------------------------------------------------------
-exp_list : exp_list_element exp_list_element[tail]
-{
-    if ($tail == NULL) {
-        $$ = $1;
-    }
-    else {
-        $$ = new ListNode($1, $tail);
-    }
-};
-
-exp_list_element : %empty {
-    $$ = NULL;
-}
-| exp COMA {
-    $$ = $1;
+exp_list : exp_list COMA exp {
+    $$ = new ListNode($3, $1);
 }
 | exp {
     $$ = $1;
-}
-| exp_list {
-    $$ = $1;
 };
+
+
 
 exp : exp[left] RELOP exp[right]
 {
@@ -989,7 +953,7 @@ AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, Ab
 
 AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
 {
-    if(isNumericType(left) && isNumericType(right)) {
+    if (isNumericType(left) && isNumericType(right)) {
         if (operation == "&&" || operation == "||") {
         if (left->getType() != typeBool)
             left = new UnaryNode(UnarToBool, left);
@@ -1000,11 +964,11 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
         return new BinarNode(left, right, operation, typeBool);
     }
     else {
-        if(!isNumericType(left))
+        if (!isNumericType(left))
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(left->getType()))
                         .arg(typeName.at(typeBool)));
-        if(!isNumericType(right))
+        if (!isNumericType(right))
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(right->getType()))
                         .arg(typeName.at(typeBool)));
@@ -1023,7 +987,7 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
 
 
         AbstractSymbolTableRecord *var = currentTable->insertVariable(name, type, 0);
-        if(var == NULL) {
+        if (var == NULL) {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
         }
@@ -1067,13 +1031,13 @@ AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTN
 AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
 {
     ValueTypeEnum whatType = what->getType();
-    if(isNumericType(whatType)) {
-        if(isNumericType(to)) {
+    if (isNumericType(whatType)) {
+        if (isNumericType(to)) {
             switch(to){
             case typeBool:
                 return new UnaryNode(UnarToBool, what);
             case typeChar:
-                if(getSizeType(whatType) > getSizeType(to))
+                if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
                                .arg(typeName.at(whatType))
                                .arg(typeName.at(to)));
@@ -1081,19 +1045,19 @@ AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
             case typeDouble:
                 return new UnaryNode(UnarToDouble, what);;
             case typeFloat:
-                if(getSizeType(whatType) > getSizeType(to))
+                if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
                                .arg(typeName.at(whatType))
                                .arg(typeName.at(to)));
                 return new UnaryNode(UnarToFloat, what);
             case typeInt:
-                if(getSizeType(whatType) > getSizeType(to))
+                if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
                                .arg(typeName.at(whatType))
                                .arg(typeName.at(to)));
                 return new UnaryNode(UnarToInt, what);
             case typeShort:
-                if(getSizeType(whatType) > getSizeType(to))
+                if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
                                .arg(typeName.at(whatType))
                                .arg(typeName.at(to)));

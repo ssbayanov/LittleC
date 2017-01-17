@@ -14,8 +14,8 @@ typedef enum
     typeChar,
     typeBool,
     typeStruct,
-    typeEnum,      /* Floating point number with double precision */
-    typeFunction
+    typeFunction,
+    typeString
 } ValueTypeEnum;
 
 static QStringList typeName = QStringList() << "int"
@@ -27,7 +27,7 @@ static QStringList typeName = QStringList() << "int"
                                             << "char"
                                             << "bool"
                                             << "struct"
-                                            << "enum"
-                                            << "function";
+                                            << "function"
+                                            << "string";
 #endif // SUBEXPRESSION_H
 
