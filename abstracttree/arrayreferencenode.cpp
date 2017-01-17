@@ -15,7 +15,9 @@ void ArrayReferenceNode::printNode(int level)
               << std::endl;
 
     if (_index != NULL) {
-        std::cout << "Index:";
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Index:"
+                  << std::endl;
         _index->printNode(level + 1);
     }
     else {

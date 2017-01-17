@@ -713,6 +713,9 @@ exp_list_element : %empty {
 }
 | exp {
     $$ = $1;
+}
+| exp_list {
+    $$ = $1;
 };
 
 exp : exp[left] RELOP exp[right]
