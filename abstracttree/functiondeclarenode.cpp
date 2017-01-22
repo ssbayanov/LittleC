@@ -23,17 +23,25 @@ void FunctionDeclareNode::printNode(int level)
         _paramList->printNode(level+1);
     }
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Body:"
-              << std::endl;
-    _body->printNode(level+1);
+    if (_body != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Body:"
+                  << std::endl;
+        _body->printNode(level+1);
+    }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD BODY NODE!!!"
+                  << std::endl;
+    }
 }
 
 FunctionDeclareNode::~FunctionDeclareNode()
 {
     if (_paramList != NULL)
         _paramList->~AbstractASTNode();
-    _body->~AbstractASTNode();
+    if (_body != NULL)
+        _body->~AbstractASTNode();
 }
 
 

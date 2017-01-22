@@ -244,7 +244,7 @@ return IDENTIFIER;}
 \"{stringch}*\" {
      TokenTable.push_back(TokenTableRow("STRING", yytext, lno));
      QString str = QString(yytext);
-     parserlval.value = new QVariant(str.mid(1,str.length() - 1));
+     parserlval.value = new QVariant(str.mid(1,str.length() - 2));
      return STRING;
      }
 

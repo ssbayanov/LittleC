@@ -33,11 +33,18 @@ void WhileNode::printNode(int level)
                   << std::endl;
         _body->printNode(level+1);
     }
+
     if(_isDoWhile && _condition != NULL) {
         std::cout << QString().fill(' ',level*2).toStdString()
                   << "Condition:"
                   << std::endl;
         _condition->printNode(level+1);
+    }
+
+    if (_condition == NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD CONDITION NODE!!!"
+                  << std::endl;
     }
 }
 
@@ -50,6 +57,7 @@ WhileNode::~WhileNode()
 {
     if(_condition != NULL)
         _condition->~AbstractASTNode();
-    _body->~AbstractASTNode();
+    if(_body != NULL)
+        _body->~AbstractASTNode();
 }
 

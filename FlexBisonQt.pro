@@ -46,7 +46,8 @@ SOURCES += main.cpp \
     abstracttree/switchnode.cpp \
     abstracttree/printnode.cpp \
     abstracttree/arrayreferencenode.cpp \
-    abstracttree/arraydeclarenode.cpp
+    abstracttree/arraydeclarenode.cpp \
+    abstracttree/arrayassignmentnode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -79,4 +80,5 @@ HEADERS += \
     abstracttree/printnode.h \
     abstracttree/ast.h \
     abstracttree/arrayreferencenode.h \
-    abstracttree/arraydeclarenode.h
+    abstracttree/arraydeclarenode.h \
+    abstracttree/arrayassignmentnode.h

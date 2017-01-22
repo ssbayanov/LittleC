@@ -14,7 +14,7 @@ void ReferenceNode::printNode(int level)
               << std::endl;
 }
 
-ValueTypeEnum ReferenceNode::getType()
+ValueTypeEnum ReferenceNode::getValueType()
 {
     return _typeValue;
 }

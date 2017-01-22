@@ -27,7 +27,8 @@ typedef enum
     NT_FunctionCall,
     NT_FunctionReturn,
     NT_ArrayReference,
-    NT_ArrayDeclare
+    NT_ArrayDeclare,
+    NT_ArrayAssignment
 } ASTNodeTypeEnum;
 
 class AbstractASTNode

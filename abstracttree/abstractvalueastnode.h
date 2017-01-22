@@ -9,7 +9,7 @@ class AbstractValueASTNode  : public AbstractASTNode
 public:
     AbstractValueASTNode(ASTNodeTypeEnum type);
 
-    virtual ValueTypeEnum getType();
+    virtual ValueTypeEnum getValueType();
 
     virtual ~AbstractValueASTNode();
 

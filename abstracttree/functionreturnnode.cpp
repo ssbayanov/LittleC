@@ -4,7 +4,7 @@ FunctionReturnNode::FunctionReturnNode(AbstractASTNode *expression)
     : AbstractValueASTNode(NT_FunctionReturn)
 {
     _expression = expression;
-    _typeValue = ((AbstractValueASTNode *)expression)->getType();
+    _typeValue = ((AbstractValueASTNode *)expression)->getValueType();
 }
 
 void FunctionReturnNode::printNode(int level)

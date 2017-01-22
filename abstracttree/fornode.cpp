@@ -46,6 +46,11 @@ void ForNode::printNode(int level)
                   << std::endl;
         _body->printNode(level+1);
     }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD BODY NODE!!!"
+                  << std::endl;
+    }
 }
 
 ForNode::~ForNode()
@@ -56,6 +61,7 @@ ForNode::~ForNode()
         _condition->~AbstractASTNode();
     if(_increment != NULL)
         _increment->~AbstractASTNode();
-    _body->~AbstractASTNode();
+    if(_body != NULL)
+        _body->~AbstractASTNode();
 }
 

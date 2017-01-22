@@ -13,15 +13,24 @@ void IfNode::printNode(int level)
     std::cout << QString().fill(' ',level*2).toStdString()
               << "If"
               << std::endl;
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Condition:"
-              << std::endl;
-    _condition->printNode(level+1);
+    if (_condition != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Condition:"
+                  << std::endl;
+        _condition->printNode(level+1);
+    }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD CONDITION NODE!!!"
+                  << std::endl;
+    }
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "True branch:"
-              << std::endl;
-    _trueBranch->printNode(level+1);
+    if (_trueBranch != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "True branch:"
+                  << std::endl;
+        _trueBranch->printNode(level+1);
+    }
     if (_falseBranch != NULL) {
         std::cout << QString().fill(' ',level*2).toStdString()
                   << "False branch:"

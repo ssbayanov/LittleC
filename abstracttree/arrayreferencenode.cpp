@@ -25,7 +25,7 @@ void ArrayReferenceNode::printNode(int level)
     }
 }
 
-ValueTypeEnum ArrayReferenceNode::getType()
+ValueTypeEnum ArrayReferenceNode::getValueType()
 {
     return _typeValue;
 }

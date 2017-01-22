@@ -1,10 +1,6 @@
 %code requires { //code insert in top parser_yacc.h
-#include <cstdio>
-#include <string>
+
 #include <iostream>
-#include <map>
-#include <tuple>
-#include <vector>
 #include <QString>
 #include <QStringList>
 
@@ -62,12 +58,6 @@
 %code requires
 {
 
-    //typedef std::tuple<std::string, std::string, int> TokenTableRow;
-
-    //extern std::vector <TokenTableRow> TokenTable;
-
-    //void dumpTokenTable(std::string firstColName, std::string secondColName, std::string thirdColName);
-
     bool isNumericType(ValueTypeEnum type);
     bool isNumericType(AbstractValueASTNode *node);
 
@@ -77,10 +67,8 @@
     AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value = NULL);
     AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
     int getSizeType(ValueTypeEnum type);
-    //SymbolsTable* currentSwitch = NULL;
 
     AbstractSymbolTableRecord *getVariableByName(QString name);
-
 }
 
 %{
@@ -122,60 +110,15 @@
 
 #define YYERROR_VERBOSE         1
 
-
-/* описание структуры синтаксического дерева */
-
-
-/*
-int g_tmpvar_upper_index = 0;
-NodeAST* constants(double value);
-NodeAST* idents (int index);
-NodeAST* tmpvars (int tmp_index);*/
-/* Генерация трехадресного кода */
-/*int codegenBinary(FILE* outputFile, int operatorCode, NodeAST* leftOperand, NodeAST* rightOperand, NodeAST* result);
-int codegenUnary(FILE* outputFile, int operatorCode, NodeAST* operand, NodeAST* result);
-int codegenGoto(FILE* outputFile, int operatorCode,int labelREALCONST, NodeAST* optionalExpression);
-int codegenLabel(FILE* outputFile, int labelREALCONST);*/
-
-/* Обработка таблицы меток. Используется стековая организация */
-/*
-static int g_LastLabelREALCONST = 0;
-static int g_LabelStackPointer = 0;
-static int Labels[256];
-static void PushLabelREALCONST(int);
-static int PopLabelREALCONST(void);
-static void EmptyLabels(void);
-*/
-
 extern int lno;
 extern int parserlex();
-//extern char g_outFileName[256]; /* Имя выходного файла */
-
-//#undef yyerror
-//#define yyerror driver.error
 
 int g_LoopNestingCounter = 0;
+int enumCounter = 0;
 
 static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
 static SymbolsTable* currentTable = topLevelVariableTable;
-
-
 %}
-
-
-
-/* The parsing context */
-//%param { Simpl_driver& driver }
-
-/*%locations
-%initial-action
-{
-  // Initialize the initial location.
-  @$.begin.filename = @$.end.filename = &driver.filename;
-};
-*/
-
-//%define parse.trace
 
 %union
 {
@@ -247,8 +190,8 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 /*%token IFX */
 
 %type <astNode>  program statement utterance statement_list statement_tail
-declaration declaration_list_element declaration_list
-assignment compound_statement exp exp_list
+declaration declaration_list_element declaration_list enum_decloration_statement
+assignment compound_statement exp exp_list identifier_list
 array_declaration array_declaration_statement
 condition_statement
 switch_statement case_statement case_list case_tail
@@ -274,10 +217,6 @@ print
 %left OPENPAREN CLOSEPAREN OPENBRACKET CLOSEBRACKET
 
 %start program
-
-/*%printer {
-    yyoutput << $$;
-} <*>*/
 
 %destructor {
     delete $$;
@@ -325,6 +264,7 @@ statement : condition_statement
 | array_declaration_statement
 | function_description_statement
 | function_return_statement
+| enum_decloration_statement
 | utterance SEMICOLON {
     $$ = $1;
 }
@@ -460,7 +400,12 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
         YYERROR;
     }
 };
+
 // Numeric declaration ------------------------------------------------------------
+enum_decloration_statement : ENUM { enumCounter = 0; } OPENBRACE identifier_list[values] CLOSEBRACE {
+   $$ = $values;
+}
+
 
 declaration_list : declaration_list_element declaration_list_element[tail] {
     if ($tail == NULL) {
@@ -522,21 +467,19 @@ goto_statement : GOTO IDENTIFIER SEMICOLON {
     }
 };
 
-break_statement : BREAK SEMICOLON
-{
+break_statement : BREAK SEMICOLON {
     if (g_LoopNestingCounter <= 0) {
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("EndOfLoop");//NULL;//createControlFlowNode(NT_JumpStatement, NULL, NULL, NULL);
+        $$ = new GoToNode("EndOfLoop");
     }
 }
 
 
 //Switch - case -------------------------------------------------------------------
-case_list : case_statement case_tail
-{
+case_list : case_statement case_tail {
     if ($2 == NULL) {
         $$ = $1;
     }
@@ -570,40 +513,32 @@ case_statement : CASE IDENTIFIER COLON statement_list {
     $$ = new CaseNode(NULL, $3);
 };
 
-switch_statement : SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {}
-{
-
+switch_statement : SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
     $$ = new SwitchNode($3, $6);
-
 };
 
 //Print and scan-------------------------------------------------------------------
-print : PRINT OPENPAREN exp CLOSEPAREN
-{
+print : PRINT OPENPAREN exp CLOSEPAREN {
     $$ = new PrintNode($3);
 };
 
 /*scan_stmt: SCAN OPENPAREN exp CLOSEPAREN
 {};*/
 
-condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF
-{
+condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF {
     $$ = new IfNode($3, $5, NULL);
 }
-| IF OPENPAREN exp CLOSEPAREN statement ELSE statement
-{
+| IF OPENPAREN exp CLOSEPAREN statement ELSE statement {
     $$ = new IfNode($3, $5, $7);
 };
 
 //Loops -------------------------------------------------------------------
-loop_statement : while_head statement
-{
+loop_statement : while_head statement {
     ((WhileNode *)$1)->setBody($2);
     $$ = $1;
     --g_LoopNestingCounter;
 }
-| for_head statement
-{
+| for_head statement {
     ((ForNode *)$1)->setBody($2);
     $$ = $1;
     --g_LoopNestingCounter;
@@ -611,8 +546,7 @@ loop_statement : while_head statement
     currentTable->setHidden();
     currentTable = currentTable->getParent();
 }
-| do_head statement while_head
-{
+| do_head statement while_head {
     ((WhileNode *)$while_head)->setBody($2);
     ((WhileNode *)$while_head)->setIsDoWhile(true);
     $$ = $3;
@@ -620,12 +554,11 @@ loop_statement : while_head statement
 }
 ;
 
-while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
-{
+while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
     AbstractValueASTNode *cond = NULL;
     if ($condition != NULL) {
         cond = (AbstractValueASTNode *)$condition;
-        if (cond->getType() != typeBool)
+        if (cond->getValueType() != typeBool)
             cond = new UnaryNode(UnarToBool, cond);
     }
 
@@ -633,32 +566,28 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN
     ++g_LoopNestingCounter;
 };
 
-for_head : FOR
-{
+for_head : FOR {
     currentTable = currentTable->appendChildTable();
 }
-    OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN
-{
-    AbstractValueASTNode *cond = NULL;
-    if ($condition != NULL) {
-        cond = (AbstractValueASTNode *)$condition;
-        if (cond->getType() != typeBool)
-            cond = new UnaryNode(UnarToBool, cond);
-    }
+    OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN {
+        AbstractValueASTNode *cond = NULL;
+        if ($condition != NULL) {
+            cond = (AbstractValueASTNode *)$condition;
+            if (cond->getValueType() != typeBool)
+                cond = new UnaryNode(UnarToBool, cond);
+        }
 
-    $$ = new ForNode($init, cond, $increment);
-    ++g_LoopNestingCounter;
-};
+        $$ = new ForNode($init, cond, $increment);
+        ++g_LoopNestingCounter;
+    };
 
-do_head : DO
-{
+do_head : DO {
     ++g_LoopNestingCounter;
 }
 
-// Assigments ---------------------------------------------------------------
+// Assignments ---------------------------------------------------------------
 
-assignment : IDENTIFIER[name] ASSIGN exp[value]
-{
+assignment : IDENTIFIER[name] ASSIGN exp[value] {
     AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
     if (var != NULL) {
         AbstractASTNode *node = numericAssign(var, (AbstractValueASTNode *)$value);
@@ -670,29 +599,82 @@ assignment : IDENTIFIER[name] ASSIGN exp[value]
         $$ = NULL;
         YYERROR;
     }
-};
+}
+| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
+        AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
+        if (var != NULL) {
+            AbstractASTNode *node = numericAssign(var, (AbstractValueASTNode *)$value);
+            if (node == NULL)
+                YYERROR;
+            $$ = node; }
+        else {
+            parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$name));
+            $$ = NULL;
+            YYERROR;
+        }
+    };
 
 // Expressions --------------------------------------------------------------
-exp_list : exp_list COMA exp {
-    $$ = new ListNode($3, $1);
+
+identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
+    if($list != NULL) {
+        if(!currentTable->containsGlobal(*$id)) {
+            AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
+            if(var != NULL) {
+                $$ = new ListNode(new AssignmentNode(var, new ValueNode(typeInt, enumCounter++)), $list);
+            }
+            else {
+                $$ = NULL;
+                YYERROR;
+            }
+        }
+        else {
+            parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$id));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+}
+| IDENTIFIER[id] {
+    if(!currentTable->containsGlobal(*$id)) {
+        AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
+        if(var != NULL) {
+            $$ = new AssignmentNode(var, new ValueNode(typeInt, enumCounter++));
+        }
+        else {
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$id));
+        $$ = NULL;
+        YYERROR;
+    }
+};
+
+
+exp_list : exp COMA exp_list {
+    $$ = new ListNode($1, $3);
 }
 | exp {
     $$ = $1;
 };
 
-
-
-exp : exp[left] RELOP exp[right]
-{
+exp : exp[left] RELOP exp[right] {
     // Relation exp
 
     AbstractValueASTNode *left = ((AbstractValueASTNode *)$left);
     AbstractValueASTNode *right = ((AbstractValueASTNode *)$right);
 
     if (isNumericType(left) && isNumericType(right)) { // Type of variables is number.
-        if (left->getType() != right->getType()) {// If exp have diffrence type.
-            if (left->getType() == typeDouble || right->getType() == typeDouble) { // If left or right expression have type Double add to double
-                if (left->getType() == typeDouble) {
+        if (left->getValueType() != right->getValueType()) {// If exp have diffrence type.
+            if (left->getValueType() == typeDouble || right->getValueType() == typeDouble) { // If left or right expression have type Double add to double
+                if (left->getValueType() == typeDouble) {
                     $$ = new BinarNode($left, new UnaryNode(UnarToDouble, $right), $2, typeBool);
                 }
                 else {
@@ -700,9 +682,9 @@ exp : exp[left] RELOP exp[right]
                 }
             }
             else { // if left or right expression have diffrent type of int converting to int
-                if (left->getType() != typeInt)
+                if (left->getValueType() != typeInt)
                     left = new UnaryNode(UnarToInt, $left);
-                if (right->getType() != typeInt)
+                if (right->getValueType() != typeInt)
                     right = new UnaryNode(UnarToInt, $right);
 
                 $$ = new BinarNode($left, $right, $2, typeBool);
@@ -712,62 +694,56 @@ exp : exp[left] RELOP exp[right]
             $$ = new BinarNode($left, $right, $2, typeBool);
     }
     else {
-        if (left->getType() == right->getType()) {
+        if (left->getValueType() == right->getValueType()) {
             if (QString("==").contains(*$2))
                 $$ = new BinarNode($left, $right, $2, typeBool);
             else {
                 $$ = NULL;
-                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(left->getType()));
+                parsererror(errorList.at(ERROR_COMPARSION_NOT_APPLICABLE).arg($2).arg(left->getValueType()));
                 YYERROR;
             }
         }
         else {
             $$ = NULL;
-            parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(left->getType()).arg(right->getType()));
+            parsererror(errorList.at(ERROR_COMPARSION_ON_DIFFERENCE_TYPES).arg($2).arg(left->getValueType()).arg(right->getValueType()));
             YYERROR;
         }
     }
 }
-| exp[left] AND exp[right]
-{
+| exp[left] AND exp[right] {
     AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "&", (AbstractValueASTNode *)$right);
     if (p == NULL)
         YYERROR;
     $$ = p;
 }
-| exp[left] AND AND exp[right]
-{
+| exp[left] AND AND exp[right] {
     AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "&&", (AbstractValueASTNode *)$right);
     if (p == NULL)
         YYERROR;
     $$ = p;
 }
-| exp[left] OR exp[right]
-{
+| exp[left] OR exp[right] {
     AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "|", (AbstractValueASTNode *)$right);
     if (p == NULL)
         YYERROR;
     $$ = p;
 }
-| exp[left] OR OR exp[right]
-{
+| exp[left] OR OR exp[right] {
     AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "||", (AbstractValueASTNode *)$right);
     if (p == NULL)
         YYERROR;
     $$ = p;
 }
-| exp[left] XOR exp[right]
-{
+| exp[left] XOR exp[right] {
     AbstractASTNode *p = binarBoolNode((AbstractValueASTNode *)$left, "^", (AbstractValueASTNode *)$right);
     if (p == NULL)
         YYERROR;
     $$ = p;
 }
-| NOT exp
-{
+| NOT exp {
     AbstractValueASTNode *var = (AbstractValueASTNode *)$2;
     if (isNumericType(var)) {
-        if (var->getType() != typeBool) {
+        if (var->getValueType() != typeBool) {
             var = new UnaryNode(UnarToBool, var);
         }
         $$ = new UnaryNode(UnarNot, var);
@@ -780,8 +756,7 @@ exp : exp[left] RELOP exp[right]
         YYERROR;
     }
 }
-| exp PLUS exp
-{
+| exp PLUS exp {
     // PLUS exp
     AbstractASTNode *p = binarMathNode((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
     if (p == NULL)
@@ -789,8 +764,7 @@ exp : exp[left] RELOP exp[right]
 
     $$ = p;
 }
-| exp MINUS exp
-{
+| exp MINUS exp {
     // MINUS exp
     AbstractASTNode *p = binarMathNode((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
     if (p == NULL)
@@ -798,8 +772,7 @@ exp : exp[left] RELOP exp[right]
 
     $$ = p;
 }
-| exp MULOP exp
-{
+| exp MULOP exp {
     // MULOP exp
     AbstractASTNode *p = binarMathNode((AbstractValueASTNode *)$1, $2, (AbstractValueASTNode *)$3);
     if (p == NULL)
@@ -807,36 +780,31 @@ exp : exp[left] RELOP exp[right]
 
     $$ = p;
 }
-| MINUS exp %prec UMINUS
-{
+| MINUS exp %prec UMINUS {
     $$ = new UnaryNode(UnarMinus, $2);
 }
-| OPENPAREN exp CLOSEPAREN // ( exp )
-{
+| OPENPAREN exp CLOSEPAREN {// ( exp )
     $$ = $2;
 }
-| REALCONST
-{
+| REALCONST {
     $$ = new ValueNode(typeDouble, $1->toDouble());
 }
-| INTCONST
-{
+| INTCONST {
     $$ = new ValueNode(typeInt, $1->toInt());
 }
-| CHARCONST
-{
+| CHARCONST {
     $$ = new ValueNode(typeChar, $1->toChar());
 }
-| TRUE
-{
+| STRING {
+    $$ = new ValueNode(typeString, $1->toString());
+}
+| TRUE {
     $$ = new ValueNode(typeBool, 1);
 }
-| FALSE
-{
+| FALSE {
     $$ = new ValueNode(typeBool, 0);
 }
-| IDENTIFIER
-{
+| IDENTIFIER {
     AbstractSymbolTableRecord *var = getVariableByName(*$1);
     if (var != NULL) {
         $$ = new ReferenceNode(var);
@@ -848,12 +816,10 @@ exp : exp[left] RELOP exp[right]
     }
 
 }
-| function_call
-{
+| function_call {
     $$ = $1;
 }
-| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET
-{
+| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET {
     AbstractSymbolTableRecord *var = getVariableByName(*$name);
     if (var != NULL) {
         if (var->isArray()) {
@@ -861,13 +827,13 @@ exp : exp[left] RELOP exp[right]
                 $$ = new ArrayReferenceNode(var, ((AbstractValueASTNode *)$index));
             }
             else {
-                parsererror(errorList.at(ERROR_CANNOT_USE_AS_INDEX).arg((typeName.at(((AbstractValueASTNode *)$index)->getType()))));
+                parsererror(errorList.at(ERROR_CANNOT_USE_AS_INDEX).arg((typeName.at(((AbstractValueASTNode *)$index)->getValueType()))));
                 $$ = NULL;
                 YYERROR;
             }
         }
         else {
-            parsererror(errorList.at(ERROR_VARIABLE_IS_NOT_ARRAY).arg((typeName.at(((AbstractValueASTNode *)$index)->getType()))));
+            parsererror(errorList.at(ERROR_VARIABLE_IS_NOT_ARRAY).arg((typeName.at(((AbstractValueASTNode *)$index)->getValueType()))));
             $$ = NULL;
             YYERROR;
         }
@@ -877,7 +843,7 @@ exp : exp[left] RELOP exp[right]
         $$ = NULL;
         YYERROR;
     }
-}
+};
 
 /*
  * Not in 2016.
@@ -892,15 +858,12 @@ exp : exp[left] RELOP exp[right]
 
 }
 */
-;
+
 
 %%
 void yyerror(QString s) {
 
     printf ("Line %d: %s.\n", lno, s.toStdString().c_str());
-    //std::cout << "EEK, parse error!  Message: " << s << std::endl;
-    // might as well halt now:
-    //exit(-1);
 }
 
 AbstractSymbolTableRecord *getVariableByName(QString name) {
@@ -929,24 +892,25 @@ bool isNumericType(ValueTypeEnum type)
 
 bool isNumericType(AbstractValueASTNode *node)
 {
-    return isNumericType(((AbstractValueASTNode *)node)->getType());
+    return isNumericType(((AbstractValueASTNode *)node)->getValueType());
 }
 
 AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
 {
     if (isNumericType(left) && isNumericType(right)) {
-        if (left->getType() != right->getType())
+
+
+        if (left->getValueType() != right->getValueType())
         {
-            if (left->getType() == typeInt)
-                return new BinarNode(new UnaryNode(UnarToDouble, left), right, operation);
-            else
-                return new BinarNode(left, new UnaryNode(UnarToDouble, right), operation);
+            right = convert(right, left->getValueType());
         }
-        else
+        if (right != NULL)
             return new BinarNode(left, right, operation);
+        else
+            return NULL;
     }
     else {
-        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(left->getType())).arg(typeName.at(right->getType())));
+        parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(left->getValueType())).arg(typeName.at(right->getValueType())));
         return NULL;
     }
 }
@@ -955,9 +919,9 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
 {
     if (isNumericType(left) && isNumericType(right)) {
         if (operation == "&&" || operation == "||") {
-        if (left->getType() != typeBool)
+        if (left->getValueType() != typeBool)
             left = new UnaryNode(UnarToBool, left);
-        if (right->getType() != typeBool)
+        if (right->getValueType() != typeBool)
             right = new UnaryNode(UnarToBool, right);
         }
 
@@ -966,11 +930,11 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
     else {
         if (!isNumericType(left))
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
-                        .arg(typeName.at(left->getType()))
+                        .arg(typeName.at(left->getValueType()))
                         .arg(typeName.at(typeBool)));
         if (!isNumericType(right))
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
-                        .arg(typeName.at(right->getType()))
+                        .arg(typeName.at(right->getValueType()))
                         .arg(typeName.at(typeBool)));
         return NULL;
     }
@@ -1011,16 +975,19 @@ AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTN
         if (!isNumericType(value))
         {
             parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
-                        .arg(typeName.at(value->getType()))
+                        .arg(typeName.at(value->getValueType()))
                         .arg(typeName.at(var->getType())));
             return NULL;
         }
         else {
-            if (value->getType() != var->getValueType()) {
+            if (value->getValueType() != var->getValueType()) {
                 value = convert(value, var->getValueType());
             }
 
-            return new AssignmentNode(var, value);
+            if (value != NULL)
+                return new AssignmentNode(var, value);
+            else
+                return NULL;
         }
     }
     else {
@@ -1028,9 +995,41 @@ AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTN
     }
 }
 
+AbstractASTNode *arrayAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *index, AbstractValueASTNode *value)
+{
+
+    if (var == NULL) {
+        parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+        return NULL;
+    }
+
+    if (value != NULL) {
+        if (!isNumericType(value))
+        {
+            parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
+                        .arg(typeName.at(value->getValueType()))
+                        .arg(typeName.at(var->getType())));
+            return NULL;
+        }
+        else {
+            if (value->getValueType() != var->getValueType()) {
+                value = convert(value, var->getValueType());
+            }
+
+            if (value != NULL)
+                return new ArrayAssignmentNode(var, index, value);
+            else
+                return NULL;
+        }
+    }
+    else {
+            return new ArrayAssignmentNode(var, index, new ValueNode(var->getValueType(), 0));
+    }
+}
+
 AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
 {
-    ValueTypeEnum whatType = what->getType();
+    ValueTypeEnum whatType = what->getValueType();
     if (isNumericType(whatType)) {
         if (isNumericType(to)) {
             switch(to){
@@ -1069,7 +1068,7 @@ AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
         }
     }
     parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
-                .arg(typeName.at(what->getType()))
+                .arg(typeName.at(what->getValueType()))
                 .arg(typeName.at(to)));
     return NULL;
 

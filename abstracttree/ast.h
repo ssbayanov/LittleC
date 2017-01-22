@@ -3,6 +3,9 @@
 
 #include "abstracttree/abstractastnode.h"
 #include "abstracttree/abstractvalueastnode.h"
+#include "abstracttree/arrayassignmentnode.h"
+#include "abstracttree/arraydeclarenode.h"
+#include "abstracttree/arrayreferencenode.h"
 #include "abstracttree/assignmentnode.h"
 #include "abstracttree/binarnode.h"
 #include "abstracttree/casenode.h"
@@ -16,8 +19,6 @@
 #include "abstracttree/listnode.h"
 #include "abstracttree/printnode.h"
 #include "abstracttree/referencenode.h"
-#include "abstracttree/arraydeclarenode.h"
-#include "abstracttree/arrayreferencenode.h"
 #include "abstracttree/switchnode.h"
 #include "abstracttree/unarynode.h"
 #include "abstracttree/valuenode.h"

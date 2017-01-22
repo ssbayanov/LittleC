@@ -4,7 +4,7 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     : AbstractValueASTNode(NT_UnaryOperation)
 {
     _uType = uType;
-    _left = left;
+    _value = left;
     switch (_uType) {
     case UnarToInt:
         _typeValue = typeInt;
@@ -16,11 +16,11 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
         _typeValue = typeBool;
         break;
     default:
-        _typeValue = ((AbstractValueASTNode *)_left)->getType();
+        _typeValue = ((AbstractValueASTNode *)_value)->getValueType();
     }
 }
 
-ValueTypeEnum UnaryNode::getType()
+ValueTypeEnum UnaryNode::getValueType()
 {
     return _typeValue;
 }
@@ -32,14 +32,22 @@ void UnaryNode::printNode(int level)
                  .arg(unarTypeString.at(_uType))
                  .arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Left:"
-              << std::endl;
-    _left->printNode(level+1);
 
+    if(_value != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Value:"
+                  << std::endl;
+        _value->printNode(level+1);
+    }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD VALUE NODE!!!"
+                  << std::endl;
+    }
 }
 
 UnaryNode::~UnaryNode()
 {
-    _left->~AbstractASTNode();
+    if(_value != NULL)
+        _value->~AbstractASTNode();
 }

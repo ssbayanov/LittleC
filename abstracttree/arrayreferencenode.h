@@ -13,7 +13,7 @@ public:
 
     void printNode(int level);
 
-    ValueTypeEnum getType();
+    ValueTypeEnum getValueType();
 
     ~ArrayReferenceNode();
 

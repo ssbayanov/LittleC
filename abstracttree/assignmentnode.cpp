@@ -13,10 +13,17 @@ void AssignmentNode::printNode(int level)
               << QString("Assignment: %1").arg(_variable->getName()).toStdString()
               << std::endl;
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Value:"
-              << std::endl;
-    _value->printNode(level+1);
+    if (_value != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Value:"
+                  << std::endl;
+        _value->printNode(level+1);
+    }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD VALUE NODE!!!"
+                  << std::endl;
+    }
 }
 
 AssignmentNode::~AssignmentNode()

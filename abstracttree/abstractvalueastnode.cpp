@@ -6,7 +6,7 @@ AbstractValueASTNode::AbstractValueASTNode(ASTNodeTypeEnum type)
 
 }
 
-ValueTypeEnum AbstractValueASTNode::getType()
+ValueTypeEnum AbstractValueASTNode::getValueType()
 {
     return _typeValue;
 }

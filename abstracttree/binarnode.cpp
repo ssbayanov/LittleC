@@ -6,7 +6,7 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
     _left = left;
     _right = right;
     _operation = operation;
-    _typeValue = ((AbstractValueASTNode *)left)->getType();
+    _typeValue = ((AbstractValueASTNode *)left)->getValueType();
 }
 
 BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation, ValueTypeEnum typeValue)
@@ -26,25 +26,41 @@ void BinarNode::printNode(int level)
                  .arg(typeName.at(_typeValue)).toStdString()
               << std::endl;
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Left:"
-              << std::endl;
-    _left->printNode(level+1);
+    if (_left != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Left:"
+                  << std::endl;
+        _left->printNode(level+1);
+    }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD LEFT NODE!!!"
+                  << std::endl;
+    }
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Right:"
-              << std::endl;
-    _right->printNode(level+1);
+    if (_right != NULL) {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "Right:"
+                  << std::endl;
+        _right->printNode(level+1);
+    }
+    else {
+        std::cout << QString().fill(' ',level*2).toStdString()
+                  << "BAD LEFT NODE!!!"
+                  << std::endl;
+    }
 }
 
-ValueTypeEnum BinarNode::getType()
+ValueTypeEnum BinarNode::getValueType()
 {
     return typeDouble;
 }
 
 BinarNode::~BinarNode()
 {
-    _left->~AbstractASTNode();
-    _right->~AbstractASTNode();
+    if (_left != NULL)
+        _left->~AbstractASTNode();
+    if (_right != NULL)
+        _right->~AbstractASTNode();
 }
 
