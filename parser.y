@@ -65,6 +65,7 @@
     AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value = NULL);
     AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value = NULL);
+    AbstractASTNode *arrayAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *index, AbstractValueASTNode *value);
     AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
     int getSizeType(ValueTypeEnum type);
 
@@ -402,7 +403,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 };
 
 // Numeric declaration ------------------------------------------------------------
-enum_decloration_statement : ENUM { enumCounter = 0; } OPENBRACE identifier_list[values] CLOSEBRACE {
+enum_decloration_statement : ENUM { enumCounter = 0; } OPENBRACE identifier_list[values] CLOSEBRACE SEMICOLON{
    $$ = $values;
 }
 
@@ -603,7 +604,7 @@ assignment : IDENTIFIER[name] ASSIGN exp[value] {
 | IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
         AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
         if (var != NULL) {
-            AbstractASTNode *node = numericAssign(var, (AbstractValueASTNode *)$value);
+            AbstractASTNode *node = arrayAssign(var, (AbstractValueASTNode *)$index, (AbstractValueASTNode *)$value);
             if (node == NULL)
                 YYERROR;
             $$ = node; }
