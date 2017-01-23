@@ -10,32 +10,27 @@ ArrayAssignmentNode::ArrayAssignmentNode(AbstractSymbolTableRecord *array, Abstr
 
 void ArrayAssignmentNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Array Assignment: %1").arg(_array->getName()).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Array Assignment: %1\n").arg(_array->getName());
 
     if (_value != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Value:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Value:\n";
         _value->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD VALUE NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD VALUE NODE!!!\n";
     }
 
     if (_index != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Index:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Index:\n";
         _index->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD INDEX NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD INDEX NODE!!!\n";
     }
 }
 

@@ -9,14 +9,12 @@ FunctionReturnNode::FunctionReturnNode(AbstractASTNode *expression)
 
 void FunctionReturnNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Return type %1")
-                 .arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+               << QString("Return type %1\n")
+                  .arg(typeName.at(_typeValue));
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Expression:"
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+               << "Expression:\n";
     _expression->printNode(level+1);
 
 }

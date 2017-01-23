@@ -9,27 +9,24 @@ CaseNode::CaseNode(AbstractASTNode *value, AbstractASTNode *statements)
 
 void CaseNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("%1:").arg(_value != NULL ? "case" : "default").toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("%1:").arg(_value != NULL ? "case" : "default")
+              << "\n";
 
     if(_value != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Value:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Value:\n";
         _value->printNode(level+1);
     }
 
     if(_statements != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Statements:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Statements:\n";
         _statements->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD STATEMENTS NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD STATEMENTS NODE!!!\n";
     }
 }
 

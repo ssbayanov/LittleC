@@ -9,31 +9,26 @@ SwitchNode::SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList)
 
 void SwitchNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Switch:"
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << "Switch:\n";
 
     if(_value != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Value:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Value:\n";
         _value->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD VALUE NODE"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD VALUE NODE\n";
     }
     if(_caseList != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Case list:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Case list:\n";
         _caseList->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD CASE LIST NODE"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD CASE LIST NODE\n";
     }
 }
 

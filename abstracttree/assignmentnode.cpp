@@ -9,20 +9,17 @@ AssignmentNode::AssignmentNode(AbstractSymbolTableRecord *variable, AbstractASTN
 
 void AssignmentNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Assignment: %1").arg(_variable->getName()).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Assignment: %1\n").arg(_variable->getName());
 
     if (_value != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Value:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Value:\n";
         _value->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD VALUE NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD VALUE NODE!!!\n";
     }
 }
 

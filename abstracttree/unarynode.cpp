@@ -27,22 +27,19 @@ ValueTypeEnum UnaryNode::getValueType()
 
 void UnaryNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Unar operation. Type: %1. Type of result: %2")
+    treeStream << QString().fill(' ',level*2)
+              << QString("Unar operation. Type: %1. Type of result: %2\n")
                  .arg(unarTypeString.at(_uType))
-                 .arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
+                 .arg(typeName.at(_typeValue));
 
     if(_value != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Value:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Value:\n";
         _value->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD VALUE NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD VALUE NODE!!!\n";
     }
 }
 

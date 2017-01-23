@@ -9,29 +9,26 @@ ListNode::ListNode(AbstractASTNode *left, AbstractASTNode *right)
 
 void ListNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "List:"
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << "List:\n";
     if(_left != NULL){
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Left:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Left:\n";
         _left->printNode(level+1);
     }
     else {
-        std::cout  << QString().fill(' ',level*2).toStdString()
-                   << "BAD LEFT LIST NODE"
-                   << std::endl;
+        treeStream  << QString().fill(' ',level*2)
+                   << "BAD LEFT LIST NODE\n";
+;
     }
 
     if(_right != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Right:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Right:\n";
         _right->printNode(level+1);
     }
     else
-        std::cout << "BAD RIGHT LIST NODE";
+        treeStream << "BAD RIGHT LIST NODE";
 
 }
 

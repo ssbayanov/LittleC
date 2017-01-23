@@ -9,9 +9,10 @@ ReferenceNode::ReferenceNode(AbstractSymbolTableRecord *variable)
 
 void ReferenceNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Reference: %1, type: %2").arg(_variable->getName()).arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Reference: %1, type: %2\n")
+                 .arg(_variable->getName())
+                 .arg(typeName.at(_typeValue));
 }
 
 ValueTypeEnum ReferenceNode::getValueType()

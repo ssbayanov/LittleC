@@ -17,7 +17,7 @@ ASTNodeTypeEnum AbstractASTNode::getType()
 
 void AbstractASTNode::printNode(int level)
 {
-    std::cout << QString("printing Abstract node :( on level %1").arg(level).toStdString();
+    treeStream << QString("printing Abstract node :( on level %1\n").arg(level);
 }
 
 AbstractASTNode::~AbstractASTNode()

@@ -8,9 +8,8 @@ GoToNode::GoToNode(QString nameLabel)
 
 void GoToNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Go to label: %1").arg(_nameLabel).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Go to label: %1").arg(_nameLabel);
 }
 
 GoToNode::~GoToNode()

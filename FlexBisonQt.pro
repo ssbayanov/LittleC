@@ -15,6 +15,7 @@ QMAKE_YACCFLAGS = -d -o parser.tab.c -l -v
 QT       += core
 QT       -= gui
 
+
 LIBS += -lfl -ly
 
 TARGET = test-lexbiz
@@ -47,7 +48,8 @@ SOURCES += main.cpp \
     abstracttree/printnode.cpp \
     abstracttree/arrayreferencenode.cpp \
     abstracttree/arraydeclarenode.cpp \
-    abstracttree/arrayassignmentnode.cpp
+    abstracttree/arrayassignmentnode.cpp \
+    abstracttree/scannode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -81,4 +83,5 @@ HEADERS += \
     abstracttree/ast.h \
     abstracttree/arrayreferencenode.h \
     abstracttree/arraydeclarenode.h \
-    abstracttree/arrayassignmentnode.h
+    abstracttree/arrayassignmentnode.h \
+    abstracttree/scannode.h

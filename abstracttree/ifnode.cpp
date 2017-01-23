@@ -10,31 +10,26 @@ IfNode::IfNode(AbstractASTNode *condition, AbstractASTNode *trueBranch, Abstract
 
 void IfNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "If"
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << "If\n";
     if (_condition != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Condition:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Condition:\n";
         _condition->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD CONDITION NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD CONDITION NODE!!!\n";
     }
 
     if (_trueBranch != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "True branch:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "True branch:\n";
         _trueBranch->printNode(level+1);
     }
     if (_falseBranch != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "False branch:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "False branch:\n";
         _falseBranch->printNode(level+1);
     }
 }

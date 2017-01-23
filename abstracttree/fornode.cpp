@@ -16,40 +16,34 @@ void ForNode::setBody(AbstractASTNode *body)
 
 void ForNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "For:"
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << "For:\n";
     if(_init != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Initialisation:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Initialisation:\n";
         _init->printNode(level+1);
     }
 
     if(_condition != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Condition:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Condition:\n";
         _condition->printNode(level+1);
     }
 
     if(_increment != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Increment:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Increment:\n";
         _increment->printNode(level+1);
     }
 
     if(_body != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Body:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Body:\n";
         _body->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD BODY NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD BODY NODE!!!\n";
     }
 }
 

@@ -3,8 +3,11 @@
 
 #include <iostream>
 #include <QString>
+#include <QTextStream>
 
 #include "symbolstable/abstractsymboltablerecord.h"
+
+extern QTextStream treeStream;
 
 typedef enum
 {
@@ -22,6 +25,7 @@ typedef enum
     NT_SwitchStatement,     // Switch statement.
     NT_CaseStatement,   // Case statement
     NT_PintStatement,     // Print statement.
+    NT_ScanExpression,
     NT_List,               // Expression or statement list.
     NT_FunctionDeclare,             // Declaration function.
     NT_FunctionCall,

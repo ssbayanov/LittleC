@@ -20,34 +20,29 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
 
 void BinarNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Binar operation: %1, type: %2")
+    treeStream << QString().fill(' ',level*2)
+              << QString("Binar operation: %1, type: %2\n")
                  .arg(_operation)
-                 .arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
+                 .arg(typeName.at(_typeValue));
 
     if (_left != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Left:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Left:\n";
         _left->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD LEFT NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD LEFT NODE!!!\n";
     }
 
     if (_right != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Right:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Right:\n";
         _right->printNode(level+1);
     }
     else {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "BAD LEFT NODE!!!"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD LEFT NODE!!!\n";
     }
 }
 

@@ -9,16 +9,17 @@ ArrayDeclareNode::ArrayDeclareNode(AbstractSymbolTableRecord *array, AbstractAST
 
 void ArrayDeclareNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Array Declare: %1, type: %2").arg(_array->getName()).arg(typeName.at(_array->getValueType())).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Array Declare: %1, type: %2\n")
+                 .arg(_array->getName())
+                 .arg(typeName.at(_array->getValueType()));
 
     if (_values != NULL) {
-        std::cout << "Values:";
+        treeStream << "Values:\n";
         _values->printNode(level + 1);
     }
     else {
-        std::cout << "BAD VALUES NODE!!!";
+        treeStream << "BAD VALUES NODE!!!\n";
     }
 }
 

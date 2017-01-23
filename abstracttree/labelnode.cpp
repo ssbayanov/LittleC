@@ -8,9 +8,8 @@ LabelNode::LabelNode(AbstractSymbolTableRecord *variable)
 
 void LabelNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Label: %1").arg(_variable->getName()).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Label: %1\n").arg(_variable->getName());
 }
 
 LabelNode::~LabelNode()

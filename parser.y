@@ -12,6 +12,13 @@
 %code provides {
     void parsererror(QString s);
 
+    extern QTextStream errorStream;
+    extern QTextStream cout;
+
+    extern bool printTree;
+    extern bool printWarnings;
+    extern bool printErrors;
+
     // Errors
     enum {  ERROR_DOUBLE_DECLARED,
             WARNING_DOUBLE_DECLARED,
@@ -31,7 +38,8 @@
             ERROR_UNKNOWN_TYPE,
             WARNING_CONVERTING_TYPES,
             ERROR_CANNOT_USE_AS_INDEX,
-            ERROR_VARIABLE_IS_NOT_ARRAY};
+            ERROR_VARIABLE_IS_NOT_ARRAY,
+            ERROR_SCAN_STRING};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -51,12 +59,9 @@
                                                  << "error: unknown type %1"
                                                  << "warning: during conversion %1 to %2 can be errors"
                                                  << "error: can't use %1 type as index of array"
-                                                 << "error: variable %1 is not a array";
+                                                 << "error: variable %1 is not a array"
+                                                 << "error: scan string is not valid";
 
-}
-
-%code requires
-{
 
     bool isNumericType(ValueTypeEnum type);
     bool isNumericType(AbstractValueASTNode *node);
@@ -199,7 +204,7 @@ switch_statement case_statement case_list case_tail
 loop_statement while_head break_statement for_head
 goto_statement label_statement
 function_call function_description_statement function_return_statement
-print
+print scan
 
 %type <type> data_types
 
@@ -228,7 +233,8 @@ program : statement_list
 {
     /*     if (driver.AST_dumping)
       { */
-    $1->printNode(0);
+    if(printTree)
+        $1->printNode(0);
     /*      } */
     $1->~AbstractASTNode();
     topLevelVariableTable->~SymbolsTable();
@@ -523,8 +529,31 @@ print : PRINT OPENPAREN exp CLOSEPAREN {
     $$ = new PrintNode($3);
 };
 
-/*scan_stmt: SCAN OPENPAREN exp CLOSEPAREN
-{};*/
+scan: SCAN OPENPAREN STRING[typeString] CLOSEPAREN {
+    ValueTypeEnum scanType = typeVoid;
+    if($typeString->toString().at(0) == '%') {
+        switch($typeString->toString().at(1).toLatin1()) {
+        case 'd':
+        case 'i': scanType = typeInt; break;
+        case 'e':
+        case 'f':
+        case 'g': scanType = typeInt; break;
+        case 's': scanType = typeString; break;
+        case 'c': scanType = typeChar; break;
+        default: parsererror(errorList.at(ERROR_SCAN_STRING));
+            $$ = NULL;
+            YYERROR;
+        }
+        if(scanType != typeVoid)
+            $$ = new ScanNode(scanType);
+    }
+    else {
+        parsererror(errorList.at(ERROR_SCAN_STRING));
+        $$ = NULL;
+        YYERROR;
+    }
+
+};
 
 condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF {
     $$ = new IfNode($3, $5, NULL);
@@ -547,7 +576,7 @@ loop_statement : while_head statement {
     currentTable->setHidden();
     currentTable = currentTable->getParent();
 }
-| do_head statement while_head {
+| do_head statement while_head SEMICOLON{
     ((WhileNode *)$while_head)->setBody($2);
     ((WhileNode *)$while_head)->setIsDoWhile(true);
     $$ = $3;
@@ -844,7 +873,8 @@ exp : exp[left] RELOP exp[right] {
         $$ = NULL;
         YYERROR;
     }
-};
+}
+    | scan ;
 
 /*
  * Not in 2016.
@@ -863,8 +893,8 @@ exp : exp[left] RELOP exp[right] {
 
 %%
 void yyerror(QString s) {
-
-    printf ("Line %d: %s.\n", lno, s.toStdString().c_str());
+    if(printErrors)
+        printf ("Line %d: %s.\n", lno, s.toStdString().c_str());
 }
 
 AbstractSymbolTableRecord *getVariableByName(QString name) {

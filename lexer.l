@@ -36,6 +36,8 @@ bool multilineComment();
 
 #define lexerlex parserlex
 
+
+
 typedef std::tuple<std::string, std::string, int> TokenTableRow;
 std::vector <std::tuple<std::string, std::string, int> > TokenTable;
 
@@ -83,13 +85,13 @@ stringch      [^"\n]
                             }*/
 
 \+                          {
-                                //TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
+                                TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
                                 return PLUS;
                             }
 
 \-                          {
-                                //TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
+                                TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
                                 return MINUS;
                             }
