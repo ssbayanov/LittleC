@@ -11,7 +11,7 @@ ArrayReferenceNode::ArrayReferenceNode(AbstractSymbolTableRecord *array, Abstrac
 void ArrayReferenceNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << QString("Array Reference: %1, type: %2\n").arg(_array->getName()).arg(typeName.at(_typeValue));
+              << QString("Array Reference: %1, type: %2\n").arg(_array->getName()).arg(typeName.at(getValueType()));
 
     if (_index != NULL) {
         treeStream << QString().fill(' ',level*2)
@@ -21,11 +21,6 @@ void ArrayReferenceNode::printNode(int level)
     else {
         treeStream << "BAD INDEX NODE!!!";
     }
-}
-
-ValueTypeEnum ArrayReferenceNode::getValueType()
-{
-    return _typeValue;
 }
 
 ArrayReferenceNode::~ArrayReferenceNode()

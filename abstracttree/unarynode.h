@@ -29,8 +29,6 @@ class UnaryNode : public AbstractValueASTNode
 public:
     UnaryNode(TypeUnary uType, AbstractASTNode *left);
 
-    ValueTypeEnum getValueType();
-
     void printNode(int level);
 
     ~UnaryNode();
@@ -38,7 +36,6 @@ public:
 private:
     AbstractASTNode *_value;
     TypeUnary _uType;
-    ValueTypeEnum _typeValue;
 };
 
 

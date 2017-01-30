@@ -13,6 +13,12 @@ public:
 
     void printNode(int level);
 
+    AbstractASTNode *getLeftNode();
+    AbstractASTNode *getRightNode();
+
+    void setLeftNode(AbstractASTNode *left);
+    void setRightNode(AbstractASTNode *right);
+
     ~ListNode();
 
 private:

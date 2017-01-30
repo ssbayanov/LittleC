@@ -32,6 +32,26 @@ void ListNode::printNode(int level)
 
 }
 
+AbstractASTNode *ListNode::getLeftNode()
+{
+    return _left;
+}
+
+AbstractASTNode *ListNode::getRightNode()
+{
+    return _right;
+}
+
+void ListNode::setLeftNode(AbstractASTNode *left)
+{
+    _left = left;
+}
+
+void ListNode::setRightNode(AbstractASTNode *right)
+{
+    _right = right;
+}
+
 ListNode::~ListNode()
 {
     if(_left != NULL)

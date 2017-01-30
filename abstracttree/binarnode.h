@@ -14,8 +14,6 @@ public:
 
     void printNode(int level);
 
-    ValueTypeEnum getValueType();
-
     ~BinarNode();
 
 private:

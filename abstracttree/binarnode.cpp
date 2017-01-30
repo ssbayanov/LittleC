@@ -6,7 +6,7 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
     _left = left;
     _right = right;
     _operation = operation;
-    _typeValue = ((AbstractValueASTNode *)left)->getValueType();
+    AbstractValueASTNode::_typeValue = ((AbstractValueASTNode *)left)->getValueType();
 }
 
 BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation, ValueTypeEnum typeValue)
@@ -15,7 +15,7 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
     _left = left;
     _right = right;
     _operation = operation;
-    _typeValue = typeValue;
+    AbstractValueASTNode::_typeValue = typeValue;
 }
 
 void BinarNode::printNode(int level)
@@ -23,7 +23,7 @@ void BinarNode::printNode(int level)
     treeStream << QString().fill(' ',level*2)
               << QString("Binar operation: %1, type: %2\n")
                  .arg(_operation)
-                 .arg(typeName.at(_typeValue));
+                 .arg(typeName.at(getValueType()));
 
     if (_left != NULL) {
         treeStream << QString().fill(' ',level*2)
@@ -44,11 +44,6 @@ void BinarNode::printNode(int level)
         treeStream << QString().fill(' ',level*2)
                   << "BAD LEFT NODE!!!\n";
     }
-}
-
-ValueTypeEnum BinarNode::getValueType()
-{
-    return typeDouble;
 }
 
 BinarNode::~BinarNode()

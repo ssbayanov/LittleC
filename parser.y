@@ -35,11 +35,13 @@
             ERROR_CANNOT_CONVERT,
             ERROR_DECLARATED_FUNCTION_NOT_GLOBAL,
             ERROR_CALL_UNDEFINED_FUNCTION,
+            ERROR_CALL_UNDEFINED_FUNCTION_WITH_PARAMS,
             ERROR_UNKNOWN_TYPE,
             WARNING_CONVERTING_TYPES,
             ERROR_CANNOT_USE_AS_INDEX,
             ERROR_VARIABLE_IS_NOT_ARRAY,
-            ERROR_SCAN_STRING};
+            ERROR_SCAN_STRING,
+            ERROR_PARAMS_FUNCTION};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -55,12 +57,14 @@
                                                  << "error: increment not applicable for %1 variable %2"
                                                  << "error: can't convert %1 to %2"
                                                  << "error: function declarated is not in the global scope"
-                                                 << "error: call of undefined function %1"
+                                                 << "error: call of undefined function %1()"
+                                                 << "error: call of undefined function %1(%2);"
                                                  << "error: unknown type %1"
                                                  << "warning: during conversion %1 to %2 can be errors"
                                                  << "error: can't use %1 type as index of array"
                                                  << "error: variable %1 is not a array"
-                                                 << "error: scan string is not valid";
+                                                 << "error: scan string is not valid"
+                                                 << "error: params of call function %1 is not valid";
 
 
     bool isNumericType(ValueTypeEnum type);
@@ -72,6 +76,7 @@
     AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value = NULL);
     AbstractASTNode *arrayAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *index, AbstractValueASTNode *value);
     AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
+    AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode *paramsNode);
     int getSizeType(ValueTypeEnum type);
 
     AbstractSymbolTableRecord *getVariableByName(QString name);
@@ -234,7 +239,7 @@ program : statement_list
     /*     if (driver.AST_dumping)
       { */
     if(printTree)
-        $1->printNode(0);
+    $1->printNode(0);
     /*      } */
     $1->~AbstractASTNode();
     topLevelVariableTable->~SymbolsTable();
@@ -328,22 +333,28 @@ function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
 
 
 }
-    declaration_list[params] CLOSEPAREN compound_statement[body] {
-        currentTable->setHidden();
-        SymbolsTable *paramsTable = currentTable;
-        currentTable = currentTable->getParent();
-        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, paramsTable);
+declaration_list[params] CLOSEPAREN compound_statement[body] {
+    currentTable->setHidden();
+    SymbolsTable *paramsTable = currentTable;
+    currentTable = currentTable->getParent();
+    AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, paramsTable);
 
-        $$ = new FunctionDeclareNode(function, $params, $body);
+    $$ = new FunctionDeclareNode(function, $params, $body);
 };
 
-function_call : IDENTIFIER[id] OPENPAREN exp_list[explist] CLOSEPAREN
+function_call : IDENTIFIER[id] OPENPAREN exp_list[params] CLOSEPAREN
 {
     AbstractSymbolTableRecord *function = getVariableByName(*$id);
     if (function != NULL) {
-        if (((FunctionTableRecord *)function)->getParams() != NULL) {
-            //if ()
-            $$ = new FunctionCallNode(function, $explist);
+        if (function->isFunction()) {
+            AbstractASTNode *validParams = validatedParams(((FunctionTableRecord *) function), $params);
+            if (validParams != NULL) {
+                $$ = new FunctionCallNode(function, validParams);
+            }
+            else {
+                $$ = NULL;
+                YYERROR;
+            }
         }
         else {
             parsererror(errorList.at(ERROR_CALL_UNDEFINED_FUNCTION).arg(*$id));
@@ -410,7 +421,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 
 // Numeric declaration ------------------------------------------------------------
 enum_decloration_statement : ENUM { enumCounter = 0; } OPENBRACE identifier_list[values] CLOSEBRACE SEMICOLON{
-   $$ = $values;
+    $$ = $values;
 }
 
 
@@ -466,7 +477,7 @@ label_statement : IDENTIFIER COLON {
 
 goto_statement : GOTO IDENTIFIER SEMICOLON {
     if (currentTable->containsGlobal(*$2)) {
-            $$ = new GoToNode(*$2);
+        $$ = new GoToNode(*$2);
     }
     else {
         parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$2));
@@ -599,17 +610,17 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
 for_head : FOR {
     currentTable = currentTable->appendChildTable();
 }
-    OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN {
-        AbstractValueASTNode *cond = NULL;
-        if ($condition != NULL) {
-            cond = (AbstractValueASTNode *)$condition;
-            if (cond->getValueType() != typeBool)
-                cond = new UnaryNode(UnarToBool, cond);
-        }
+OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN {
+    AbstractValueASTNode *cond = NULL;
+    if ($condition != NULL) {
+        cond = (AbstractValueASTNode *)$condition;
+        if (cond->getValueType() != typeBool)
+            cond = new UnaryNode(UnarToBool, cond);
+    }
 
-        $$ = new ForNode($init, cond, $increment);
-        ++g_LoopNestingCounter;
-    };
+    $$ = new ForNode($init, cond, $increment);
+    ++g_LoopNestingCounter;
+};
 
 do_head : DO {
     ++g_LoopNestingCounter;
@@ -631,18 +642,18 @@ assignment : IDENTIFIER[name] ASSIGN exp[value] {
     }
 }
 | IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
-        AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
-        if (var != NULL) {
-            AbstractASTNode *node = arrayAssign(var, (AbstractValueASTNode *)$index, (AbstractValueASTNode *)$value);
-            if (node == NULL)
-                YYERROR;
-            $$ = node; }
-        else {
-            parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$name));
-            $$ = NULL;
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
+    if (var != NULL) {
+        AbstractASTNode *node = arrayAssign(var, (AbstractValueASTNode *)$index, (AbstractValueASTNode *)$value);
+        if (node == NULL)
             YYERROR;
-        }
-    };
+        $$ = node; }
+    else {
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$name));
+        $$ = NULL;
+        YYERROR;
+    }
+};
 
 // Expressions --------------------------------------------------------------
 
@@ -701,7 +712,7 @@ exp : exp[left] RELOP exp[right] {
     AbstractValueASTNode *left = ((AbstractValueASTNode *)$left);
     AbstractValueASTNode *right = ((AbstractValueASTNode *)$right);
 
-    if (isNumericType(left) && isNumericType(right)) { // Type of variables is number.
+    if (isNumericType( left ) && isNumericType( right )) { // Type of variables is number.
         if (left->getValueType() != right->getValueType()) {// If exp have diffrence type.
             if (left->getValueType() == typeDouble || right->getValueType() == typeDouble) { // If left or right expression have type Double add to double
                 if (left->getValueType() == typeDouble) {
@@ -772,7 +783,7 @@ exp : exp[left] RELOP exp[right] {
 }
 | NOT exp {
     AbstractValueASTNode *var = (AbstractValueASTNode *)$2;
-    if (isNumericType(var)) {
+    if (isNumericType( var )) {
         if (var->getValueType() != typeBool) {
             var = new UnaryNode(UnarToBool, var);
         }
@@ -853,7 +864,7 @@ exp : exp[left] RELOP exp[right] {
     AbstractSymbolTableRecord *var = getVariableByName(*$name);
     if (var != NULL) {
         if (var->isArray()) {
-            if (isNumericType((AbstractValueASTNode *)($index))) {
+            if (isNumericType( (AbstractValueASTNode *) $index) ) {
                 $$ = new ArrayReferenceNode(var, ((AbstractValueASTNode *)$index));
             }
             else {
@@ -874,7 +885,7 @@ exp : exp[left] RELOP exp[right] {
         YYERROR;
     }
 }
-    | scan ;
+| scan ;
 
 /*
  * Not in 2016.
@@ -893,7 +904,7 @@ exp : exp[left] RELOP exp[right] {
 
 %%
 void yyerror(QString s) {
-    if(printErrors)
+    if (printErrors)
         printf ("Line %d: %s.\n", lno, s.toStdString().c_str());
 }
 
@@ -908,7 +919,7 @@ AbstractSymbolTableRecord *getVariableByName(QString name) {
     return var;
 }
 
-bool isNumericType(ValueTypeEnum type)
+bool isNumericType( ValueTypeEnum type )
 {
     if (type == typeInt ||
             type == typeBool ||
@@ -921,14 +932,14 @@ bool isNumericType(ValueTypeEnum type)
     return false;
 }
 
-bool isNumericType(AbstractValueASTNode *node)
+bool isNumericType( AbstractValueASTNode *node )
 {
-    return isNumericType(((AbstractValueASTNode *)node)->getValueType());
+    return isNumericType( ((AbstractValueASTNode *)node)->getValueType() );
 }
 
 AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
 {
-    if (isNumericType(left) && isNumericType(right)) {
+    if ( isNumericType(left) && isNumericType(right) ) {
 
 
         if (left->getValueType() != right->getValueType())
@@ -948,22 +959,22 @@ AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, Ab
 
 AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right)
 {
-    if (isNumericType(left) && isNumericType(right)) {
+    if ( isNumericType(left) && isNumericType(right) ) {
         if (operation == "&&" || operation == "||") {
-        if (left->getValueType() != typeBool)
-            left = new UnaryNode(UnarToBool, left);
-        if (right->getValueType() != typeBool)
-            right = new UnaryNode(UnarToBool, right);
+            if (left->getValueType() != typeBool)
+                left = new UnaryNode(UnarToBool, left);
+            if (right->getValueType() != typeBool)
+                right = new UnaryNode(UnarToBool, right);
         }
 
         return new BinarNode(left, right, operation, typeBool);
     }
     else {
-        if (!isNumericType(left))
+        if ( !isNumericType(left) )
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(left->getValueType()))
                         .arg(typeName.at(typeBool)));
-        if (!isNumericType(right))
+        if ( !isNumericType(right) )
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(right->getValueType()))
                         .arg(typeName.at(typeBool)));
@@ -974,7 +985,7 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
 
 AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value)
 {
-    if (!currentTable->contains(name)) {
+    if ( !currentTable->contains(name) ) {
         if (currentTable->getVariableGlobal(name) != NULL)
         {
             parsererror(errorList.at(WARNING_DOUBLE_DECLARED).arg(name));
@@ -1022,7 +1033,7 @@ AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTN
         }
     }
     else {
-            return new AssignmentNode(var, new ValueNode(var->getValueType(), 0));
+        return new AssignmentNode(var, new ValueNode(var->getValueType(), 0));
     }
 }
 
@@ -1054,7 +1065,7 @@ AbstractASTNode *arrayAssign(AbstractSymbolTableRecord *var, AbstractValueASTNod
         }
     }
     else {
-            return new ArrayAssignmentNode(var, index, new ValueNode(var->getValueType(), 0));
+        return new ArrayAssignmentNode(var, index, new ValueNode(var->getValueType(), 0));
     }
 }
 
@@ -1069,28 +1080,28 @@ AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
             case typeChar:
                 if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
-                               .arg(typeName.at(whatType))
-                               .arg(typeName.at(to)));
+                                .arg(typeName.at(whatType))
+                                .arg(typeName.at(to)));
                 return new UnaryNode(UnarToChar, what);
             case typeDouble:
                 return new UnaryNode(UnarToDouble, what);;
             case typeFloat:
                 if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
-                               .arg(typeName.at(whatType))
-                               .arg(typeName.at(to)));
+                                .arg(typeName.at(whatType))
+                                .arg(typeName.at(to)));
                 return new UnaryNode(UnarToFloat, what);
             case typeInt:
                 if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
-                               .arg(typeName.at(whatType))
-                               .arg(typeName.at(to)));
+                                .arg(typeName.at(whatType))
+                                .arg(typeName.at(to)));
                 return new UnaryNode(UnarToInt, what);
             case typeShort:
                 if (getSizeType(whatType) > getSizeType(to))
                     parsererror(errorList.at(WARNING_CONVERTING_TYPES)
-                               .arg(typeName.at(whatType))
-                               .arg(typeName.at(to)));
+                                .arg(typeName.at(whatType))
+                                .arg(typeName.at(to)));
                 return new UnaryNode(UnarToShort, what);
             default:
                 parsererror(errorList.at(ERROR_UNKNOWN_TYPE).arg(to));
@@ -1124,4 +1135,100 @@ int getSizeType(ValueTypeEnum type)
         parsererror(errorList.at(ERROR_UNKNOWN_TYPE).arg(type));
         return 0;
     }
+}
+
+AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode *paramsNode)
+{
+    QList<ValueTypeEnum> callParamsTypes;
+    AbstractASTNode *currentNode = paramsNode;
+    AbstractASTNode *lastListNode = NULL;
+    SymbolsTable::iterator pI = function->getParams()->begin();
+    bool isValid = true;
+    QString paramsString = "";
+
+    if(currentNode != NULL) {
+        // Bypass list
+        while ( !currentNode->isValueNode() ) {
+            AbstractValueASTNode *valueNode;
+
+            if (currentNode->getType() == NT_List) {
+                if (((ListNode *) currentNode)->getLeftNode()->isValueNode()) {
+                    valueNode = ((AbstractValueASTNode *)((ListNode *) currentNode)->getLeftNode());
+                }
+                else {
+                    parsererror(errorList.at(ERROR_PARAMS_FUNCTION).arg(function->getName()));
+                    return NULL;
+                }
+            }
+            else {
+                parsererror(errorList.at(ERROR_PARAMS_FUNCTION).arg(function->getName()));
+                return NULL;
+            }
+
+            if (pI != function->getParams()->end()) {
+                if (valueNode->getValueType() !=  pI.value()->getValueType()) {
+                    valueNode = convert(valueNode, pI.value()->getValueType());
+                    if (valueNode != NULL) {
+                        ((ListNode *) currentNode)->setLeftNode(valueNode);
+                    }
+                    else {
+                        //error printing in convert function
+                        return NULL;
+                    }
+                }}
+
+            callParamsTypes << valueNode->getValueType();
+            if(paramsString.length() != 0)
+                paramsString.append(",");
+            paramsString.append(typeName.at(valueNode->getValueType()));
+
+            lastListNode = currentNode;
+            currentNode = ((ListNode *) currentNode)->getRightNode();
+
+            if (pI != function->getParams()->end()) {
+                ++pI;
+            }
+        }
+        if (pI != function->getParams()->end()) {
+            if (((AbstractValueASTNode *) currentNode)->getValueType() !=  pI.value()->getValueType()) {
+                currentNode =  convert(((AbstractValueASTNode *) currentNode), pI.value()->getValueType());
+                if (currentNode != NULL) {
+                    if( lastListNode != NULL ) {
+                        ((ListNode *) lastListNode)->setRightNode(currentNode);
+                    }
+                    else {
+                        // if one parametr and converting success returning there
+                        return currentNode;
+                    }
+                }
+                else {
+                    //error printing in convert function
+                    return NULL;
+                }
+            }
+        }
+        callParamsTypes << ((AbstractValueASTNode *) currentNode)->getValueType();
+
+        if(paramsString.length() != 0)
+            paramsString.append(",");
+        paramsString.append(typeName.at(((AbstractValueASTNode *) currentNode)->getValueType()));
+
+    }
+
+    if (callParamsTypes.count() == function->getParams()->count()) {
+        pI == function->getParams()->begin();
+        for(int i = 0; i < callParamsTypes.count(); i++, pI++) {
+            if (callParamsTypes.at(i) != pI.value()->getType())
+            {
+                parsererror(errorList.at(ERROR_CALL_UNDEFINED_FUNCTION_WITH_PARAMS).arg(function->getName()).arg(paramsString));
+                return NULL;
+            }
+        }
+        return paramsNode;
+    }
+    else {
+        parsererror(errorList.at(ERROR_CALL_UNDEFINED_FUNCTION_WITH_PARAMS).arg(function->getName()).arg(paramsString));
+    }
+
+    return NULL;
 }

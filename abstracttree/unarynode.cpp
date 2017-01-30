@@ -20,11 +20,6 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     }
 }
 
-ValueTypeEnum UnaryNode::getValueType()
-{
-    return _typeValue;
-}
-
 void UnaryNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)

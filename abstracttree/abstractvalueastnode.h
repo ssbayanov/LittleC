@@ -13,6 +13,10 @@ public:
 
     virtual ~AbstractValueASTNode();
 
+    bool isValueNode();
+
+protected:
+
     ValueTypeEnum _typeValue;
 };
 #endif // ABSTRACTVALUEASTNODE_H

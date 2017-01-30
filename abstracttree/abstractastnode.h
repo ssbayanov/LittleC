@@ -48,6 +48,8 @@ public:
 
     virtual ~AbstractASTNode();
 
+    virtual bool isValueNode();
+
 private:
     ASTNodeTypeEnum _nodetype;
 };

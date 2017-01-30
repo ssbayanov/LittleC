@@ -8,6 +8,7 @@ SymbolsTable::SymbolsTable(SymbolsTable *p) :
     if(parent != NULL)
         parent->childs.append(this);
     childs.clear();
+
 }
 
 SymbolsTable::~SymbolsTable()
@@ -17,6 +18,7 @@ SymbolsTable::~SymbolsTable()
 
     clear();
     childs.clear();
+
 }
 
 VariableTableRecord *SymbolsTable::insertVariable(QString name,

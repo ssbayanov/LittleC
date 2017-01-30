@@ -24,3 +24,8 @@ AbstractASTNode::~AbstractASTNode()
 {
 
 }
+
+bool AbstractASTNode::isValueNode()
+{
+    return false;
+}

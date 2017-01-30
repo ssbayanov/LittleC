@@ -16,3 +16,8 @@ AbstractValueASTNode::~AbstractValueASTNode()
 
 }
 
+bool AbstractValueASTNode::isValueNode()
+{
+    return true;
+}
+

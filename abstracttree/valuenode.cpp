@@ -15,11 +15,6 @@ void ValueNode::printNode(int level)
                  .arg(typeName.at(_typeValue));
 }
 
-ValueTypeEnum ValueNode::getValueType()
-{
-    return _typeValue;
-}
-
 ValueNode::~ValueNode()
 {
 

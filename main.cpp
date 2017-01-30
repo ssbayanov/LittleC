@@ -33,17 +33,20 @@ QTextStream outStream;
 QTextStream treeStream(stdout);
 QTextStream tokenStream(stdout);
 QTextStream errorStream(stdout);
+QTextStream symbolsStream(stdout);
 QTextStream cout(stdout);
 
 QFile outFile;
 QFile treeFile;
 QFile tokensFile;
 QFile errorsFile;
+QFile symbolsFile;
 
 bool printTree = false;
 bool printTokens = false;
-bool printWarnings = false;
+bool printWarnings = true;
 bool printErrors = true;
+bool printSymbols = false;
 
 bool isFlag(QString arg);
 bool changeStream(QTextStream *stream, QFile *file, QString fileName);
@@ -63,34 +66,6 @@ int main(int argc, char *argv[])
     for (int i = 1; i < argc; i++) {
         if(isFlag(argv[i])) {
             switch (argv[i][1]) {
-            case 't':
-                printTokens = true;
-                if (argc - 1 > i) {
-                    if (!isFlag(argv[i+1])) {
-                        i++;
-                        if(!changeStream(&tokenStream, &tokensFile, argv[i])){
-                            hasError = true;
-                            cout << QString("Cannot open token output file %1\n").arg(argv[i]);
-                        }
-                    }
-                }
-                break;
-            case 'T': printTokens = false;
-                break;
-            case 'e':
-                printErrors = true;
-                if (argc - 1 > i) {
-                    if (!isFlag(argv[i+1])) {
-                        i++;
-                        if(!changeStream(&errorStream, &errorsFile, argv[i])){
-                            hasError = true;
-                            cout << QString("Cannot open error output file %1\n").arg(argv[i]);
-                        }
-                    }
-                }
-                break;
-            case 'E':
-                printErrors = false;
             case 'a':
                 printTree = true;
                 if (argc - 1 > i) {
@@ -105,6 +80,50 @@ int main(int argc, char *argv[])
                 break;
             case 'A':
                 printTree = false;
+            case 'e':
+                printErrors = true;
+                if (argc - 1 > i) {
+                    if (!isFlag(argv[i+1])) {
+                        i++;
+                        if(!changeStream(&errorStream, &errorsFile, argv[i])){
+                            hasError = true;
+                            cout << QString("Cannot open error output file %1\n").arg(argv[i]);
+                        }
+                    }
+                }
+                break;
+            case 'E':
+                printErrors = false;
+            case 'o': break;
+            case 'O': break;
+            case 's': break;
+                printSymbols = true;
+                if (argc - 1 > i) {
+                    if (!isFlag(argv[i+1])) {
+                        i++;
+                        if(!changeStream(&symbolsStream, &symbolsFile, argv[i])){
+                            hasError = true;
+                            cout << QString("Cannot open error output file %1\n").arg(argv[i]);
+                        }
+                    }
+                }
+                break;
+            case 'S': break;
+                printSymbols = false;
+            case 't':
+                printTokens = true;
+                if (argc - 1 > i) {
+                    if (!isFlag(argv[i+1])) {
+                        i++;
+                        if(!changeStream(&tokenStream, &tokensFile, argv[i])){
+                            hasError = true;
+                            cout << QString("Cannot open token output file %1\n").arg(argv[i]);
+                        }
+                    }
+                }
+                break;
+            case 'T': printTokens = false;
+                break;
             case 'w':
                 printWarnings = true;
             case 'W':
