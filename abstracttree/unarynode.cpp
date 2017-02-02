@@ -15,6 +15,15 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     case UnarToBool:
         _typeValue = typeBool;
         break;
+    case UnarToChar:
+        _typeValue = typeChar;
+        break;
+    case UnarToShort:
+        _typeValue = typeShort;
+        break;
+    case UnarToFloat:
+        _typeValue = typeFloat;
+        break;
     default:
         _typeValue = ((AbstractValueASTNode *)_value)->getValueType();
     }

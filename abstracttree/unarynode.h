@@ -18,6 +18,9 @@ typedef enum
 static QStringList unarTypeString = QStringList() << "To double"
                                               << "To integer"
                                               << "To bool"
+                                              << "To char"
+                                              << "To float"
+                                              << "To short"
                                               << "Unar \"-\""
                                               << "Bool Not";
 

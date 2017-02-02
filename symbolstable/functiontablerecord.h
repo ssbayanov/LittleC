@@ -2,9 +2,6 @@
 #define FUNCTIONTABLERECORD_H
 
 #include "symbolstable/abstractsymboltablerecord.h"
-#include "abstracttree/ast.h"
-
-extern AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
 
 class SymbolsTable;
 

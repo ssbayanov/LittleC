@@ -28,7 +28,7 @@ public:
     bool isArray();
     bool isVariable();
 
-private:
+protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */
     QString _name;
     SymbolsTable *_table;

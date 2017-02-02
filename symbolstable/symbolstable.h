@@ -1,20 +1,20 @@
 #ifndef SYMBOLSTABLE_H
 #define SYMBOLSTABLE_H
 
-#include <QHash>
 #include <QString>
 #include <QVariant>
 #include <QList>
 #include "subexpression.h"
-#include "variabletablerecord.h"
-#include "functiontablerecord.h"
+#include "symbolstable/variabletablerecord.h"
+#include "symbolstable/functiontablerecord.h"
 #include "symbolstable/abstractsymboltablerecord.h"
+#include "symbolstable/structtablerecord.h"
 
 
 /**
  * @brief The SymbolsTable class for store variables in diffrence scopes
  */
-class SymbolsTable : public QHash<QString, AbstractSymbolTableRecord*>
+class SymbolsTable : public QList<AbstractSymbolTableRecord*>
 {
 public:
     SymbolsTable(SymbolsTable *p);
@@ -87,6 +87,9 @@ public:
                                         ValueTypeEnum type,
                                         SymbolsTable *params);
 
+    StructTableRecord *insertStruct(QString name,
+                                    SymbolsTable *variables);
+
 
     /**
      * @brief getVariable find variable into values list by name in current table
@@ -105,7 +108,10 @@ public:
      * @param name searching variable name
      * @return true if variable found or false if variable not founded
      */
+
     bool containsGlobal(QString name);
+
+    bool contains(QString name);
 
 private:
     SymbolsTable *parent;

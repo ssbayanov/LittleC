@@ -2,7 +2,7 @@
 #include <QDebug>
 
 SymbolsTable::SymbolsTable(SymbolsTable *p) :
-    QHash()
+    QList()
 {
     parent = p;
     if(parent != NULL)
@@ -34,7 +34,7 @@ VariableTableRecord *SymbolsTable::insertVariable(QString name,
         return NULL;
     }
 
-    this->insert(name, record);
+    this->append(record);
 
     return record;
 }
@@ -54,9 +54,26 @@ FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum ty
         return NULL;
     }
 
-    this->insert(name, function);
+    this->append(function);
 
     return function;
+}
+
+StructTableRecord *SymbolsTable::insertStruct(QString name, SymbolsTable *variables)
+{
+    StructTableRecord *structure;
+
+    try {
+        structure = new StructTableRecord(name, this, variables);
+    }
+    catch (std::bad_alloc& ba) {
+        return NULL;
+    }
+
+    this->append(structure);
+
+    return structure;
+
 }
 
 void SymbolsTable::setParent(SymbolsTable *p)
@@ -104,11 +121,12 @@ SymbolsTable *SymbolsTable::appendChildTable()
 
 AbstractSymbolTableRecord *SymbolsTable::getVariable(QString name)
 {
-    SymbolsTable::iterator i = find(name);
-    if(i != end())
-        return (AbstractSymbolTableRecord *) i.value();
-    else
-        return NULL;
+    for(SymbolsTable::iterator i = begin(); i != end(); i++) {
+        if((*i)->getName() == name) {
+            return *i;
+        }
+    }
+    return NULL;
 }
 
 AbstractSymbolTableRecord *SymbolsTable::getVariableGlobal(QString name)
@@ -119,10 +137,11 @@ AbstractSymbolTableRecord *SymbolsTable::getVariableGlobal(QString name)
         ptr = ptr->getParent();
     }
     if(ptr != NULL){
-        return ptr->find(name).value();
+        return ptr->getVariable(name);
     }
     return NULL;
 }
+
 
 bool SymbolsTable::containsGlobal(QString name)
 {
@@ -135,4 +154,13 @@ bool SymbolsTable::containsGlobal(QString name)
         return true;
     return false;
 }
+
+bool SymbolsTable::contains(QString name) {
+
+    if(getVariable(name) != NULL) {
+        return true;
+    }
+    return false;
+}
+
 

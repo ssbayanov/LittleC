@@ -49,7 +49,9 @@ SOURCES += main.cpp \
     abstracttree/arrayreferencenode.cpp \
     abstracttree/arraydeclarenode.cpp \
     abstracttree/arrayassignmentnode.cpp \
-    abstracttree/scannode.cpp
+    abstracttree/scannode.cpp \
+    symbolstable/structtablerecord.cpp \
+    abstracttree/structdeclarenode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -84,4 +86,6 @@ HEADERS += \
     abstracttree/arrayreferencenode.h \
     abstracttree/arraydeclarenode.h \
     abstracttree/arrayassignmentnode.h \
-    abstracttree/scannode.h
+    abstracttree/scannode.h \
+    symbolstable/structtablerecord.h \
+    abstracttree/structdeclarenode.h
