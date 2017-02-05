@@ -42,7 +42,9 @@
             ERROR_VARIABLE_IS_NOT_ARRAY,
             ERROR_SCAN_STRING,
             ERROR_PARAMS_FUNCTION,
-            ERROR_IS_NOT_A_TYPE};
+            ERROR_IS_NOT_A_TYPE,
+            ERROR_IS_NOT_A_STRUCT,
+            ERROR_IS_NOT_A_MEMBER_STRUCT};
 
     static QStringList errorList = QStringList() << "error: Variable %1 is already declared at this scope."
                                                  << "warning: Variable %1 is already declared."
@@ -66,7 +68,9 @@
                                                  << "error: variable %1 is not a array"
                                                  << "error: scan string is not valid"
                                                  << "error: params of call function %1 is not valid"
-                                                 << "error: %1 is not a type";
+                                                 << "error: %1 is not a type"
+                                                 << "error: variable %1 is not a structure"
+                                                 << "error: %1 is not a member struct %2";
 
 
     bool isNumericType(ValueTypeEnum type);
@@ -212,7 +216,7 @@ assignment compound_statement exp exp_list identifier_list
 // Array
 array_declaration array_declaration_statement array_reference
 // Structure
-struct_decloration_statement struct_variable_declaration_statement
+struct_decloration_statement struct_variable_declaration_statement srtuct_variable_reference
 // Control statements
 condition_statement
 switch_statement case_statement case_list case_tail
@@ -510,25 +514,62 @@ struct_decloration_statement : STRUCT IDENTIFIER[name] {
 
 struct_variable_declaration_statement : IDENTIFIER[struct_name] IDENTIFIER[name] SEMICOLON{
     AbstractSymbolTableRecord *structType = currentTable->getVariableGlobal(*$struct_name);
-    if(structType->isStructType()){
-        if(!contains(*$name)) {
-            AbstractSymbolTableRecord *structVariable = currentTable->insertStruct(*$name, (StructTypeTableRecord *) structType);
-            if(structVariable != NULL) {
-                $$ = new StructVariableDeclareNode(structType, structVariable);
+    if (structType != NULL) {
+        if (structType->isStructType()) {
+            if (!contains(*$name)) {
+                AbstractSymbolTableRecord *structVariable = currentTable->insertStruct(*$name, (StructTypeTableRecord *) structType);
+                if (structVariable != NULL) {
+                    $$ = new StructVariableDeclareNode(structType, structVariable);
+                }
+                else {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    $$ = NULL;
+                    YYERROR;
+                }
             }
             else {
-                parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
                 $$ = NULL;
                 YYERROR;
             }
         }
         else {
+            parsererror(errorList.at(ERROR_IS_NOT_A_TYPE).arg(structType->getName()));
             $$ = NULL;
             YYERROR;
         }
     }
     else {
         parsererror(errorList.at(ERROR_IS_NOT_A_TYPE).arg(structType->getName()));
+        $$ = NULL;
+        YYERROR;
+    }
+
+
+
+};
+
+srtuct_variable_reference : IDENTIFIER[struct_name] DOT IDENTIFIER[name] {
+    AbstractSymbolTableRecord *structVariable = currentTable->getVariableGlobal(*$struct_name);
+    if (structVariable != NULL) {
+        if (structVariable->isStruct()) {
+            AbstractSymbolTableRecord *member = ((StructTableRecord *) structVariable)->getStructType()->getVariables()->getVariable(*$name);
+            if (member != NULL) {
+                $$ = new StructReferenceNode(structVariable, member);
+            }
+            else {
+                parsererror(errorList.at(ERROR_IS_NOT_A_MEMBER_STRUCT).arg(*$name).arg(*$struct_name));
+                $$ = NULL;
+                YYERROR;
+            }
+        }
+        else {
+            parsererror(errorList.at(ERROR_IS_NOT_A_STRUCT).arg(*$struct_name));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$struct_name));
         $$ = NULL;
         YYERROR;
     }
@@ -986,7 +1027,8 @@ exp : exp[left] RELOP exp[right] {
     $$ = $1;
 }
 | array_reference
-| scan ;
+| scan
+| srtuct_variable_reference;
 
 /*
  * Not in 2016.

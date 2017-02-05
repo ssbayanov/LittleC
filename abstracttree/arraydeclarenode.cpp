@@ -15,7 +15,9 @@ void ArrayDeclareNode::printNode(int level)
                  .arg(typeName.at(_array->getValueType()));
 
     if (_values != NULL) {
-        treeStream << "Values:\n";
+        treeStream
+                << QString().fill(' ',level*2)
+                << "Values:\n";
         _values->printNode(level + 1);
     }
     else {
