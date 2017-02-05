@@ -9,6 +9,8 @@
 #include "symbolstable/functiontablerecord.h"
 #include "symbolstable/abstractsymboltablerecord.h"
 #include "symbolstable/structtablerecord.h"
+#include "symbolstable/structtypetablerecord.h"
+
 
 
 /**
@@ -87,8 +89,11 @@ public:
                                         ValueTypeEnum type,
                                         SymbolsTable *params);
 
-    StructTableRecord *insertStruct(QString name,
+    StructTypeTableRecord *insertStructType(QString name,
                                     SymbolsTable *variables);
+
+    StructTableRecord *insertStruct(QString name,
+                                    StructTypeTableRecord *typeStruct);
 
 
     /**

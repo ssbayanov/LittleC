@@ -9,7 +9,9 @@ class SymbolsTable;
 typedef enum {
     SymbolTableRecord_Function,
     SymbolTableRecord_Variable,
-    SymbolTableRecord_Array
+    SymbolTableRecord_Array,
+    SymbolTableRecord_Struct,
+    SymbolTableRecord_StructType
 } SymbolsTableRecordType;
 
 class AbstractSymbolTableRecord
@@ -27,6 +29,8 @@ public:
     bool isFunction();
     bool isArray();
     bool isVariable();
+    bool isStructType();
+    bool isStruct();
 
 protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */

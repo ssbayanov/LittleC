@@ -1,7 +1,7 @@
 #include "structdeclarenode.h"
 
 StructDeclareNode::StructDeclareNode(AbstractSymbolTableRecord *variable, AbstractASTNode *variablesList)
-    : AbstractValueASTNode(NT_StructDeclare)
+    : AbstractValueASTNode(NT_StructTypeDeclare)
 {
     _variablesList = variablesList;
     _variable = variable;
@@ -10,7 +10,7 @@ StructDeclareNode::StructDeclareNode(AbstractSymbolTableRecord *variable, Abstra
 void StructDeclareNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << QString("Declaration struct: %1")
+              << QString("Declaration struct type: %1\n")
                  .arg(_variable->getName());
 
     if (_variablesList != NULL) {

@@ -21,6 +21,7 @@
 #include "abstracttree/referencenode.h"
 #include "abstracttree/scannode.h"
 #include "abstracttree/structdeclarenode.h"
+#include "abstracttree/structvariabledeclarenode.h"
 #include "abstracttree/switchnode.h"
 #include "abstracttree/unarynode.h"
 #include "abstracttree/valuenode.h"

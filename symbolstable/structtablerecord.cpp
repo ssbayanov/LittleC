@@ -1,15 +1,13 @@
 #include "structtablerecord.h"
 
-StructTableRecord::StructTableRecord(QString name, SymbolsTable *table, SymbolsTable *variables)
-    : AbstractSymbolTableRecord(SymbolTableRecord_Function, name, typeStruct, table)
+StructTableRecord::StructTableRecord(QString name, SymbolsTable *table, StructTypeTableRecord *structType)
+    : AbstractSymbolTableRecord(SymbolTableRecord_Struct, name, typeStruct, table)
 {
-    _variables = variables;
+    _structType = structType;
 }
 
-SymbolsTable *StructTableRecord::getVariables()
+StructTypeTableRecord *StructTableRecord::getStructType()
 {
-    return _variables;
+    return _structType;
 }
-
-
 

@@ -47,3 +47,13 @@ bool AbstractSymbolTableRecord::isVariable()
 {
     return (_type == SymbolTableRecord_Variable);
 }
+
+bool AbstractSymbolTableRecord::isStructType()
+{
+    return (_type == SymbolTableRecord_StructType);
+}
+
+bool AbstractSymbolTableRecord::isStruct()
+{
+    return (_type == SymbolTableRecord_Struct);
+}

@@ -33,7 +33,8 @@ typedef enum
     NT_ArrayReference,
     NT_ArrayDeclare,
     NT_ArrayAssignment,
-    NT_StructDeclare
+    NT_StructDeclare,
+    NT_StructTypeDeclare
 } ASTNodeTypeEnum;
 
 class AbstractASTNode

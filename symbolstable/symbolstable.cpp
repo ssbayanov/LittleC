@@ -59,12 +59,12 @@ FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum ty
     return function;
 }
 
-StructTableRecord *SymbolsTable::insertStruct(QString name, SymbolsTable *variables)
+StructTypeTableRecord *SymbolsTable::insertStructType(QString name, SymbolsTable *variables)
 {
-    StructTableRecord *structure;
+    StructTypeTableRecord *structure;
 
     try {
-        structure = new StructTableRecord(name, this, variables);
+        structure = new StructTypeTableRecord(name, this, variables);
     }
     catch (std::bad_alloc& ba) {
         return NULL;
@@ -74,6 +74,22 @@ StructTableRecord *SymbolsTable::insertStruct(QString name, SymbolsTable *variab
 
     return structure;
 
+}
+
+StructTableRecord *SymbolsTable::insertStruct(QString name, StructTypeTableRecord *typeStruct)
+{
+    StructTableRecord *structure;
+
+    try {
+        structure = new StructTableRecord(name, this, typeStruct);
+    }
+    catch (std::bad_alloc& ba) {
+        return NULL;
+    }
+
+    this->append(structure);
+
+    return structure;
 }
 
 void SymbolsTable::setParent(SymbolsTable *p)

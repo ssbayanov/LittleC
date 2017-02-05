@@ -2,16 +2,19 @@
 #define STRUCTTABLERECORD_H
 
 #include "symbolstable/abstractsymboltablerecord.h"
+#include "symbolstable/structtypetablerecord.h"
+
+class StructTypeTableRecord;
 
 class StructTableRecord : public AbstractSymbolTableRecord
 {
 public:
-    StructTableRecord(QString name, SymbolsTable *table, SymbolsTable *variables);
+    StructTableRecord(QString name, SymbolsTable *table, StructTypeTableRecord *structType);
 
-    SymbolsTable *getVariables();
+    StructTypeTableRecord *getStructType();
 
 private:
-    SymbolsTable *_variables;
+    StructTypeTableRecord *_structType;
 };
 
 #endif // STRUCTTABLERECORD_H

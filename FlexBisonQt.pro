@@ -50,8 +50,10 @@ SOURCES += main.cpp \
     abstracttree/arraydeclarenode.cpp \
     abstracttree/arrayassignmentnode.cpp \
     abstracttree/scannode.cpp \
+    abstracttree/structdeclarenode.cpp \
+    symbolstable/structtypetablerecord.cpp \
     symbolstable/structtablerecord.cpp \
-    abstracttree/structdeclarenode.cpp
+    abstracttree/structvariabledeclarenode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -63,6 +65,8 @@ HEADERS += \
     symbolstable/abstractsymboltablerecord.h \
     symbolstable/variabletablerecord.h \
     symbolstable/functiontablerecord.h \
+    symbolstable/structtypetablerecord.h \
+    symbolstable/structtablerecord.h \
     abstracttree/abstractastnode.h \
     abstracttree/abstractvalueastnode.h \
     abstracttree/valuenode.h \
@@ -87,5 +91,6 @@ HEADERS += \
     abstracttree/arraydeclarenode.h \
     abstracttree/arrayassignmentnode.h \
     abstracttree/scannode.h \
-    symbolstable/structtablerecord.h \
-    abstracttree/structdeclarenode.h
+    abstracttree/structdeclarenode.h \
+    abstracttree/structvariabledeclarenode.h
+
