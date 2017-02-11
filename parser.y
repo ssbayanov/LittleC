@@ -80,8 +80,6 @@
     AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, AbstractValueASTNode *right);
     AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value = NULL);
-    AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value = NULL);
-    AbstractASTNode *arrayAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *index, AbstractValueASTNode *value);
     AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to);
     AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode *paramsNode);
     int getSizeType(ValueTypeEnum type);
@@ -131,7 +129,7 @@
 extern int lno;
 extern int parserlex();
 
-int g_LoopNestingCounter = 0;
+int loopNestingCounter = 0;
 int enumCounter = 0;
 
 static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
@@ -212,7 +210,7 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 declaration declaration_list_element declaration_list enum_decloration_statement
 parameter parameter_list
 // Operations
-assignment compound_statement exp exp_list identifier_list
+assignment compound_statement exp exp_list identifier_list reference variable_reference
 // Array
 array_declaration array_declaration_statement array_reference
 // Structure
@@ -652,7 +650,7 @@ goto_statement : GOTO IDENTIFIER SEMICOLON {
 };
 
 break_statement : BREAK SEMICOLON {
-    if (g_LoopNestingCounter <= 0) {
+    if (loopNestingCounter <= 0) {
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
         $$ = NULL;
     }
@@ -697,8 +695,11 @@ case_statement : CASE IDENTIFIER COLON statement_list {
     $$ = new CaseNode(NULL, $3);
 };
 
-switch_statement : SWITCH OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
-    $$ = new SwitchNode($3, $6);
+switch_statement : SWITCH {
+    loopNestingCounter++;
+} OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
+    loopNestingCounter--;
+    $$ = new SwitchNode($exp, $case_list);
 };
 
 //Print and scan-------------------------------------------------------------------
@@ -743,12 +744,12 @@ condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF {
 loop_statement : while_head statement {
     ((WhileNode *)$1)->setBody($2);
     $$ = $1;
-    --g_LoopNestingCounter;
+    --loopNestingCounter;
 }
 | for_head statement {
     ((ForNode *)$1)->setBody($2);
     $$ = $1;
-    --g_LoopNestingCounter;
+    --loopNestingCounter;
 
     currentTable->setHidden();
     currentTable = currentTable->getParent();
@@ -757,7 +758,7 @@ loop_statement : while_head statement {
     ((WhileNode *)$while_head)->setBody($2);
     ((WhileNode *)$while_head)->setIsDoWhile(true);
     $$ = $3;
-    --g_LoopNestingCounter;
+    --loopNestingCounter;
 }
 ;
 
@@ -770,7 +771,7 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
     }
 
     $$ = new WhileNode(cond);
-    ++g_LoopNestingCounter;
+    ++loopNestingCounter;
 };
 
 for_head : FOR {
@@ -785,29 +786,26 @@ OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment
     }
 
     $$ = new ForNode($init, cond, $increment);
-    ++g_LoopNestingCounter;
+    ++loopNestingCounter;
 };
 
 do_head : DO {
-    ++g_LoopNestingCounter;
+    ++loopNestingCounter;
 }
 
 // Assignments ---------------------------------------------------------------
 
-assignment : IDENTIFIER[name] ASSIGN exp[value] {
-    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
-    if (var != NULL) {
-        AbstractASTNode *node = numericAssign(var, (AbstractValueASTNode *)$value);
-        if (node == NULL)
-            YYERROR;
-        $$ = node; }
+assignment : reference[variable] ASSIGN exp[value] {
+    AbstractASTNode *node = binarMathNode(((AbstractValueASTNode *) $variable), "=", ((AbstractValueASTNode *) $value));
+    if (node != NULL) {
+        $$ = node;
+    }
     else {
-        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$name));
         $$ = NULL;
         YYERROR;
     }
-}
-| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
+};
+/*| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
     AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
     if (var != NULL) {
         AbstractASTNode *node = arrayAssign(var, (AbstractValueASTNode *)$index, (AbstractValueASTNode *)$value);
@@ -820,6 +818,7 @@ assignment : IDENTIFIER[name] ASSIGN exp[value] {
         YYERROR;
     }
 };
+*/
 
 // Expressions --------------------------------------------------------------
 
@@ -828,7 +827,7 @@ identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
         if(!currentTable->containsGlobal(*$id)) {
             AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
             if(var != NULL) {
-                $$ = new ListNode(new AssignmentNode(var, new ValueNode(typeInt, enumCounter++)), $list);
+                $$ = new ListNode(new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "="), $list);
             }
             else {
                 $$ = NULL;
@@ -850,7 +849,7 @@ identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
     if(!currentTable->containsGlobal(*$id)) {
         AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
         if(var != NULL) {
-            $$ = new AssignmentNode(var, new ValueNode(typeInt, enumCounter++));
+            $$ = new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "=");
         }
         else {
             $$ = NULL;
@@ -871,6 +870,23 @@ exp_list : exp COMA exp_list {
 | exp {
     $$ = $1;
 };
+
+reference : array_reference
+| variable_reference
+| srtuct_variable_reference;
+
+variable_reference :  IDENTIFIER {
+    AbstractSymbolTableRecord *var = getVariableByName(*$1);
+    if (var != NULL) {
+        $$ = new ReferenceNode(var);
+    }
+    else {
+        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        $$ = NULL;
+        YYERROR;
+    }
+
+}
 
 exp : exp[left] RELOP exp[right] {
     // Relation exp
@@ -1011,24 +1027,11 @@ exp : exp[left] RELOP exp[right] {
 | FALSE {
     $$ = new ValueNode(typeBool, 0);
 }
-| IDENTIFIER {
-    AbstractSymbolTableRecord *var = getVariableByName(*$1);
-    if (var != NULL) {
-        $$ = new ReferenceNode(var);
-    }
-    else {
-        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
-        $$ = NULL;
-        YYERROR;
-    }
-
-}
 | function_call {
     $$ = $1;
 }
-| array_reference
 | scan
-| srtuct_variable_reference;
+| reference;
 
 /*
  * Not in 2016.
@@ -1148,74 +1151,10 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
         }
-        return numericAssign(var, value);
+        return new BinarNode(new ReferenceNode(var), (value == NULL ? new ValueNode(type, 0) : value), "=");
     }
     else {
         return NULL;
-    }
-}
-
-AbstractASTNode *numericAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *value)
-{
-
-    if (var == NULL) {
-        parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
-        return NULL;
-    }
-
-    if (value != NULL) {
-        if (!isNumericType(value))
-        {
-            parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
-                        .arg(typeName.at(value->getValueType()))
-                        .arg(typeName.at(var->getType())));
-            return NULL;
-        }
-        else {
-            if (value->getValueType() != var->getValueType()) {
-                value = convert(value, var->getValueType());
-            }
-
-            if (value != NULL)
-                return new AssignmentNode(var, value);
-            else
-                return NULL;
-        }
-    }
-    else {
-        return new AssignmentNode(var, new ValueNode(var->getValueType(), 0));
-    }
-}
-
-AbstractASTNode *arrayAssign(AbstractSymbolTableRecord *var, AbstractValueASTNode *index, AbstractValueASTNode *value)
-{
-
-    if (var == NULL) {
-        parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
-        return NULL;
-    }
-
-    if (value != NULL) {
-        if (!isNumericType(value))
-        {
-            parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE)
-                        .arg(typeName.at(value->getValueType()))
-                        .arg(typeName.at(var->getType())));
-            return NULL;
-        }
-        else {
-            if (value->getValueType() != var->getValueType()) {
-                value = convert(value, var->getValueType());
-            }
-
-            if (value != NULL)
-                return new ArrayAssignmentNode(var, index, value);
-            else
-                return NULL;
-        }
-    }
-    else {
-        return new ArrayAssignmentNode(var, index, new ValueNode(var->getValueType(), 0));
     }
 }
 

@@ -38,7 +38,6 @@ SOURCES += main.cpp \
     abstracttree/ifnode.cpp \
     abstracttree/whilenode.cpp \
     abstracttree/fornode.cpp \
-    abstracttree/assignmentnode.cpp \
     abstracttree/binarnode.cpp \
     abstracttree/unarynode.cpp \
     abstracttree/labelnode.cpp \
@@ -48,7 +47,6 @@ SOURCES += main.cpp \
     abstracttree/printnode.cpp \
     abstracttree/arrayreferencenode.cpp \
     abstracttree/arraydeclarenode.cpp \
-    abstracttree/arrayassignmentnode.cpp \
     abstracttree/scannode.cpp \
     abstracttree/structdeclarenode.cpp \
     symbolstable/structtypetablerecord.cpp \
@@ -79,7 +77,6 @@ HEADERS += \
     abstracttree/ifnode.h \
     abstracttree/whilenode.h \
     abstracttree/fornode.h \
-    abstracttree/assignmentnode.h \
     abstracttree/binarnode.h \
     abstracttree/unarynode.h \
     abstracttree/labelnode.h \
@@ -90,7 +87,6 @@ HEADERS += \
     abstracttree/ast.h \
     abstracttree/arrayreferencenode.h \
     abstracttree/arraydeclarenode.h \
-    abstracttree/arrayassignmentnode.h \
     abstracttree/scannode.h \
     abstracttree/structdeclarenode.h \
     abstracttree/structvariabledeclarenode.h \

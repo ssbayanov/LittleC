@@ -42,7 +42,7 @@ void BinarNode::printNode(int level)
     }
     else {
         treeStream << QString().fill(' ',level*2)
-                  << "BAD LEFT NODE!!!\n";
+                  << "BAD RIGHT NODE!!!\n";
     }
 }
 
