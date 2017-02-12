@@ -7,7 +7,6 @@
 #include <QTextStream>
 #include <QFile>
 
-//#include "myast.h"
 #include <map>
 #include <tuple>
 #include <vector>

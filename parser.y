@@ -25,6 +25,7 @@
             ERROR_NOT_DECLARED,
             ERROR_TYPES_INCOMPATIBLE,
             ERROR_BREAK_NOT_INSIDE_LOOP,
+            ERROR_CONTINUE_NOT_INSIDE_LOOP,
             ERROR_MEMORY_ALLOCATION,
             ERROR_UNRECOGNIZED_TOKEN,
             ERROR_UNFINISHED_STRING,
@@ -51,6 +52,7 @@
                                                  << "error: Variable %1 was not declared."
                                                  << "error: can not convert %1 to %2"
                                                  << "error: 'break' not inside loop."
+                                                 << "error: 'continue' not inside loop."
                                                  << "error: memory allocation or access error."
                                                  << "error: %1 - unrecognized token."
                                                  << "error: unfinished string."
@@ -218,7 +220,7 @@ struct_decloration_statement struct_variable_declaration_statement srtuct_variab
 // Control statements
 condition_statement
 switch_statement case_statement case_list case_tail
-loop_statement while_head break_statement for_head
+loop_statement while_head break_statement continue_statement for_head
 goto_statement label_statement
 // Functions
 function_call function_description_statement function_return_statement
@@ -283,6 +285,7 @@ utterance : print
 statement : condition_statement
 | compound_statement
 | break_statement
+| continue_statement
 | loop_statement
 | switch_statement
 | goto_statement
@@ -604,8 +607,7 @@ parameter_list : parameter[param] COMA parameter_list[list] {
     $$ = NULL;
 };
 
-parameter : data_types[type] IDENTIFIER
-{
+parameter : data_types[type] IDENTIFIER{
     if (isNumericType( $type )) {
         AbstractASTNode *var = numericDeclaration($1, *$2);
         if (var == NULL)
@@ -616,6 +618,19 @@ parameter : data_types[type] IDENTIFIER
         $$ = NULL;
     }
 }
+| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET {
+    if (isNumericType( $type )) {
+        AbstractASTNode *var = arrayDeclaration($1, *$2);
+        if (var == NULL)
+            YYERROR;
+        $$ = var;
+    }
+    else {
+        $$ = NULL;
+    }
+}
+;
+
 
 declaration : parameter
 | data_types IDENTIFIER ASSIGN exp
@@ -659,7 +674,15 @@ break_statement : BREAK SEMICOLON {
     }
 }
 
-
+continue_statement : CONTINUE SEMICOLON {
+    if (loopNestingCounter <= 0) {
+        parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
+        $$ = NULL;
+    }
+    else {
+        $$ = new GoToNode("NextIterationOfLoop");
+    }
+}
 //Switch - case -------------------------------------------------------------------
 case_list : case_statement case_tail {
     if ($2 == NULL) {
