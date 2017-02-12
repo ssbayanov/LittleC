@@ -29,15 +29,15 @@
 #include <vector>
 #include <string.h>
 
-#include "myast.h"
-int yyerror(std::string);
-int yylex();
 #include "parser_yacc.h"
+
+
+bool multilineComment();
+
 #define lexerlex parserlex
-//using namespace std;
+
 typedef std::tuple<std::string, std::string, int> TokenTableRow;
 std::vector <std::tuple<std::string, std::string, int> > TokenTable;
-
 
 #define yyterminate() return EOFILE
 
@@ -46,8 +46,7 @@ int lno = 1;
 
 %option nodefault noyywrap
 
-/*stringch      [^"\n]*/
-%x COMMENTS
+stringch      [^"\n]
 
 %%
 
@@ -63,43 +62,125 @@ int lno = 1;
 \/\/.*$     { }
 
 
-    /* Noneclose multiline comment.
-\/\*(.|[\t\n\r])* {
-    std::cerr << "ERROR: " << yytext << " - Unfinished comment. Line "
-         << lno << ".\n";}*/
-
-
-    /* Multiline comment.*/
-\/\*(.|[\t\n\r])*\*\/   { }
-
+    /* Multiline comment. */
+\/\* { bool isClosed = multilineComment();
+        if(!isClosed)
+            parsererror(errorList.at(ERROR_UNCLOSED_COMMENT));
+    }
 
 
     /* Binar operations. */
-\=                          { TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno)); return ASSIGN;}
-\+                          { TokenTable.push_back(TokenTableRow("PLUS", yytext, lno)); strcpy(parserlval.s, yytext); return PLUS;}
-\-                          { TokenTable.push_back(TokenTableRow("MINUS", yytext, lno)); strcpy(parserlval.s, yytext); return MINUS;}
-\++|\--                     { TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno)); strcpy(parserlval.s, yytext); return ADDUOP;}
+\=                          {
+                                //TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno));
+                                return ASSIGN;
+                            }
+    /*
+     * Not in 2016.
+     * \+{2}|\-{2}                     {
+                                TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return INCREMENT;
+                            }*/
+
+\+                          {
+                                //TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return PLUS;
+                            }
+
+\-                         {
+                                //TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return MINUS;
+                            }
 
     /*  */
-\*|\/|\%                    { TokenTable.push_back(TokenTableRow("MULOP", yytext, lno)); strcpy(parserlval.s, yytext); return MULOP;}
+\*|\/|\%                    {
+                                TokenTable.push_back(TokenTableRow("MULOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return MULOP;
+                            }
 
     /* Boolean operations */
-"&"|"|"|"^"|"!"             { TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno)); strcpy(parserlval.s, yytext); return BOOLOP;}
+
+"&"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return AND;
+                            }
+"|"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return OR;
+                            }
+"^"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return XOR;
+                            }
+"!"                         {
+                                TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return NOT;
+                            }
 
     /* Comparison and relation operator tokens */
-">="|"<="|"<"|">"|"=="|"!=" { TokenTable.push_back(TokenTableRow("RELOP", yytext, lno)); strcpy(parserlval.s, yytext); return RELOP;}
+">="|"<="|"<"|">"|"=="|"!=" {
+                                TokenTable.push_back(TokenTableRow("RELOP", yytext, lno));
+                                strcpy(parserlval.opName, yytext);
+                                return RELOP;
+                            }
 
     /* Punctuation */
-\;  { TokenTable.push_back(TokenTableRow("SEMICOLON", yytext, lno)); return SEMICOLON;}
-\:  { TokenTable.push_back(TokenTableRow("COLON", yytext, lno)); return COLON;}
-\,  { TokenTable.push_back(TokenTableRow("COMA", yytext, lno)); return COMA;}
-\.  { TokenTable.push_back(TokenTableRow("DOT", yytext, lno)); return DOT;}
-\[  { TokenTable.push_back(TokenTableRow("OPENBRACKET", yytext, lno)); return OPENBRACKET;}
-\]  { TokenTable.push_back(TokenTableRow("CLOSEBRACKET", yytext, lno)); return CLOSEBRACKET;}
-\(  { TokenTable.push_back(TokenTableRow("OPENPAREN", yytext, lno)); return OPENPAREN;}
-\)  { TokenTable.push_back(TokenTableRow("CLOSEPAREN", yytext, lno)); return CLOSEPAREN;}
-\{  { TokenTable.push_back(TokenTableRow("OPENBRACE", yytext, lno)); return OPENBRACE;}
-\}  { TokenTable.push_back(TokenTableRow("CLOSEBRACE", yytext, lno)); return CLOSEBRACE;}
+\;                          {
+                                TokenTable.push_back(TokenTableRow("SEMICOLON", yytext, lno));
+                                return SEMICOLON;
+                            }
+
+\:                          {
+                                TokenTable.push_back(TokenTableRow("COLON", yytext, lno));
+                                return COLON;
+                            }
+
+\,                          {
+                                TokenTable.push_back(TokenTableRow("COMA", yytext, lno));
+                                return COMA;
+                            }
+
+\.                          {
+                                TokenTable.push_back(TokenTableRow("DOT", yytext, lno));
+                                return DOT;
+                            }
+
+\[                          {
+                                TokenTable.push_back(TokenTableRow("OPENBRACKET", yytext, lno));
+                                return OPENBRACKET;
+                            }
+
+\]                          {
+                                TokenTable.push_back(TokenTableRow("CLOSEBRACKET", yytext, lno));
+                                return CLOSEBRACKET;
+                            }
+
+\(                          {
+                                TokenTable.push_back(TokenTableRow("OPENPAREN", yytext, lno));
+                                return OPENPAREN;
+                            }
+
+\)                          {
+                                TokenTable.push_back(TokenTableRow("CLOSEPAREN", yytext, lno));
+                                return CLOSEPAREN;
+                            }
+
+\{                          {
+                                TokenTable.push_back(TokenTableRow("OPENBRACE", yytext, lno));
+                                return OPENBRACE;
+                            }
+
+\}                          {
+                                TokenTable.push_back(TokenTableRow("CLOSEBRACE", yytext, lno));
+                                return CLOSEBRACE;
+                            }
 
     /* Control commands. */
 if       { TokenTable.push_back(TokenTableRow("IF", yytext, lno)); return IF; }
@@ -130,43 +211,68 @@ enum     { TokenTable.push_back(TokenTableRow("ENUM", yytext, lno)); return ENUM
 struct   { TokenTable.push_back(TokenTableRow("STRUCT", yytext, lno)); return STRUCT; }
 
     /* Predestined values. */
-true     { TokenTable.push_back(TokenTableRow("TRUE", yytext, lno)); return TRUE; }
-false    { TokenTable.push_back(TokenTableRow("FALSE", yytext, lno)); return FALSE; }
+true     { TokenTable.push_back(TokenTableRow("TRUE", yytext, lno)); return TRUEt; }
+false    { TokenTable.push_back(TokenTableRow("FALSE", yytext, lno)); return FALSEt; }
 
     /* Integrated functions. */
 print    { TokenTable.push_back(TokenTableRow("PRINT", yytext, lno)); return PRINT; }
 scan     { TokenTable.push_back(TokenTableRow("SCAN", yytext, lno)); return SCAN; }
 
     /* Real constants. */
-[0-9]+\.[0-9]+ {TokenTable.push_back(TokenTableRow("REALCONST", yytext, lno)); parserlval.d = atof(yytext);
+[0-9]+\.[0-9]+ {TokenTable.push_back(TokenTableRow("REALCONST", yytext, lno)); parserlval.value = new QVariant(yytext);
             return REALCONST;}
 
     /* Integer constanst. */
-[0-9]+ {TokenTable.push_back(TokenTableRow("INTCONST", yytext, lno)); parserlval.i = atoi(yytext);
+[0-9]+ {TokenTable.push_back(TokenTableRow("INTCONST", yytext, lno)); parserlval.value = new QVariant(yytext);
             return INTCONST;}
 
     /* Identifiers. */
-[0-9]([A-Za-z0-9])*  {
-        std::cerr << "ERROR: " << yytext << " - Wrong name of identifier. It must begin with a letter or an underscore. Line "
-                                                                                  << lno << ".\n"; }
-[A-Za-z_]([A-Za-z0-9])* {TokenTable.push_back(TokenTableRow("IDENTIFIER", yytext, lno)); parserlval.var = new std::string(yytext, yyleng);
+[:alpha:]|[[:alnum:]_]* {TokenTable.push_back(TokenTableRow("IDENTIFIER", yytext, lno)); parserlval.variableName = new QString(yytext);
 return IDENTIFIER;}
- \"[^\"]*$  {
-  std::cerr << "ERROR: " << yytext << " - Unfinished string literal. Line "
-                                                                            << lno << ".\n"; }
 
- \"[^\"]*\" {
- TokenTable.push_back(TokenTableRow("STRCONST", yytext, lno)); parserlval.str = new std::string(yytext, yyleng);
-                                                      return STRCONST; }
+    /* Errors strings (without ") */
+ \"{stringch}*$  {
+     parsererror(errorList.at(ERROR_UNFINISHED_STRING));}
 
+    /* Char */
+\'{stringch}{1}\' {
+    TokenTable.push_back(TokenTableRow("CHARCONST", yytext, lno));
+    QString c = QString(yytext);
+    parserlval.value = new QVariant(c.at(1));
+    return CHARCONST;}
+
+    /* String */
+\"{stringch}*\" {
+     TokenTable.push_back(TokenTableRow("STRING", yytext, lno));
+     QString str = QString(yytext);
+     parserlval.value = new QVariant(str.mid(1,str.length() - 1));
+     return STRING;
+     }
 
     /* Undefined token. */
 .       {
-        std::cerr << "ERROR: " << yytext << " - unrecognized token. Line " << lno << ".\n";
+        parsererror(errorList.at(ERROR_UNRECOGNIZED_TOKEN).arg(yytext));
         }
 
 
 <<EOF>> {
-        return EOFILE; }
+        return EOFILE;
+        }
+
 
 %%
+bool multilineComment(){
+    char    c1 = ' ', c2 = ' ';
+    while(c1 != '*' || c2 != '/')
+    {
+        c1 = c2;
+        c2 = yyinput();
+        if(c2 == EOF)
+            return false;
+
+        if(c2 == '\n')
+            lno++;
+    }
+
+    return true;
+}
