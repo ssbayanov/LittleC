@@ -20,6 +20,11 @@ void AbstractASTNode::printNode(int level)
     treeStream << QString("printing Abstract node :( on level %1\n").arg(level);
 }
 
+QString AbstractASTNode::printTripleCode(int level)
+{
+    outStream << QString("printing Abstract node :( on level %1\n").arg(level);
+}
+
 AbstractASTNode::~AbstractASTNode()
 {
 

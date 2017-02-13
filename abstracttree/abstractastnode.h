@@ -8,6 +8,7 @@
 #include "symbolstable/abstractsymboltablerecord.h"
 
 extern QTextStream treeStream;
+extern QTextStream outStream;
 
 typedef enum
 {
@@ -47,7 +48,9 @@ public:
     void setType(ASTNodeTypeEnum type);
     ASTNodeTypeEnum getType();
 
-    virtual void printNode(int level) = 0;
+    virtual void printNode(int level = 0);
+
+    virtual QString printTripleCode(int level = 0);
 
     virtual ~AbstractASTNode();
 

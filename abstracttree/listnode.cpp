@@ -10,26 +10,35 @@ ListNode::ListNode(AbstractASTNode *left, AbstractASTNode *right)
 void ListNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << "List:\n";
+               << "List:\n";
     if(_left != NULL){
         treeStream << QString().fill(' ',level*2)
-                  << "Left:\n";
+                   << "Left:\n";
         _left->printNode(level+1);
     }
     else {
         treeStream  << QString().fill(' ',level*2)
-                   << "BAD LEFT LIST NODE\n";
-;
+                    << "BAD LEFT LIST NODE\n";
+        ;
     }
 
     if(_right != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "Right:\n";
+                   << "Right:\n";
         _right->printNode(level+1);
     }
     else
         treeStream << "BAD RIGHT LIST NODE";
 
+}
+
+QString ListNode::printTripleCode(int level)
+{
+    if(_left != NULL)
+        _left->printTripleCode();
+    if(_left != NULL)
+        _right->printTripleCode();
+    return "";
 }
 
 AbstractASTNode *ListNode::getLeftNode()

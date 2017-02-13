@@ -24,6 +24,15 @@ static QStringList unarTypeString = QStringList() << "To double"
                                               << "Unar \"-\""
                                               << "Bool Not";
 
+static QStringList unarOperationCommand = QStringList() << "unartodouble"
+                                              << "unartointeger"
+                                              << "unartobool"
+                                              << "unartochar"
+                                              << "unartofloat"
+                                              << "unartoshort"
+                                              << "unarminus"
+                                              << "unarnot";
+
 /**
  * @brief The UnaryNode class node for storage unary operations
  */
@@ -33,6 +42,8 @@ public:
     UnaryNode(TypeUnary uType, AbstractASTNode *left);
 
     void printNode(int level);
+
+    virtual QString printTripleCode(int level);
 
     ~UnaryNode();
 

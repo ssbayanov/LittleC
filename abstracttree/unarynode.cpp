@@ -32,19 +32,31 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
 void UnaryNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << QString("Unar operation. Type: %1. Type of result: %2\n")
-                 .arg(unarTypeString.at(_uType))
-                 .arg(typeName.at(_typeValue));
+               << QString("Unar operation. Type: %1. Type of result: %2\n")
+                  .arg(unarTypeString.at(_uType))
+                  .arg(typeName.at(_typeValue));
 
     if(_value != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "Value:\n";
+                   << "Value:\n";
         _value->printNode(level+1);
     }
     else {
         treeStream << QString().fill(' ',level*2)
-                  << "BAD VALUE NODE!!!\n";
+                   << "BAD VALUE NODE!!!\n";
     }
+}
+
+QString UnaryNode::printTripleCode(int level)
+{
+    if(_value != NULL) {
+        outStream << QString("$t%1 = %2 %3\n")
+                     .arg(level)
+                     .arg(unarOperationCommand.at(_uType))
+                     .arg(_value->printTripleCode(level+1));
+    }
+    return QString("$t%1")
+            .arg(level);
 }
 
 UnaryNode::~UnaryNode()

@@ -11,8 +11,13 @@ void ValueNode::printNode(int level)
 {
 
     treeStream << QString().fill(' ',level*2)
-              << QString("Value: %1, type: %2\n").arg(_value.toString())
-                 .arg(typeName.at(_typeValue));
+               << QString("Value: %1, type: %2\n").arg(_value.toString())
+                  .arg(typeName.at(_typeValue));
+}
+
+QString ValueNode::printTripleCode(int level)
+{
+    return _value.toString();
 }
 
 ValueNode::~ValueNode()

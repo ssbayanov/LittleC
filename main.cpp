@@ -28,19 +28,22 @@ typedef enum {
     SE_Out
 } StreamsEnum;
 
-QTextStream outStream;
+QTextStream inStream;
+QTextStream outStream(stdout);
 QTextStream treeStream(stdout);
 QTextStream tokenStream(stdout);
 QTextStream errorStream(stdout);
 QTextStream symbolsStream(stdout);
 QTextStream cout(stdout);
 
+QFile inFile;
 QFile outFile;
 QFile treeFile;
 QFile tokensFile;
 QFile errorsFile;
 QFile symbolsFile;
 
+bool printOut = true;
 bool printTree = false;
 bool printTokens = false;
 bool printWarnings = true;
@@ -93,8 +96,20 @@ int main(int argc, char *argv[])
                 break;
             case 'E':
                 printErrors = false;
-            case 'o': break;
+            case 'o':
+                printOut = true;
+                if (argc - 1 > i) {
+                    if (!isFlag(argv[i+1])) {
+                        i++;
+                        if(!changeStream(&outStream, &outFile, argv[i])){
+                            hasError = true;
+                            cout << QString("Cannot open error output file %1\n").arg(argv[i]);
+                        }
+                    }
+                }
+                break;
             case 'O': break;
+                printOut = true;
             case 's': break;
                 printSymbols = true;
                 if (argc - 1 > i) {
@@ -133,6 +148,8 @@ int main(int argc, char *argv[])
                      << "-A\tDon't print abstract symbol tree. Default not ptint" << "\n"
                      << "-e\tprint parser errors." << "\n"
                      << "-E\tDon't print parser errors. Default ptint to stdout" << "\n"
+                     << "-o\tprint triple code. Default printing to stdout" << "\n"
+                     << "-O\tDon't triple code." << "\n"
                      << "-t\tprint token table." << "\n"
                      << "-T\tDon't print token table. Default not ptint" << "\n"
                      << "-w\tshow warning messages." << "\n"
@@ -144,9 +161,9 @@ int main(int argc, char *argv[])
         }
         else {
             if(i == 1) {
-                outFile.setFileName(argv[i]);
-                if(outFile.open(QFile::ReadOnly)){
-                    outStream.setDevice(&outFile);
+                inFile.setFileName(argv[i]);
+                if(inFile.open(QFile::ReadOnly)){
+                    inStream.setDevice(&inFile);
                 }
                 else {
                     hasError = true;

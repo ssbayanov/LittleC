@@ -12,6 +12,8 @@ public:
 
     BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString operation, ValueTypeEnum typeValue);
 
+    virtual QString printTripleCode(int level);
+
     void printNode(int level);
 
     ~BinarNode();

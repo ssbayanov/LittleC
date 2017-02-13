@@ -252,14 +252,14 @@ print scan
 
 program : statement_list
 {
-    /*     if (driver.AST_dumping)
-      { */
-    if(printTree)
-    $1->printNode(0);
-    /*      } */
+    if(printTree) {
+        $1->printNode(0);
+    }
+
+    $1->printTripleCode();
     $1->~AbstractASTNode();
+
     topLevelVariableTable->~SymbolsTable();
-    /*   driver.result = 0;*/
 };
 
 statement_list : statement statement_tail
@@ -299,10 +299,6 @@ statement : condition_statement
 | utterance SEMICOLON {
     $$ = $1;
 }
-/*| exp SEMICOLON
-{
-    //if ($1->getType() == NT_UnaryOperation)
-}*/
 | error SEMICOLON // Restore after error
 {
     yyerrok;
@@ -620,7 +616,7 @@ parameter : data_types[type] IDENTIFIER{
 }
 | data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET {
     if (isNumericType( $type )) {
-        AbstractASTNode *var = arrayDeclaration($1, *$2);
+        AbstractASTNode *var = NULL;//arrayDeclaration($1, *$2);
         if (var == NULL)
             YYERROR;
         $$ = var;
@@ -828,20 +824,6 @@ assignment : reference[variable] ASSIGN exp[value] {
         YYERROR;
     }
 };
-/*| IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
-    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$name);
-    if (var != NULL) {
-        AbstractASTNode *node = arrayAssign(var, (AbstractValueASTNode *)$index, (AbstractValueASTNode *)$value);
-        if (node == NULL)
-            YYERROR;
-        $$ = node; }
-    else {
-        parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$name));
-        $$ = NULL;
-        YYERROR;
-    }
-};
-*/
 
 // Expressions --------------------------------------------------------------
 

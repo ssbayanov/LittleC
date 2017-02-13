@@ -15,6 +15,11 @@ void ReferenceNode::printNode(int level)
                  .arg(typeName.at(_typeValue));
 }
 
+QString ReferenceNode::printTripleCode(int level)
+{
+    return _variable->getName();
+}
+
 ReferenceNode::~ReferenceNode()
 {
 
