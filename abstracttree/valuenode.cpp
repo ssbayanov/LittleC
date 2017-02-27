@@ -10,15 +10,14 @@ ValueNode::ValueNode(ValueTypeEnum typeValue, QVariant value)
 void ValueNode::printNode(int level)
 {
 
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Value: %1, type: %2").arg(_value.toString())
-                 .arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+               << QString("Value: %1, type: %2\n").arg(_value.toString())
+                  .arg(typeName.at(_typeValue));
 }
 
-ValueTypeEnum ValueNode::getType()
+QString ValueNode::printTripleCode(int level)
 {
-    return _typeValue;
+    return _value.toString();
 }
 
 ValueNode::~ValueNode()

@@ -8,19 +8,23 @@ PrintNode::PrintNode(AbstractASTNode *expression)
 
 void PrintNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Print:"
-              << std::endl;
-
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Expression:"
-              << std::endl;
-    _expression->printNode(level+1);
+    treeStream << QString().fill(' ',level*2)
+              << "Print:\n";
+    if (_expression != NULL) {
+        treeStream << QString().fill(' ',level*2)
+                  << "Expression:\n";
+        _expression->printNode(level+1);
+    }
+    else {
+        treeStream << QString().fill(' ',level*2)
+                  << "BAD EXPRESSION NODE!!!\n";
+    }
 }
 
 PrintNode::~PrintNode()
 {
-    _expression->~AbstractASTNode();
+    if (_expression != NULL)
+        _expression->~AbstractASTNode();
 }
 
 

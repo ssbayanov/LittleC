@@ -10,16 +10,14 @@ FunctionCallNode::FunctionCallNode(AbstractSymbolTableRecord *variable, Abstract
 
 void FunctionCallNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Call function: %1, type: %2")
+    treeStream << QString().fill(' ',level*2)
+              << QString("Call function: %1, type: %2\n")
                  .arg(_variable->getName())
-                 .arg(typeName.at(_variable->getValueType())).toStdString()
-              << std::endl;
+                 .arg(typeName.at(_variable->getValueType()));
 
     if (_paramList != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Params:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Params:\n";
         _paramList->printNode(level+1);
     }
 }

@@ -10,24 +10,17 @@ ArrayReferenceNode::ArrayReferenceNode(AbstractSymbolTableRecord *array, Abstrac
 
 void ArrayReferenceNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Array Reference: %1, type: %2").arg(_array->getName()).arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
+    treeStream << QString().fill(' ',level*2)
+              << QString("Array Reference: %1, type: %2\n").arg(_array->getName()).arg(typeName.at(getValueType()));
 
     if (_index != NULL) {
-        std::cout << QString().fill(' ',level*2).toStdString()
-                  << "Index:"
-                  << std::endl;
+        treeStream << QString().fill(' ',level*2)
+                  << "Index:\n";
         _index->printNode(level + 1);
     }
     else {
-        std::cout << "BAD INDEX NODE!!!";
+        treeStream << "BAD INDEX NODE!!!";
     }
-}
-
-ValueTypeEnum ArrayReferenceNode::getType()
-{
-    return _typeValue;
 }
 
 ArrayReferenceNode::~ArrayReferenceNode()

@@ -13,8 +13,6 @@ public:
 
     void printNode(int level);
 
-    ValueTypeEnum getType();
-
     ~ArrayReferenceNode();
 
 private:

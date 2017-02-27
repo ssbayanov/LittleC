@@ -10,11 +10,8 @@ public:
     ValueNode(ValueTypeEnum typeValue, QVariant value);
 
     void printNode(int level);
-    QVariant getValue(){
-        return _value;
-    }
 
-    ValueTypeEnum getType();
+    virtual QString printTripleCode(int level);
 
     ~ValueNode();
 

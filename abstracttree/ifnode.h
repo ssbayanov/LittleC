@@ -9,15 +9,6 @@ public:
     IfNode(AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch);
 
     void printNode(int level);
-    AbstractASTNode * getCond(){
-        return _condition;
-    }
-    AbstractASTNode * getTrueBr(){
-        return _trueBranch;
-    }
-    AbstractASTNode * getFalseBr(){
-        return _falseBranch;
-    }
 
     ~IfNode();
 

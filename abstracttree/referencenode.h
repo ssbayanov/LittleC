@@ -12,11 +12,8 @@ public:
     ReferenceNode(AbstractSymbolTableRecord *variable);
 
     void printNode(int level);
-    QString getVariable(){
-        return _variable->getName();
-    }
 
-    ValueTypeEnum getType();
+    virtual QString printTripleCode(int level);
 
     ~ReferenceNode();
 

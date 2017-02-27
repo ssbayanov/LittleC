@@ -18,8 +18,20 @@ typedef enum
 static QStringList unarTypeString = QStringList() << "To double"
                                               << "To integer"
                                               << "To bool"
+                                              << "To char"
+                                              << "To float"
+                                              << "To short"
                                               << "Unar \"-\""
                                               << "Bool Not";
+
+static QStringList unarOperationCommand = QStringList() << "unartodouble"
+                                              << "unartointeger"
+                                              << "unartobool"
+                                              << "unartochar"
+                                              << "unartofloat"
+                                              << "unartoshort"
+                                              << "unarminus"
+                                              << "unarnot";
 
 /**
  * @brief The UnaryNode class node for storage unary operations
@@ -29,19 +41,15 @@ class UnaryNode : public AbstractValueASTNode
 public:
     UnaryNode(TypeUnary uType, AbstractASTNode *left);
 
-    ValueTypeEnum getType();
-
     void printNode(int level);
-    AbstractASTNode* getLeft(){
-        return _left;
-    }
+
+    virtual QString printTripleCode(int level);
 
     ~UnaryNode();
 
 private:
-    AbstractASTNode *_left;
+    AbstractASTNode *_value;
     TypeUnary _uType;
-    ValueTypeEnum _typeValue;
 };
 
 

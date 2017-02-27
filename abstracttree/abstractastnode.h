@@ -3,8 +3,18 @@
 
 #include <iostream>
 #include <QString>
+#include <QTextStream>
 
 #include "symbolstable/abstractsymboltablerecord.h"
+
+extern QTextStream treeStream;
+extern QTextStream outStream;
+extern int g_LastLabelNumber;
+extern int g_LabelStackPointer;
+extern int Labels[256];
+extern void PushLabelNumber(int);
+extern int PopLabelNumber(void);
+extern void EmptyLabels(void);
 
 typedef enum
 {
@@ -22,12 +32,17 @@ typedef enum
     NT_SwitchStatement,     // Switch statement.
     NT_CaseStatement,   // Case statement
     NT_PintStatement,     // Print statement.
+    NT_ScanExpression,
     NT_List,               // Expression or statement list.
     NT_FunctionDeclare,             // Declaration function.
     NT_FunctionCall,
     NT_FunctionReturn,
     NT_ArrayReference,
     NT_ArrayDeclare,
+    NT_ArrayAssignment,
+    NT_StructDeclare,
+    NT_StructTypeDeclare,
+    NT_StructReference
 } ASTNodeTypeEnum;
 
 class AbstractASTNode
@@ -38,20 +53,17 @@ public:
     // Type
     void setType(ASTNodeTypeEnum type);
     ASTNodeTypeEnum getType();
-    int getIndex(){
-        return _index;
-    }
-    void setIndex(int value){
-        _index = value;
-    }
 
-    virtual void printNode(int level) = 0;
+    virtual void printNode(int level = 0);
+
+    virtual QString printTripleCode(int level = 0);
 
     virtual ~AbstractASTNode();
 
+    virtual bool isValueNode();
+
 private:
     ASTNodeTypeEnum _nodetype;
-    int _index;
 };
 
 #endif // ABSTRACTASTNODE_H

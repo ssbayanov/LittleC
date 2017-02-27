@@ -9,7 +9,7 @@
 class CaseNode : public AbstractASTNode
 {
 public:
-    CaseNode(AbstractASTNode *value, AbstractASTNode *expressions);
+    CaseNode(AbstractASTNode *value, AbstractASTNode *statements);
 
     void printNode(int level);
 
@@ -17,7 +17,7 @@ public:
 
 private:
     AbstractASTNode *_value;
-    AbstractASTNode *_expressions;
+    AbstractASTNode *_statements;
 };
 
 #endif // CASENODE_H

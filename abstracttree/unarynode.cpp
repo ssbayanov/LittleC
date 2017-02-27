@@ -4,7 +4,7 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     : AbstractValueASTNode(NT_UnaryOperation)
 {
     _uType = uType;
-    _left = left;
+    _value = left;
     switch (_uType) {
     case UnarToInt:
         _typeValue = typeInt;
@@ -15,31 +15,52 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     case UnarToBool:
         _typeValue = typeBool;
         break;
+    case UnarToChar:
+        _typeValue = typeChar;
+        break;
+    case UnarToShort:
+        _typeValue = typeShort;
+        break;
+    case UnarToFloat:
+        _typeValue = typeFloat;
+        break;
     default:
-        _typeValue = ((AbstractValueASTNode *)_left)->getType();
+        _typeValue = ((AbstractValueASTNode *)_value)->getValueType();
     }
-}
-
-ValueTypeEnum UnaryNode::getType()
-{
-    return _typeValue;
 }
 
 void UnaryNode::printNode(int level)
 {
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << QString("Unar operation. Type: %1. Type of result: %2")
-                 .arg(unarTypeString.at(_uType))
-                 .arg(typeName.at(_typeValue)).toStdString()
-              << std::endl;
-    std::cout << QString().fill(' ',level*2).toStdString()
-              << "Left:"
-              << std::endl;
-    _left->printNode(level+1);
+    treeStream << QString().fill(' ',level*2)
+               << QString("Unar operation. Type: %1. Type of result: %2\n")
+                  .arg(unarTypeString.at(_uType))
+                  .arg(typeName.at(_typeValue));
 
+    if(_value != NULL) {
+        treeStream << QString().fill(' ',level*2)
+                   << "Value:\n";
+        _value->printNode(level+1);
+    }
+    else {
+        treeStream << QString().fill(' ',level*2)
+                   << "BAD VALUE NODE!!!\n";
+    }
+}
+
+QString UnaryNode::printTripleCode(int level)
+{
+    if(_value != NULL) {
+        outStream << QString("$t%1 = %2 %3\n")
+                     .arg(level)
+                     .arg(unarOperationCommand.at(_uType))
+                     .arg(_value->printTripleCode(level+1));
+    }
+    return QString("$t%1")
+            .arg(level);
 }
 
 UnaryNode::~UnaryNode()
 {
-    _left->~AbstractASTNode();
+    if(_value != NULL)
+        _value->~AbstractASTNode();
 }
