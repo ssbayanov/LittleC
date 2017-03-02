@@ -32,6 +32,18 @@ void FunctionDeclareNode::printNode(int level)
     }
 }
 
+QString FunctionDeclareNode::printTripleCode(int level)
+{
+    outStream << QString("Function_%1:\n").arg(_variable->getName());
+    if(_body != NULL){
+        _body->printTripleCode();
+    }
+
+    //outStream << QString("LoopEnd_%1:\n").arg(_key);
+
+    return "";
+}
+
 FunctionDeclareNode::~FunctionDeclareNode()
 {
     if (_paramList != NULL)

@@ -13,6 +13,7 @@ class VariableTableRecord : public AbstractSymbolTableRecord
 {
 public:
     VariableTableRecord(QString name,
+                        QString key,
                         ValueTypeEnum valueType,
                         QVariant value, SymbolsTable *table,
                         SymbolsTableRecordType type = SymbolTableRecord_Variable);

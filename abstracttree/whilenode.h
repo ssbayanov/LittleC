@@ -9,11 +9,13 @@
 class WhileNode : public AbstractASTNode
 {
 public:
-    WhileNode(AbstractASTNode *condition, AbstractASTNode *body = NULL);
+    WhileNode(QString key, AbstractASTNode *condition, AbstractASTNode *body = NULL);
 
     void setBody(AbstractASTNode *body);
 
     void printNode(int level);
+
+    QString printTripleCode(int level);
 
     void setIsDoWhile(bool isDoWhile = true);
 
@@ -22,6 +24,7 @@ public:
 private:
     AbstractASTNode *_condition;
     AbstractASTNode *_body;
+    QString _key;
     bool _isDoWhile;
 };
 

@@ -17,11 +17,16 @@ typedef enum {
 class AbstractSymbolTableRecord
 {
 public:
-    AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, SymbolsTable *table);
+    AbstractSymbolTableRecord(SymbolsTableRecordType type,
+                              QString name,
+                              QString key,
+                              ValueTypeEnum valueType,
+                              SymbolsTable *table);
     ~AbstractSymbolTableRecord();
 
     ValueTypeEnum getValueType();
     QString getName();
+    QString getKey();
 
     SymbolsTable *getTable();
     SymbolsTableRecordType getType();
@@ -35,6 +40,7 @@ public:
 protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */
     QString _name;
+    QString _key;
     SymbolsTable *_table;
 
     SymbolsTableRecordType _type;

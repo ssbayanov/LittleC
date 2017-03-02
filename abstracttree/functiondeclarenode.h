@@ -11,6 +11,8 @@ public:
 
       void printNode(int level);
 
+      QString printTripleCode(int level);
+
       ~FunctionDeclareNode();
 private:
       AbstractSymbolTableRecord *_variable;

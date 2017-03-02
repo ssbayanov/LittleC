@@ -132,7 +132,9 @@ extern int lno;
 extern int parserlex();
 
 int loopNestingCounter = 0;
+int loopSwitchCounter = 0;
 int enumCounter = 0;
+static QString lastFunctionName = "global";
 
 static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
 static SymbolsTable* currentTable = topLevelVariableTable;
@@ -345,7 +347,7 @@ function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
         YYERROR;
     }
     currentTable = currentTable->appendChildTable();
-
+    lastFunctionName = *$name;
 
 }
 parameter_list[params] CLOSEPAREN compound_statement[body] {
@@ -353,8 +355,10 @@ parameter_list[params] CLOSEPAREN compound_statement[body] {
     SymbolsTable *paramsTable = currentTable;
     currentTable = currentTable->getParent();
 
+    lastFunctionName = "global";
+
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, paramsTable);
+        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, lastFunctionName, $type, paramsTable);
         $$ = new FunctionDeclareNode(function, $params, $body);
     }
     else {
@@ -400,7 +404,7 @@ array_declaration_statement : array_declaration SEMICOLON {
 
 array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CLOSEBRACKET {
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
             $$ = new ArrayDeclareNode(array, $values);
         }
@@ -418,7 +422,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 }
 | data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN OPENBRACE exp_list[values] CLOSEBRACE {
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
             $$ = new ArrayDeclareNode(array, $values);
         }
@@ -436,7 +440,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 | data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN STRING[value] {
     if(!contains(*$name)) {
         if ($type == typeChar) {
-            AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+            AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
             if (array != NULL) {
                 $$ = new ArrayDeclareNode(array, new ValueNode(typeString, *$value));
             }
@@ -493,7 +497,7 @@ struct_decloration_statement : STRUCT IDENTIFIER[name] {
     currentTable->setHidden();
     currentTable = currentTable->getParent();
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *structure = currentTable->insertStructType(*$name, variables);
+        AbstractSymbolTableRecord *structure = currentTable->insertStructType(*$name, lastFunctionName, variables);
         if (structure != NULL) {
             $$ = new StructDeclareNode(structure, $values);
         }
@@ -514,7 +518,7 @@ struct_variable_declaration_statement : IDENTIFIER[struct_name] IDENTIFIER[name]
     if (structType != NULL) {
         if (structType->isStructType()) {
             if (!contains(*$name)) {
-                AbstractSymbolTableRecord *structVariable = currentTable->insertStruct(*$name, (StructTypeTableRecord *) structType);
+                AbstractSymbolTableRecord *structVariable = currentTable->insertStruct(*$name, lastFunctionName, (StructTypeTableRecord *) structType);
                 if (structVariable != NULL) {
                     $$ = new StructVariableDeclareNode(structType, structVariable);
                 }
@@ -645,14 +649,14 @@ label_statement : IDENTIFIER COLON {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$1));
     }
     else {
-        label = currentTable->insertVariable(*$1, typeLabel, *$1);
+        label = currentTable->insertVariable(*$1, lastFunctionName, typeLabel, *$1);
     }
     $$ = new LabelNode(label);
 }
 
 goto_statement : GOTO IDENTIFIER SEMICOLON {
     if (currentTable->containsGlobal(*$2)) {
-        $$ = new GoToNode(*$2);
+        $$ = new GoToNode(*$2, lastFunctionName);
     }
     else {
         parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$2));
@@ -666,7 +670,7 @@ break_statement : BREAK SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("EndOfLoop");
+        $$ = new GoToNode("LoopEnd",QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName));
     }
 }
 
@@ -676,7 +680,7 @@ continue_statement : CONTINUE SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("NextIterationOfLoop");
+        $$ = new GoToNode("LoopBegin",QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName));
     }
 }
 //Switch - case -------------------------------------------------------------------
@@ -715,9 +719,10 @@ case_statement : CASE IDENTIFIER COLON statement_list {
 };
 
 switch_statement : SWITCH {
-    loopNestingCounter++;
+    ++loopNestingCounter;
+    ++loopSwitchCounter;
 } OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
-    loopNestingCounter--;
+    --loopNestingCounter;
     $$ = new SwitchNode($exp, $case_list);
 };
 
@@ -782,6 +787,9 @@ loop_statement : while_head statement {
 ;
 
 while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
+    ++loopNestingCounter;
+    ++loopSwitchCounter;
+
     AbstractValueASTNode *cond = NULL;
     if ($condition != NULL) {
         cond = (AbstractValueASTNode *)$condition;
@@ -789,8 +797,7 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
             cond = new UnaryNode(UnarToBool, cond);
     }
 
-    $$ = new WhileNode(cond);
-    ++loopNestingCounter;
+    $$ = new WhileNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), cond);
 };
 
 for_head : FOR {
@@ -806,10 +813,12 @@ OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment
 
     $$ = new ForNode($init, cond, $increment);
     ++loopNestingCounter;
+    ++loopSwitchCounter;
 };
 
 do_head : DO {
     ++loopNestingCounter;
+    ++loopSwitchCounter;
 }
 
 // Assignments ---------------------------------------------------------------
@@ -830,7 +839,7 @@ assignment : reference[variable] ASSIGN exp[value] {
 identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
     if($list != NULL) {
         if(!currentTable->containsGlobal(*$id)) {
-            AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
+            AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, lastFunctionName, typeInt, enumCounter);
             if(var != NULL) {
                 $$ = new ListNode(new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "="), $list);
             }
@@ -852,7 +861,7 @@ identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
 }
 | IDENTIFIER[id] {
     if(!currentTable->containsGlobal(*$id)) {
-        AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
+        AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, lastFunctionName, typeInt, enumCounter);
         if(var != NULL) {
             $$ = new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "=");
         }
@@ -1151,7 +1160,7 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
 AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value)
 {
     if ( !contains(name) ) {
-        AbstractSymbolTableRecord *var = currentTable->insertVariable(name, type, 0);
+        AbstractSymbolTableRecord *var = currentTable->insertVariable(name, lastFunctionName, type, 0);
         if (var == NULL) {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
@@ -1307,7 +1316,6 @@ AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode 
         if(paramsString.length() != 0)
             paramsString.append(",");
         paramsString.append(typeName.at(((AbstractValueASTNode *) currentNode)->getValueType()));
-
     }
 
     if (callParamsTypes.count() == function->getParams()->count()) {

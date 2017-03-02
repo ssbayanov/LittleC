@@ -21,14 +21,14 @@ SymbolsTable::~SymbolsTable()
 
 }
 
-VariableTableRecord *SymbolsTable::insertVariable(QString name,
+VariableTableRecord *SymbolsTable::insertVariable(QString name, QString key,
                                                   ValueTypeEnum type,
                                                   QVariant value,
                                                   SymbolsTableRecordType typeRecord)
 {
     VariableTableRecord *record;
     try {
-        record = new VariableTableRecord(name, type, value, this, typeRecord);
+        record = new VariableTableRecord(name, key, type, value, this, typeRecord);
     }
     catch (std::bad_alloc& ba) {
         return NULL;
@@ -39,16 +39,16 @@ VariableTableRecord *SymbolsTable::insertVariable(QString name,
     return record;
 }
 
-VariableTableRecord *SymbolsTable::insertArray(QString name, ValueTypeEnum type)
+VariableTableRecord *SymbolsTable::insertArray(QString name, QString key, ValueTypeEnum type)
 {
-    return insertVariable(name, type, 0, SymbolTableRecord_Array);
+    return insertVariable(name, key, type, 0, SymbolTableRecord_Array);
 }
 
-FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum type, SymbolsTable *params)
+FunctionTableRecord *SymbolsTable::insertFunction(QString name, QString key, ValueTypeEnum type, SymbolsTable *params)
 {
     FunctionTableRecord *function;
     try {
-        function = new FunctionTableRecord(name, type, this, params);
+        function = new FunctionTableRecord(name, key, type, this, params);
     }
     catch (std::bad_alloc& ba) {
         return NULL;
@@ -59,12 +59,12 @@ FunctionTableRecord *SymbolsTable::insertFunction(QString name, ValueTypeEnum ty
     return function;
 }
 
-StructTypeTableRecord *SymbolsTable::insertStructType(QString name, SymbolsTable *variables)
+StructTypeTableRecord *SymbolsTable::insertStructType(QString name, QString key, SymbolsTable *variables)
 {
     StructTypeTableRecord *structure;
 
     try {
-        structure = new StructTypeTableRecord(name, this, variables);
+        structure = new StructTypeTableRecord(name, key, this, variables);
     }
     catch (std::bad_alloc& ba) {
         return NULL;
@@ -76,12 +76,12 @@ StructTypeTableRecord *SymbolsTable::insertStructType(QString name, SymbolsTable
 
 }
 
-StructTableRecord *SymbolsTable::insertStruct(QString name, StructTypeTableRecord *typeStruct)
+StructTableRecord *SymbolsTable::insertStruct(QString name, QString key, StructTypeTableRecord *typeStruct)
 {
     StructTableRecord *structure;
 
     try {
-        structure = new StructTableRecord(name, this, typeStruct);
+        structure = new StructTableRecord(name, key, this, typeStruct);
     }
     catch (std::bad_alloc& ba) {
         return NULL;

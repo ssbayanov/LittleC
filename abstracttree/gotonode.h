@@ -9,14 +9,17 @@
 class GoToNode : public AbstractASTNode
 {
 public:
-    GoToNode(QString nameLabel);
+    GoToNode(QString nameLabel, QString key);
 
     void printNode(int level);
+
+    QString printTripleCode(int level);
 
     ~GoToNode();
 
 private:
     QString _nameLabel;
+    QString _key;
 };
 
 #endif // GOTONODE_H

@@ -6,7 +6,10 @@
 class StructTypeTableRecord : public AbstractSymbolTableRecord
 {
 public:
-    StructTypeTableRecord(QString name, SymbolsTable *table, SymbolsTable *variables);
+    StructTypeTableRecord(QString name,
+                          QString key,
+                          SymbolsTable *table,
+                          SymbolsTable *variables);
 
     SymbolsTable *getVariables();
 

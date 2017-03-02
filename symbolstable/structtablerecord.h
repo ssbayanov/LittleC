@@ -9,7 +9,10 @@ class StructTypeTableRecord;
 class StructTableRecord : public AbstractSymbolTableRecord
 {
 public:
-    StructTableRecord(QString name, SymbolsTable *table, StructTypeTableRecord *structType);
+    StructTableRecord(QString name,
+                      QString key,
+                      SymbolsTable *table,
+                      StructTypeTableRecord *structType);
 
     StructTypeTableRecord *getStructType();
 

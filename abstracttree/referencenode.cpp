@@ -17,7 +17,7 @@ void ReferenceNode::printNode(int level)
 
 QString ReferenceNode::printTripleCode(int level)
 {
-    return _variable->getName();
+    return QString("%1_%2").arg(_variable->getName()).arg(_variable->getKey());
 }
 
 ReferenceNode::~ReferenceNode()
