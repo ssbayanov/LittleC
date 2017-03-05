@@ -47,45 +47,50 @@ void WhileNode::printNode(int level)
 QString WhileNode::printTripleCode(int level)
 {
 
-if(_isDoWhile) goto m2; else goto m1;
- m1:   if(_condition != NULL){
-        outStream << QString("L%1:\n").arg(g_LastLabelNumber);
-        PushLabelNumber(g_LastLabelNumber);
-        g_LastLabelNumber++;
-
-        outStream << QString("iffalse %1 goto L%2\n")
-                     .arg(_condition->printTripleCode(level+1))
-                     .arg(g_LastLabelNumber);
-        g_LastLabelNumber++;
+    if(!_isDoWhile){
+        if(_condition != NULL){
+            outStream << QString("LoopBegin_%1:\n").arg(_key);
+            outStream << QString("iffalse %1 goto LoopEnd_%2\n")
+                         .arg(_condition->printTripleCode(level+1))
+                         .arg(_key);
         }
-m2:    if(_body != NULL){
 
-         if(_isDoWhile) {
-          outStream << QString("L%1:\n")
-                          .arg(g_LastLabelNumber);
-          PushLabelNumber(g_LastLabelNumber);
-          g_LastLabelNumber++;
-         }
+
+    if(_body != NULL){
 
         _body->printTripleCode();
- //       PopLabelNumber();
-
-
-       int tmp = PopLabelNumber();
-        outStream << QString("goto L%1\n")
-                     .arg(tmp);
-        if(_isDoWhile) {
-            PushLabelNumber(g_LastLabelNumber-1);
-            outStream << QString("L%1:\n")
-                         .arg(g_LastLabelNumber);
-        }
-        else {
-        PushLabelNumber(++tmp);
-        outStream << QString("L%1:\n")
-                     .arg(tmp);
-       }
+        outStream << QString("goto LoopBegin_%1\n")
+                     .arg(_key);
+        outStream << QString("LoopEnd_%1:\n").arg(_key);
+    }
 
     }
+
+
+    if(_isDoWhile) {
+        if(_body != NULL){
+             outStream << QString("LoopBegin_%1:\n").arg(_key);
+            _body->printTripleCode();
+
+        }
+
+        if(_condition != NULL){
+            outStream << QString("iffalse %1 goto LoopEnd_%2\n")
+                         .arg(_condition->printTripleCode(level+1))
+                         .arg(_key);
+            outStream << QString("goto LoopBegin_%1\n")
+                         .arg(_key);
+            outStream << QString("LoopEnd_%1:\n").arg(_key);
+        }
+
+//        else {
+//            outStream << QString("goto LoopBegin_%2\n")
+//                         .arg(_key);
+//        }
+    }
+
+    //outStream << QString("LoopEnd_%1:\n").arg(_key);
+
     return "";
 }
 void WhileNode::setIsDoWhile(bool isDoWhile)
