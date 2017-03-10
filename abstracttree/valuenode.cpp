@@ -15,7 +15,7 @@ void ValueNode::printNode(int level)
                   .arg(typeName.at(_typeValue));
 }
 
-QString ValueNode::printTripleCode(int level)
+QString ValueNode::printTripleCode(int level, QString param)
 {
     return _value.toString();
 }

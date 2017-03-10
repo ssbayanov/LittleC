@@ -13,7 +13,7 @@ void LabelNode::printNode(int level)
                  .arg(_variable->getName());
 }
 
-QString LabelNode::printTripleCode(int level)
+QString LabelNode::printTripleCode(int level, QString param)
 {
     outStream << QString("%1%2:\n")
                  .arg(_variable->getName())

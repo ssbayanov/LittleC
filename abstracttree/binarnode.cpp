@@ -18,7 +18,7 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
     AbstractValueASTNode::_typeValue = typeValue;
 }
 
-QString BinarNode::printTripleCode(int level)
+QString BinarNode::printTripleCode(int level, QString param)
 {
     if(_left != NULL && _right != NULL) {
         if(_operation == "=") {

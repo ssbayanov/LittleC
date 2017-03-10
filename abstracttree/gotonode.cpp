@@ -13,7 +13,7 @@ void GoToNode::printNode(int level)
                << QString("Go to label: %1\n").arg(_nameLabel);
 }
 
-QString GoToNode::printTripleCode(int level)
+QString GoToNode::printTripleCode(int level, QString param)
 {
     outStream << QString("goto %1_%2\n").arg(_nameLabel).arg(_key);
     return "";

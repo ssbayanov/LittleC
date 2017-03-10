@@ -11,7 +11,7 @@ public:
 
       void printNode(int level);
 
-      QString printTripleCode(int level);
+      QString printTripleCode(int level, QString param);
 
       ~FunctionDeclareNode();
 private:

@@ -45,7 +45,7 @@ void WhileNode::printNode(int level)
     }
 }
 
-QString WhileNode::printTripleCode(int level)
+QString WhileNode::printTripleCode(int level, QString param)
 {
     outStream << QString("LoopBegin_%1:\n").arg(_key);
     if(!_isDoWhile){

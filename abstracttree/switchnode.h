@@ -14,13 +14,16 @@ public:
      * @param value pointer to value node
      * @param caseList pointer to cases list node
      */
-    SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList);
+    SwitchNode(QString key, AbstractASTNode *value, AbstractASTNode *caseList);
 
     /**
      * @brief printNode printing switch node to stdout
      * @param level
      */
     void printNode(int level);
+
+
+    QString printTripleCode(int level, QString param);
 
     /**
       * @brief ~SwitchNode destruction class and call destrucor of _value and _caseList
@@ -37,6 +40,8 @@ private:
      * @brief _caseList pointer to cases list
      */
     AbstractASTNode *_caseList;
+
+    QString _key;
 
 };
 

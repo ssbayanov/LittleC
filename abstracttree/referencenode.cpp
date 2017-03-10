@@ -15,7 +15,7 @@ void ReferenceNode::printNode(int level)
                  .arg(typeName.at(_typeValue));
 }
 
-QString ReferenceNode::printTripleCode(int level)
+QString ReferenceNode::printTripleCode(int level, QString param)
 {
     return QString("%1_%2").arg(_variable->getName()).arg(_variable->getKey());
 }

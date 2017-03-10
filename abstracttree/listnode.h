@@ -13,7 +13,7 @@ public:
 
     void printNode(int level);
 
-    QString printTripleCode(int level);
+    QString printTripleCode(int level, QString param);
 
     AbstractASTNode *getLeftNode();
     AbstractASTNode *getRightNode();

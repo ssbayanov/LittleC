@@ -705,17 +705,17 @@ case_statement : CASE IDENTIFIER COLON statement_list {
     AbstractSymbolTableRecord *var = getVariableByName(*$2);
     if (var != NULL) {
 
-        $$ = new CaseNode(new ReferenceNode(var), $4);
+        $$ = new CaseNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), new ReferenceNode(var), $4);
     }
     else {
         $$ = NULL;
     }
 }
 | CASE INTCONST COLON statement_list {
-    $$ = new CaseNode(new ValueNode(typeInt, $2->toInt()), $4);
+    $$ = new CaseNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), new ValueNode(typeInt, $2->toInt()), $4);
 }
 | DEFAULT COLON statement_list {
-    $$ = new CaseNode(NULL, $3);
+    $$ = new CaseNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), NULL, $3);
 };
 
 switch_statement : SWITCH {
@@ -723,7 +723,7 @@ switch_statement : SWITCH {
     ++loopSwitchCounter;
 } OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
     --loopNestingCounter;
-    $$ = new SwitchNode($exp, $case_list);
+    $$ = new SwitchNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), $exp, $case_list);
 };
 
 //Print and scan-------------------------------------------------------------------

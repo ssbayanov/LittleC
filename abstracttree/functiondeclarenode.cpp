@@ -32,7 +32,7 @@ void FunctionDeclareNode::printNode(int level)
     }
 }
 
-QString FunctionDeclareNode::printTripleCode(int level)
+QString FunctionDeclareNode::printTripleCode(int level, QString param)
 {
     outStream << QString("Function_%1:\n").arg(_variable->getName());
     if(_body != NULL){

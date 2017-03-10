@@ -1,10 +1,11 @@
 #include "switchnode.h"
 
-SwitchNode::SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList)
+SwitchNode::SwitchNode(QString key, AbstractASTNode *value, AbstractASTNode *caseList)
     : AbstractASTNode(NT_SwitchStatement)
 {
     _value = value;
     _caseList = caseList;
+    _key = key;
 }
 
 void SwitchNode::printNode(int level)
@@ -30,6 +31,22 @@ void SwitchNode::printNode(int level)
         treeStream << QString().fill(' ',level*2)
                   << "BAD CASE LIST NODE\n";
     }
+}
+
+QString SwitchNode::printTripleCode(int level, QString param)
+{
+    outStream << QString("value_%1 = %2\n")
+                 .arg(_key)
+                 .arg(_value->printTripleCode(level+1));
+
+    if(_caseList != NULL){        
+        _caseList->printTripleCode(level, "value");
+        _caseList->printTripleCode(level, param);
+    }
+
+    outStream << QString("LoopEnd_%1:\n").arg(_key);
+
+    return "";
 }
 
 SwitchNode::~SwitchNode()

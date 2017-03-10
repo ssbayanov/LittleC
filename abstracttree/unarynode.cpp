@@ -47,7 +47,7 @@ void UnaryNode::printNode(int level)
     }
 }
 
-QString UnaryNode::printTripleCode(int level)
+QString UnaryNode::printTripleCode(int level, QString param)
 {
     if(_value != NULL) {
         outStream << QString("$t%1 = %2 %3\n")
