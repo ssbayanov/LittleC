@@ -680,7 +680,7 @@ continue_statement : CONTINUE SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("LoopBegin",QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName));
+        $$ = new GoToNode("LoopContinue",QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName));
     }
 }
 //Switch - case -------------------------------------------------------------------
@@ -802,6 +802,8 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
 
 for_head : FOR {
     currentTable = currentTable->appendChildTable();
+    ++loopNestingCounter;
+    ++loopSwitchCounter;
 }
 OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN {
     AbstractValueASTNode *cond = NULL;
@@ -811,9 +813,10 @@ OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment
             cond = new UnaryNode(UnarToBool, cond);
     }
 
-    $$ = new ForNode($init, cond, $increment);
-    ++loopNestingCounter;
-    ++loopSwitchCounter;
+    $$ = new ForNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName),
+                     $init,
+                     cond,
+                     $increment);
 };
 
 do_head : DO {

@@ -196,8 +196,12 @@ int main(int argc, char *argv[])
             else
                 cout << "Parser has errors. Stop with result " << parsingResult << "\n";
         }
-        treeStream << "\n";
-        treeStream.flush();
+
+        if(printTree) {
+            treeStream << "\n";
+            treeStream.flush();
+        }
+
         cout.flush();
 
         if(printTokens) {
