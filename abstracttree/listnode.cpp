@@ -36,7 +36,7 @@ QString ListNode::printTripleCode(int level, QString param)
 {
     if(_left != NULL)
         _left->printTripleCode(level+1, param);
-    if(_left != NULL)
+    if(_right != NULL)
         _right->printTripleCode(level+2, param);
     return "";
 }

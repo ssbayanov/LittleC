@@ -34,6 +34,36 @@ void IfNode::printNode(int level)
     }
 }
 
+QString IfNode::printTripleCode(int level, QString param)
+{
+
+    /*if(_condition != NULL){
+        outStream << QString("iffalse %1 goto Else_%2\n")
+                     .arg(_condition->printTripleCode(level+1))
+                     .arg(_key);
+    }
+
+    if(_body != NULL){
+        _body->printTripleCode(level+1);
+
+    }
+
+    outStream << QString("LoopContinue_%1:\n").arg(_key);
+
+    if(_iteration != NULL){
+        _iteration->printTripleCode(level+1);
+    }
+
+    outStream << QString("goto LoopBegin_%1\n")
+                 .arg(_key);
+
+    outStream << QString("LoopEnd_%1:\n")
+                 .arg(_key);
+                 */
+
+    return "";
+}
+
 IfNode::~IfNode()
 {
     _condition->~AbstractASTNode();

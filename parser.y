@@ -131,8 +131,8 @@
 extern int lno;
 extern int parserlex();
 
-int loopNestingCounter = 0;
 int loopSwitchCounter = 0;
+QList<int> operatorNumerStack;
 int enumCounter = 0;
 static QString lastFunctionName = "global";
 
@@ -665,22 +665,22 @@ goto_statement : GOTO IDENTIFIER SEMICOLON {
 };
 
 break_statement : BREAK SEMICOLON {
-    if (loopNestingCounter <= 0) {
+    if (operatorNumerStack.isEmpty()) {
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("LoopEnd",QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName));
+        $$ = new GoToNode("LoopEnd",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 
 continue_statement : CONTINUE SEMICOLON {
-    if (loopNestingCounter <= 0) {
-        parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
+    if (operatorNumerStack.isEmpty()) {
+        parsererror(errorList.at(ERROR_CONTINUE_NOT_INSIDE_LOOP));
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("LoopContinue",QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName));
+        $$ = new GoToNode("LoopContinue",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 //Switch - case -------------------------------------------------------------------
@@ -705,25 +705,24 @@ case_statement : CASE IDENTIFIER COLON statement_list {
     AbstractSymbolTableRecord *var = getVariableByName(*$2);
     if (var != NULL) {
 
-        $$ = new CaseNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), new ReferenceNode(var), $4);
+        $$ = new CaseNode(QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName), new ReferenceNode(var), $4);
     }
     else {
         $$ = NULL;
     }
 }
 | CASE INTCONST COLON statement_list {
-    $$ = new CaseNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), new ValueNode(typeInt, $2->toInt()), $4);
+    $$ = new CaseNode(QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName), new ValueNode(typeInt, $2->toInt()), $4);
 }
 | DEFAULT COLON statement_list {
-    $$ = new CaseNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), NULL, $3);
+    $$ = new CaseNode(QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName), NULL, $3);
 };
 
 switch_statement : SWITCH {
-    ++loopNestingCounter;
-    ++loopSwitchCounter;
+    operatorNumerStack << loopSwitchCounter;
 } OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
-    --loopNestingCounter;
-    $$ = new SwitchNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), $exp, $case_list);
+    operatorNumerStack.removeLast();
+    $$ = new SwitchNode(QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName), $exp, $case_list);
 };
 
 //Print and scan-------------------------------------------------------------------
@@ -768,12 +767,12 @@ condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF {
 loop_statement : while_head statement {
     ((WhileNode *)$1)->setBody($2);
     $$ = $1;
-    --loopNestingCounter;
+    operatorNumerStack.removeLast();
 }
 | for_head statement {
     ((ForNode *)$1)->setBody($2);
     $$ = $1;
-    --loopNestingCounter;
+    operatorNumerStack.removeLast();
 
     currentTable->setHidden();
     currentTable = currentTable->getParent();
@@ -782,13 +781,13 @@ loop_statement : while_head statement {
     ((WhileNode *)$while_head)->setBody($2);
     ((WhileNode *)$while_head)->setIsDoWhile(true);
     $$ = $3;
-    --loopNestingCounter;
+    operatorNumerStack.removeLast();
 }
 ;
 
 while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
-    ++loopNestingCounter;
-    ++loopSwitchCounter;
+    operatorNumerStack << ++loopSwitchCounter;
+
 
     AbstractValueASTNode *cond = NULL;
     if ($condition != NULL) {
@@ -797,13 +796,12 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
             cond = new UnaryNode(UnarToBool, cond);
     }
 
-    $$ = new WhileNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName), cond);
+    $$ = new WhileNode(QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName), cond);
 };
 
 for_head : FOR {
     currentTable = currentTable->appendChildTable();
-    ++loopNestingCounter;
-    ++loopSwitchCounter;
+    operatorNumerStack << ++loopSwitchCounter;
 }
 OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN {
     AbstractValueASTNode *cond = NULL;
@@ -813,15 +811,14 @@ OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment
             cond = new UnaryNode(UnarToBool, cond);
     }
 
-    $$ = new ForNode(QString("%1_%2").arg(loopSwitchCounter).arg(lastFunctionName),
+    $$ = new ForNode(QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName),
                      $init,
                      cond,
                      $increment);
 };
 
 do_head : DO {
-    ++loopNestingCounter;
-    ++loopSwitchCounter;
+    operatorNumerStack << ++loopSwitchCounter;
 }
 
 // Assignments ---------------------------------------------------------------
