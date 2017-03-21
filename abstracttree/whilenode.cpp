@@ -51,7 +51,7 @@ QString WhileNode::printTripleCode(int level, QString param)
     outStream << QString("LoopContinue_%1:\n").arg(_key);
     if(!_isDoWhile){
         if(_condition != NULL){
-            outStream << QString("iffalse %1 goto LoopEnd_%2\n")
+            outStream << QString("\tiffalse %1 goto LoopEnd_%2\n")
                          .arg(_condition->printTripleCode(level+1))
                          .arg(_key);
         }
@@ -64,12 +64,12 @@ QString WhileNode::printTripleCode(int level, QString param)
 
     if(_isDoWhile) {
         if(_condition != NULL){
-            outStream << QString("iffalse %1 goto LoopBegin_%2\n")
+            outStream << QString("\tiffalse %1 goto LoopBegin_%2\n")
                          .arg(_condition->printTripleCode(level+1))
                          .arg(_key);
         }
         else {
-            outStream << QString("goto LoopBegin_%1\n")
+            outStream << QString("\tgoto LoopBegin_%1\n")
                          .arg(_key);
         }
     }

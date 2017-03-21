@@ -35,7 +35,7 @@ void SwitchNode::printNode(int level)
 
 QString SwitchNode::printTripleCode(int level, QString param)
 {
-    outStream << QString("value_%1 = %2\n")
+    outStream << QString("\tvalue_%1 = %2\n")
                  .arg(_key)
                  .arg(_value->printTripleCode(level+1));
 

@@ -22,6 +22,20 @@ void FunctionCallNode::printNode(int level)
     }
 }
 
+QString FunctionCallNode::printTripleCode(int level, QString param)
+{
+    int numParams = 0;
+    if(_paramList != NULL) {
+        numParams = _paramList->printTripleCode(level+1,"isParamList").toInt();
+    }
+
+    outStream << QString("\tcall %1, %2\n")
+                 .arg(_variable->getName())
+                 .arg(numParams);
+
+    return "";
+}
+
 FunctionCallNode::~FunctionCallNode()
 {
     if (_paramList != NULL)

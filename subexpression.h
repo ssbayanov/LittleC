@@ -19,6 +19,26 @@ typedef enum
     typeString
 } ValueTypeEnum;
 
+static int getSizeType(ValueTypeEnum type)
+{
+    switch(type) {
+    case typeVoid:
+        return 0;
+    case typeBool:
+    case typeChar:
+        return 1;
+    case typeShort:
+        return 2;
+    case typeFloat:
+    case typeInt:
+        return 4;
+    case typeDouble:
+        return 8;
+    default:
+        return -1;
+    }
+}
+
 static QStringList typeName = QStringList() << "int"
                                             << "short"
                                             << "float"

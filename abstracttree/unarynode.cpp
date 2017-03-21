@@ -50,7 +50,7 @@ void UnaryNode::printNode(int level)
 QString UnaryNode::printTripleCode(int level, QString param)
 {
     if(_value != NULL) {
-        outStream << QString("$t%1 = %2 %3\n")
+        outStream << QString("\t$t%1 = %2 %3\n")
                      .arg(level)
                      .arg(unarOperationCommand.at(_uType))
                      .arg(_value->printTripleCode(level+1));

@@ -22,13 +22,13 @@ QString BinarNode::printTripleCode(int level, QString param)
 {
     if(_left != NULL && _right != NULL) {
         if(_operation == "=") {
-            outStream << QString("%1 = %2\n")
+            outStream << QString("\t%1 = %2\n")
                          .arg(_left->printTripleCode(level+1))
                          .arg(_right->printTripleCode(level+2));
             return "";
         }
         else {
-            outStream << QString("$t%1 = %2 %3 %4\n")
+            outStream << QString("\t$t%1 = %2 %3 %4\n")
                          .arg(level)
                          .arg(_left->printTripleCode(level+1))
                          .arg(_operation)

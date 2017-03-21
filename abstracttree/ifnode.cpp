@@ -1,11 +1,12 @@
 #include "ifnode.h"
 
-IfNode::IfNode(AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch)
+IfNode::IfNode(QString key, AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch)
     : AbstractASTNode(NT_IfStatement)
 {
     _condition = condition;
     _trueBranch = trueBranch;
     _falseBranch = falseBranch;
+    _key = key;
 }
 
 void IfNode::printNode(int level)
@@ -27,6 +28,7 @@ void IfNode::printNode(int level)
                   << "True branch:\n";
         _trueBranch->printNode(level+1);
     }
+
     if (_falseBranch != NULL) {
         treeStream << QString().fill(' ',level*2)
                   << "False branch:\n";
@@ -37,29 +39,29 @@ void IfNode::printNode(int level)
 QString IfNode::printTripleCode(int level, QString param)
 {
 
-    /*if(_condition != NULL){
-        outStream << QString("iffalse %1 goto Else_%2\n")
+    if(_condition != NULL){
+        outStream << QString("\tiffalse %1 goto Else_%2\n")
                      .arg(_condition->printTripleCode(level+1))
                      .arg(_key);
     }
 
-    if(_body != NULL){
-        _body->printTripleCode(level+1);
+    if(_trueBranch != NULL){
+        _trueBranch->printTripleCode(level+1);
 
     }
 
-    outStream << QString("LoopContinue_%1:\n").arg(_key);
+    outStream << QString("\tgoto EndIf_%1\n")
+                 .arg(_key);
+    outStream << QString("Else_%1:\n")
+                 .arg(_key);
 
-    if(_iteration != NULL){
-        _iteration->printTripleCode(level+1);
+    if(_falseBranch != NULL){
+        _falseBranch->printTripleCode(level+1);
+
     }
 
-    outStream << QString("goto LoopBegin_%1\n")
+    outStream << QString("EndIf_%1:\n")
                  .arg(_key);
-
-    outStream << QString("LoopEnd_%1:\n")
-                 .arg(_key);
-                 */
 
     return "";
 }

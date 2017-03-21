@@ -59,7 +59,7 @@ QString ForNode::printTripleCode(int level, QString param)
                  .arg(_key);
 
     if(_condition != NULL){
-        outStream << QString("iffalse %1 goto LoopEnd_%2\n")
+        outStream << QString("\tiffalse %1 goto LoopEnd_%2\n")
                      .arg(_condition->printTripleCode(level+1))
                      .arg(_key);
     }
@@ -75,7 +75,7 @@ QString ForNode::printTripleCode(int level, QString param)
         _iteration->printTripleCode(level+1);
     }
 
-    outStream << QString("goto LoopBegin_%1\n")
+    outStream << QString("\tgoto LoopBegin_%1\n")
                  .arg(_key);
 
     outStream << QString("LoopEnd_%1:\n")

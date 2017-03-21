@@ -35,18 +35,18 @@ QString CaseNode::printTripleCode(int level, QString param)
 {
     if(param == "value"){
         if(_value != NULL){
-            outStream << QString("$t%1 = value_%2 == %3\n")
+            outStream << QString("\t$t%1 = value_%2 == %3\n")
                          .arg(level)
                          .arg(_key)
                          .arg(_value->printTripleCode(level+1));
 
 
-            outStream << QString("if $t%1 goto CaseLabel_%1_%2\n")
+            outStream << QString("\tif $t%1 goto CaseLabel_%1_%2\n")
                          .arg(level)
                          .arg(_key);
         }
         else {
-            outStream << QString("goto CaseLabel_%1_%2\n")
+            outStream << QString("\tgoto CaseLabel_%1_%2\n")
                          .arg(level)
                          .arg(_key);
         }

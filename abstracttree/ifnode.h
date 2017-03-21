@@ -6,7 +6,7 @@
 class IfNode : public AbstractASTNode
 {
 public:
-    IfNode(AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch);
+    IfNode(QString key, AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch);
 
     void printNode(int level);
 
@@ -18,6 +18,7 @@ private:
     AbstractASTNode *_condition;
     AbstractASTNode *_trueBranch;
     AbstractASTNode *_falseBranch;
+    QString _key;
 };
 
 

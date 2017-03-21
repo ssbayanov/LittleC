@@ -132,6 +132,7 @@ extern int lno;
 extern int parserlex();
 
 int loopSwitchCounter = 0;
+int ifCounter = 0;
 QList<int> operatorNumerStack;
 int enumCounter = 0;
 static QString lastFunctionName = "global";
@@ -757,10 +758,10 @@ scan: SCAN OPENPAREN STRING[typeString] CLOSEPAREN {
 };
 
 condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF {
-    $$ = new IfNode($3, $5, NULL);
+    $$ = new IfNode(QString("%1").arg(++ifCounter), $3, $5, NULL);
 }
 | IF OPENPAREN exp CLOSEPAREN statement ELSE statement {
-    $$ = new IfNode($3, $5, $7);
+    $$ = new IfNode(QString("%1").arg(++ifCounter), $3, $5, $7);
 };
 
 //Loops -------------------------------------------------------------------
@@ -1217,27 +1218,6 @@ AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
                 .arg(typeName.at(to)));
     return NULL;
 
-}
-
-int getSizeType(ValueTypeEnum type)
-{
-    switch(type) {
-    case typeVoid:
-        return 0;
-    case typeBool:
-    case typeChar:
-        return 1;
-    case typeShort:
-        return 2;
-    case typeFloat:
-    case typeInt:
-        return 4;
-    case typeDouble:
-        return 8;
-    default:
-        parsererror(errorList.at(ERROR_UNKNOWN_TYPE).arg(type));
-        return 0;
-    }
 }
 
 AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode *paramsNode)
