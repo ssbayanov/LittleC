@@ -15,6 +15,8 @@ public:
 
     bool isValueNode();
 
+    QString getValueTypeLLVM();
+
 protected:
 
     ValueTypeEnum _typeValue;

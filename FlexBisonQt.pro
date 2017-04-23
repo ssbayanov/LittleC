@@ -52,7 +52,8 @@ SOURCES += main.cpp \
     symbolstable/structtypetablerecord.cpp \
     symbolstable/structtablerecord.cpp \
     abstracttree/structvariabledeclarenode.cpp \
-    abstracttree/structreferencenode.cpp
+    abstracttree/structreferencenode.cpp \
+    abstracttree/variabledeclarationnode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -90,5 +91,6 @@ HEADERS += \
     abstracttree/scannode.h \
     abstracttree/structdeclarenode.h \
     abstracttree/structvariabledeclarenode.h \
-    abstracttree/structreferencenode.h
+    abstracttree/structreferencenode.h \
+    abstracttree/variabledeclarationnode.h
 

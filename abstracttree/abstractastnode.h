@@ -17,6 +17,7 @@ typedef enum
     NT_AssignmentOperation, // Unary assignment operator.
     NT_NumericConstant,             // Numeric literal.
     NT_StringConstant,             // Sting literal.
+    NT_Declaration,
     NT_Reference,        // Variable name.
     NT_IfStatement,       // If statement.
     NT_WhileStatement,    // While statement.

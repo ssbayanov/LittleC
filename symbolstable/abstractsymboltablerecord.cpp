@@ -1,4 +1,5 @@
 #include "abstractsymboltablerecord.h"
+#include "symbolstable/symbolstable.h"
 
 AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, QString key, ValueTypeEnum valueType, SymbolsTable *table)
 {
@@ -39,6 +40,16 @@ SymbolsTableRecordType AbstractSymbolTableRecord::getType()
     return _type;
 }
 
+QString AbstractSymbolTableRecord::getTypeName()
+{
+    return typeName.at(_type);
+}
+
+int AbstractSymbolTableRecord::getSize()
+{
+    return getSizeType(_valueType);
+}
+
 bool AbstractSymbolTableRecord::isFunction()
 {
     return (_type == SymbolTableRecord_Function);
@@ -62,4 +73,9 @@ bool AbstractSymbolTableRecord::isStructType()
 bool AbstractSymbolTableRecord::isStruct()
 {
     return (_type == SymbolTableRecord_Struct);
+}
+
+bool AbstractSymbolTableRecord::isGlobal()
+{
+    return (getTable()->getParent() == NULL);
 }

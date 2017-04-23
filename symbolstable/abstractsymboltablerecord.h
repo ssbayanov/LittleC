@@ -30,12 +30,16 @@ public:
 
     SymbolsTable *getTable();
     SymbolsTableRecordType getType();
+    QString getTypeName();
+    int getSize();
 
     bool isFunction();
     bool isArray();
     bool isVariable();
     bool isStructType();
     bool isStruct();
+
+    bool isGlobal();
 
 protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */

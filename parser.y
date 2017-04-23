@@ -1166,7 +1166,7 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
         }
-        return new BinarNode(new ReferenceNode(var), (value == NULL ? new ValueNode(type, 0) : value), "=");
+        return new VariableDeclarationNode(var, value);
     }
     else {
         return NULL;

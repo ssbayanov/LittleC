@@ -24,6 +24,7 @@
 #include "abstracttree/switchnode.h"
 #include "abstracttree/unarynode.h"
 #include "abstracttree/valuenode.h"
+#include "abstracttree/variabledeclarationnode.h"
 #include "abstracttree/whilenode.h"
 
 #endif // ASTNODE_H
