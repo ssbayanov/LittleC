@@ -5,6 +5,7 @@ VariableDeclarationNode::VariableDeclarationNode(AbstractSymbolTableRecord *vari
 {
     _variable = variable;
     _value = value;
+    _typeValue = variable->getValueType();
 }
 
 void VariableDeclarationNode::printNode(int level)

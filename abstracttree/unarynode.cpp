@@ -50,13 +50,37 @@ void UnaryNode::printNode(int level)
 QString UnaryNode::printTripleCode(int level, QString param)
 {
     if(_value != NULL) {
-        outStream << QString("\t$t%1 = %2 %3\n")
-                     .arg(level)
-                     .arg(unarOperationCommand.at(_uType))
-                     .arg(_value->printTripleCode(level+1));
+        QString opText = "";
+        switch (_uType) {
+        case UnarToDouble:
+            opText = "double ";
+            break;
+        case UnarToInt:
+            opText = "i32 ";
+            break;
+        case UnarToBool:
+        case UnarToChar:
+        case UnarToShort:
+            opText = "i8 ";
+            break;
+        case UnarToFloat:
+            opText = "float ";
+            break;
+        case UnarMinus:
+            opText = "-";
+            break;
+        case UnarNot:
+            opText = "!";
+            break;
+        default:
+            break;
+        }
+        return QString("%1%2")
+                .arg(opText)
+                .arg(_value->printTripleCode(level+1));
+
     }
-    return QString("$t%1")
-            .arg(level);
+    return "";
 }
 
 UnaryNode::~UnaryNode()

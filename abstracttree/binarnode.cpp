@@ -5,7 +5,8 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
 {
     _left = left;
     _right = right;
-    _operation = operation;
+    _operationText = operation;
+    _operation = getOperation(operation);
     AbstractValueASTNode::_typeValue = ((AbstractValueASTNode *)left)->getValueType();
 }
 
@@ -14,30 +15,9 @@ BinarNode::BinarNode(AbstractASTNode *left, AbstractASTNode *right, QString oper
 {
     _left = left;
     _right = right;
-    _operation = operation;
+    _operationText = operation;
+    _operation = getOperation(operation);
     AbstractValueASTNode::_typeValue = typeValue;
-}
-
-QString BinarNode::printTripleCode(int level, QString param)
-{
-    if(_left != NULL && _right != NULL) {
-        if(_operation == "=") {
-            outStream << QString("\t%1 = %2\n")
-                         .arg(_left->printTripleCode(level+1))
-                         .arg(_right->printTripleCode(level+2));
-            return "";
-        }
-        else {
-            outStream << QString("\t$t%1 = %2 %3 %4\n")
-                         .arg(level)
-                         .arg(_left->printTripleCode(level+1))
-                         .arg(_operation)
-                         .arg(_right->printTripleCode(level+2));
-            return QString("$t%1")
-                    .arg(level);
-        }
-    }
-    return "";
 }
 
 void BinarNode::printNode(int level)
@@ -68,11 +48,141 @@ void BinarNode::printNode(int level)
     }
 }
 
+QString BinarNode::printTripleCode(int level, QString param)
+{
+    if(_left != NULL && _right != NULL) {
+        if(_operation == BO_Assign) {
+            outStream << QString("%1 = %2")
+                         .arg(_left->printTripleCode(level+1))
+                         .arg(_right->printTripleCode(level+2));
+        }
+        else {
+            QString operationLLVMText = "";
+            ValueTypeEnum leftValueType = ((AbstractValueASTNode *)_left)->getValueType();
+            bool isInt = (leftValueType == typeBool)
+                    || (leftValueType == typeInt)
+                    || (leftValueType == typeChar)
+                    || (leftValueType == typeShort);
+
+            switch(_operation) {
+            case BO_Undef:
+                operationLLVMText = "";
+                break;
+            case BO_Add:
+                if(isInt)
+                    operationLLVMText = "add";
+                else
+                    operationLLVMText = "fadd";
+                break;
+            case BO_Sub:
+                if(isInt)
+                    operationLLVMText = "sub";
+                else
+                    operationLLVMText = "fsub";
+                break;
+            case BO_Mul:
+                if(isInt)
+                    operationLLVMText = "mul";
+                else
+                    operationLLVMText = "fmul";
+                break;
+            case BO_Div:
+                if(isInt)
+                    operationLLVMText = "udiv";
+                else
+                    operationLLVMText = "fdiv";
+                break;
+            case BO_Rem:
+                if(isInt)
+                    operationLLVMText = "urem";
+                else
+                    operationLLVMText = "frem";
+                break;
+            case BO_And:
+            case BO_AndBitwise:
+            case BO_Or:
+            case BO_OrBitwise:
+            case BO_Xor:
+            case BO_Lees:
+            case BO_LeesEq:
+            case BO_Eq:
+            case BO_GreatEq:
+            case BO_Great:
+            case BO_NotEq:
+            default:
+                operationLLVMText = "";
+            }
+
+            outStream << QString("%t%1 = %3 %2, %4\n")
+                         .arg(level)
+                         .arg(_left->printTripleCode(level+1))
+                         .arg(operationLLVMText)
+                         .arg(_right->printTripleCode(level+2));
+            return QString("%t%1")
+                    .arg(level);
+        }
+    }
+    return "";
+}
+
+
 BinarNode::~BinarNode()
 {
     if (_left != NULL)
         _left->~AbstractASTNode();
     if (_right != NULL)
         _right->~AbstractASTNode();
+}
+
+BinarNodeOperationEnum BinarNode::getOperation(QString op)
+{
+    switch(op.toStdString().c_str()[0]) {
+    case '+':
+        return BO_Add;
+        break;
+    case '-':
+        return BO_Sub;
+        break;
+    case '/':
+        return BO_Div;
+        break;
+    case '*':
+        return BO_Mul;
+        break;
+    case '%':
+        return BO_Rem;
+    case '!':
+        return BO_NotEq;
+        break;
+    case '>':
+        if(op.toStdString().length() > 1)
+            return BO_GreatEq;
+        return BO_Great;
+        break;
+    case '<':
+        if(op.toStdString().length() > 1)
+            return BO_LeesEq;
+        return BO_Lees;
+        break;
+    case '&':
+        if(op.toStdString().length() > 1)
+            return BO_And;
+        return BO_AndBitwise;
+        break;
+    case '|':
+        if(op.toStdString().length() > 1)
+            return BO_Or;
+        return BO_OrBitwise;
+        break;
+    case '^':
+        return BO_Xor;
+        break;
+    case '=':
+        if(op.toStdString().length() > 1)
+            return BO_Eq;
+        return BO_Assign;
+        break;
+    default: return BO_Undef;
+    }
 }
 
