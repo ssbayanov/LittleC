@@ -6,6 +6,7 @@ FunctionDeclareNode::FunctionDeclareNode(AbstractSymbolTableRecord *variable, Ab
     _variable = variable;
     _paramList = paramList;
     _body = body;
+    _typeValue = variable->getValueType();
 }
 
 void FunctionDeclareNode::printNode(int level)
@@ -34,12 +35,15 @@ void FunctionDeclareNode::printNode(int level)
 
 QString FunctionDeclareNode::printTripleCode(int level, QString param)
 {
-    outStream << QString("Function_%1:\n").arg(_variable->getName());
+    outStream << QString("define %2 @%1 () {\n")
+                 .arg(_variable->getName())
+                 .arg(getValueTypeLLVM());
+
     if(_body != NULL){
         _body->printTripleCode();
     }
 
-    //outStream << QString("LoopEnd_%1:\n").arg(_key);
+    outStream << QString("}\n");
 
     return "";
 }

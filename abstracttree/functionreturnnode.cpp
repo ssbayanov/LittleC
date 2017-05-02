@@ -21,8 +21,9 @@ void FunctionReturnNode::printNode(int level)
 
 QString FunctionReturnNode::printTripleCode(int level, QString param)
 {
-    outStream << QString("\treturn %1\n")
-                 .arg(_expression->printTripleCode(level+1, param));
+    outStream << QString("ret %2 %1\n")
+                 .arg(_expression->printTripleCode(level+1, param))
+                 .arg(((AbstractValueASTNode *) _expression)->getValueTypeLLVM());
 
     return "";
 

@@ -12,6 +12,8 @@ QMAKE_LEX = flex
 QMAKE_YACC = bison
 QMAKE_YACCFLAGS = -d -o parser.tab.c -l -v
 
+#INCLUDEPATH += /usr/lib/llvm-3.8/include
+
 QT       += core
 QT       -= gui
 
@@ -53,7 +55,8 @@ SOURCES += main.cpp \
     symbolstable/structtablerecord.cpp \
     abstracttree/structvariabledeclarenode.cpp \
     abstracttree/structreferencenode.cpp \
-    abstracttree/variabledeclarationnode.cpp
+    abstracttree/variabledeclarationnode.cpp \
+    irprint.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -92,5 +95,6 @@ HEADERS += \
     abstracttree/structdeclarenode.h \
     abstracttree/structvariabledeclarenode.h \
     abstracttree/structreferencenode.h \
-    abstracttree/variabledeclarationnode.h
+    abstracttree/variabledeclarationnode.h \
+    irprint.h
 

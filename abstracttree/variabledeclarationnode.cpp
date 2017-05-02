@@ -14,15 +14,23 @@ void VariableDeclarationNode::printNode(int level)
               << QString("Declaration variable: %1, type: %2\n")
                  .arg(_variable->getName())
                  .arg(_variable->getTypeName());
+
+    if(_value != NULL) {
+        _value->printNode(level+1);
+    }
 }
 
 QString VariableDeclarationNode::printTripleCode(int level, QString param)
 {
-    outStream << QString("%1%2 = external global %3 %4\n")
+    ir.writeLine( QString("%1%2 = %4 %3")
                  .arg(_variable->isGlobal() ? "@" : "%")
                  .arg(_variable->getName())
-                 .arg(getValueTypeLLVM())
-                 .arg((_value == NULL) ? "": _value->printTripleCode(level));
+                 .arg((_value == NULL) ? "": _value->printTripleCode(level))
+                 .arg(_variable->isGlobal() ? "global "+getValueTypeLLVM()
+                                            : QString("add %1 0, ")
+                                              .arg(getValueTypeLLVM())));
+
+
 
     return "";
 }

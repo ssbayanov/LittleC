@@ -14,6 +14,7 @@
 #define DEBUG_MODE 1
 
 #include "parser_yacc.h"
+#include "irprint.h"
 
 //extern int yyparse();
 extern std::vector <std::tuple<std::string, std::string, int> > TokenTable;
@@ -35,6 +36,8 @@ QTextStream tokenStream(stdout);
 QTextStream errorStream(stdout);
 QTextStream symbolsStream(stdout);
 QTextStream cout(stdout);
+
+IRPrint ir;
 
 QFile inFile;
 QFile outFile;

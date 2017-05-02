@@ -4,10 +4,9 @@
 #include <QString>
 #include <QVariant>
 #include <QList>
-#include "subexpression.h"
+#include "symbolstable/abstractsymboltablerecord.h"
 #include "symbolstable/variabletablerecord.h"
 #include "symbolstable/functiontablerecord.h"
-#include "symbolstable/abstractsymboltablerecord.h"
 #include "symbolstable/structtablerecord.h"
 #include "symbolstable/structtypetablerecord.h"
 

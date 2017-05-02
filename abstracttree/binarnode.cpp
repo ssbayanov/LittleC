@@ -24,7 +24,7 @@ void BinarNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
                << QString("Binar operation: %1, type: %2\n")
-                  .arg(_operation)
+                  .arg(BinarNodeOperationText.at(_operation))
                   .arg(typeName.at(getValueType()));
 
     if (_left != NULL) {
@@ -48,52 +48,45 @@ void BinarNode::printNode(int level)
     }
 }
 
-QString BinarNode::printTripleCode(int level, QString param)
+QString BinarNode::printTripleCode(int , QString )
 {
     if(_left != NULL && _right != NULL) {
         if(_operation == BO_Assign) {
-            outStream << QString("%1 = %2")
-                         .arg(_left->printTripleCode(level+1))
-                         .arg(_right->printTripleCode(level+2));
+            ir.writeLine( QString("%1 = %2")
+                         .arg(_left->printTripleCode())
+                         .arg(_right->printTripleCode()));
         }
         else {
             QString operationLLVMText = "";
             ValueTypeEnum leftValueType = ((AbstractValueASTNode *)_left)->getValueType();
-            bool isInt = (leftValueType == typeBool)
-                    || (leftValueType == typeInt)
-                    || (leftValueType == typeChar)
-                    || (leftValueType == typeShort);
 
             switch(_operation) {
-            case BO_Undef:
-                operationLLVMText = "";
-                break;
             case BO_Add:
-                if(isInt)
+                if(isInt(getValueType()))
                     operationLLVMText = "add";
                 else
                     operationLLVMText = "fadd";
                 break;
             case BO_Sub:
-                if(isInt)
+                if(isInt(getValueType()))
                     operationLLVMText = "sub";
                 else
                     operationLLVMText = "fsub";
                 break;
             case BO_Mul:
-                if(isInt)
+                if(isInt(getValueType()))
                     operationLLVMText = "mul";
                 else
                     operationLLVMText = "fmul";
                 break;
             case BO_Div:
-                if(isInt)
+                if(isInt(getValueType()))
                     operationLLVMText = "udiv";
                 else
                     operationLLVMText = "fdiv";
                 break;
             case BO_Rem:
-                if(isInt)
+                if(isInt(getValueType()))
                     operationLLVMText = "urem";
                 else
                     operationLLVMText = "frem";
@@ -110,16 +103,19 @@ QString BinarNode::printTripleCode(int level, QString param)
             case BO_Great:
             case BO_NotEq:
             default:
-                operationLLVMText = "";
+                operationLLVMText = "err";
             }
 
-            outStream << QString("%t%1 = %3 %2, %4\n")
-                         .arg(level)
-                         .arg(_left->printTripleCode(level+1))
-                         .arg(operationLLVMText)
-                         .arg(_right->printTripleCode(level+2));
-            return QString("%t%1")
-                    .arg(level);
+            ir.writeCommandLine( QString("%2 %4 %1, %3")
+                         .arg(
+                              _left->printTripleCode(),
+                              operationLLVMText,
+                              _right->printTripleCode(),
+                              getValueTypeLLVM())
+                         );
+
+
+            return QString(ir.lastCommandLine());
         }
     }
     return "";

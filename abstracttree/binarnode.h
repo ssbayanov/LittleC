@@ -27,6 +27,26 @@ typedef enum {
     BO_NotEq
 } BinarNodeOperationEnum;
 
+static QStringList BinarNodeOperationText
+= QStringList() << "UNDEF"
+                << "="
+                << "+"
+                << "-"
+                << "*"
+                << "/"
+                << "%"
+                << "&&"
+                << "&"
+                << "||"
+                << "|"
+                << "^"
+                << "<"
+                << "<="
+                << "=="
+                << ">="
+                << ">"
+                << "!=";
+
 class BinarNode : public AbstractValueASTNode
 {
 public:
@@ -36,7 +56,7 @@ public:
 
 
 
-    virtual QString printTripleCode(int level, QString param);
+    virtual QString printTripleCode(int, QString);
 
     void printNode(int level);
 

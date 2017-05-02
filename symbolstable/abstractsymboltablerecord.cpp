@@ -42,7 +42,7 @@ SymbolsTableRecordType AbstractSymbolTableRecord::getType()
 
 QString AbstractSymbolTableRecord::getTypeName()
 {
-    return typeName.at(_type);
+    return typeName.at(_valueType);
 }
 
 int AbstractSymbolTableRecord::getSize()

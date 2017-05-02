@@ -610,7 +610,7 @@ parameter_list : parameter[param] COMA parameter_list[list] {
 
 parameter : data_types[type] IDENTIFIER{
     if (isNumericType( $type )) {
-        AbstractASTNode *var = numericDeclaration($1, *$2);
+        AbstractASTNode *var = numericDeclaration($type, *$2);
         if (var == NULL)
             YYERROR;
         $$ = var;
@@ -634,9 +634,9 @@ parameter : data_types[type] IDENTIFIER{
 
 
 declaration : parameter
-| data_types IDENTIFIER ASSIGN exp
+| data_types[type] IDENTIFIER ASSIGN exp
 {
-    AbstractASTNode *var = numericDeclaration($1, *$2, (AbstractValueASTNode *)$4);
+    AbstractASTNode *var = numericDeclaration($type, *$2, (AbstractValueASTNode *)$4);
     if (var == NULL)
         YYERROR;
     $$ = var;
@@ -1117,7 +1117,6 @@ AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, Ab
 {
     if ( isNumericType(left) && isNumericType(right) ) {
 
-
         if (left->getValueType() != right->getValueType())
         {
             right = convert(right, left->getValueType());
@@ -1166,9 +1165,17 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
         }
+        if(value->getValueType() != type) {
+            value = convert(value, type);
+            if (value == NULL) {
+                parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                return NULL;
+            }
+        }
         return new VariableDeclarationNode(var, value);
     }
     else {
+        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(name));
         return NULL;
     }
 }

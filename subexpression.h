@@ -39,6 +39,16 @@ static int getSizeType(ValueTypeEnum type)
     }
 }
 
+static int isInt(ValueTypeEnum type)
+{
+    if(type == typeBool
+            || type == typeInt
+            || type == typeShort
+            || type == typeChar)
+        return true;
+    return false;
+}
+
 static QStringList typeName = QStringList() << "int"
                                             << "short"
                                             << "float"

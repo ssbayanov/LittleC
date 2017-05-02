@@ -1,7 +1,6 @@
 #ifndef VARIABLETABLERECORD_H
 #define VARIABLETABLERECORD_H
 
-#include "subexpression.h"
 #include "symbolstable/abstractsymboltablerecord.h"
 
 #include <QString>

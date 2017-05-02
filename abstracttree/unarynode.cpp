@@ -47,27 +47,48 @@ void UnaryNode::printNode(int level)
     }
 }
 
-QString UnaryNode::printTripleCode(int level, QString param)
+QString UnaryNode::printTripleCode(int level, QString)
 {
     if(_value != NULL) {
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) _value);
         QString opText = "";
         switch (_uType) {
         case UnarToDouble:
-            opText = "double ";
+            if(isInt(value->getValueType())) {
+                ir.writeCommandLine( QString("sitofp %1 %2 to %3")
+                        .arg(value->getValueTypeLLVM())
+                        .arg(value->printTripleCode())
+                        .arg(getValueTypeLLVM()));
+            }
+
             break;
         case UnarToInt:
-            opText = "i32 ";
-            break;
         case UnarToBool:
         case UnarToChar:
         case UnarToShort:
-            opText = "i8 ";
+            if(isInt(value->getValueType())) {
+                ir.writeCommandLine( QString("%1 %2 %3 to %4")
+                        .arg(getSizeType(getValueType()) < getSizeType(value->getValueType()) ?
+                                 "trunc" :
+                                 "zext")
+                        .arg(value->getValueTypeLLVM())
+                        .arg(value->printTripleCode())
+                        .arg(getValueTypeLLVM()));
+            }
+            else {
+                ir.writeCommandLine( QString("fptosi %1 %2 to %3")
+                        .arg(value->getValueTypeLLVM())
+                        .arg(value->printTripleCode())
+                        .arg(getValueTypeLLVM()));
+            }
             break;
         case UnarToFloat:
             opText = "float ";
             break;
         case UnarMinus:
-            opText = "-";
+            ir.writeCommandLine( QString("sub %1 0, %2")
+                                 .arg(value->getValueTypeLLVM())
+                                 .arg(value->printTripleCode()));
             break;
         case UnarNot:
             opText = "!";
@@ -75,9 +96,10 @@ QString UnaryNode::printTripleCode(int level, QString param)
         default:
             break;
         }
-        return QString("%1%2")
-                .arg(opText)
-                .arg(_value->printTripleCode(level+1));
+        //outStream << opText;
+
+        return QString(ir.lastCommandLine())
+                .arg(level);
 
     }
     return "";

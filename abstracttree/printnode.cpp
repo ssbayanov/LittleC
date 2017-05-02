@@ -21,6 +21,11 @@ void PrintNode::printNode(int level)
     }
 }
 
+QString PrintNode::printTripleCode(int level, QString param)
+{
+    return "";
+}
+
 PrintNode::~PrintNode()
 {
     if (_expression != NULL)
