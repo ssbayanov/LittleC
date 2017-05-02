@@ -97,11 +97,23 @@ QString BinarNode::printTripleCode(int , QString )
             case BO_OrBitwise:
             case BO_Xor:
             case BO_Lees:
+                operationLLVMText = "icmp slt";
+                break;
             case BO_LeesEq:
+                operationLLVMText = "icmp sle";
+                break;
             case BO_Eq:
+                operationLLVMText = "icmp eq";
+                break;
             case BO_GreatEq:
+                operationLLVMText = "icmp sge";
+                break;
             case BO_Great:
+                operationLLVMText = "icmp sgt";
+                break;
             case BO_NotEq:
+                operationLLVMText = "icmp ne";
+                break;
             default:
                 operationLLVMText = "err";
             }
@@ -111,7 +123,7 @@ QString BinarNode::printTripleCode(int , QString )
                               _left->printTripleCode(),
                               operationLLVMText,
                               _right->printTripleCode(),
-                              getValueTypeLLVM())
+                              getValueTypeLLVM(leftValueType))
                          );
 
 

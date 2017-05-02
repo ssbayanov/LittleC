@@ -14,6 +14,7 @@ QMAKE_YACCFLAGS = -d -o parser.tab.c -l -v
 
 #INCLUDEPATH += /usr/lib/llvm-3.8/include
 
+
 QT       += core
 QT       -= gui
 
@@ -56,7 +57,8 @@ SOURCES += main.cpp \
     abstracttree/structvariabledeclarenode.cpp \
     abstracttree/structreferencenode.cpp \
     abstracttree/variabledeclarationnode.cpp \
-    irprint.cpp
+    irprint.cpp \
+    abstracttree/assignmentnode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -96,5 +98,6 @@ HEADERS += \
     abstracttree/structvariabledeclarenode.h \
     abstracttree/structreferencenode.h \
     abstracttree/variabledeclarationnode.h \
-    irprint.h
+    irprint.h \
+    abstracttree/assignmentnode.h
 

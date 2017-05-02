@@ -17,18 +17,13 @@ void ReferenceNode::printNode(int level)
 
 QString ReferenceNode::printTripleCode(int level, QString param)
 {
-    if(_variable->isGlobal()){
-        outStream << QString("%t%3 = load %1, %1* @%2\n")
-                     .arg(getValueTypeLLVM())
-                     .arg(_variable->getName())
-                     .arg(level);
-        return QString("%t%3")
-                .arg(level);
-    }
-    else {
-        return QString("%%2")
-                .arg(_variable->getName());
-    }
+    ir.writeCommandLine(QString("load %1, %1* %2%3")
+                        .arg(getValueTypeLLVM())
+                        .arg(_variable->isGlobal() ? "@" : "%")
+                        .arg(_variable->getName()));
+
+    return ir.lastCommandLine();
+
 }
 
 ReferenceNode::~ReferenceNode()

@@ -12,26 +12,26 @@ IfNode::IfNode(QString key, AbstractASTNode *condition, AbstractASTNode *trueBra
 void IfNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << "If\n";
+               << "If\n";
     if (_condition != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "Condition:\n";
+                   << "Condition:\n";
         _condition->printNode(level+1);
     }
     else {
         treeStream << QString().fill(' ',level*2)
-                  << "BAD CONDITION NODE!!!\n";
+                   << "BAD CONDITION NODE!!!\n";
     }
 
     if (_trueBranch != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "True branch:\n";
+                   << "True branch:\n";
         _trueBranch->printNode(level+1);
     }
 
     if (_falseBranch != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "False branch:\n";
+                   << "False branch:\n";
         _falseBranch->printNode(level+1);
     }
 }
@@ -39,29 +39,43 @@ void IfNode::printNode(int level)
 QString IfNode::printTripleCode(int level, QString param)
 {
 
-    if(_condition != NULL){
-        outStream << QString("\tiffalse %1 goto Else_%2\n")
-                     .arg(_condition->printTripleCode(level+1))
-                     .arg(_key);
+    QString trueTmp = "";
+    QString falseTmp = "";
+    QString endTmp = "";
+    QString condTmp = _condition->printTripleCode();
+
+    ir.startStore();
+
+    //true branche
+    ir.writeLabelLine();
+    trueTmp = ir.lastCommandLine();
+    if (_trueBranch != NULL) {
+        _trueBranch->printTripleCode();
+        ir.writeLine("br label %endLabel");
     }
 
-    if(_trueBranch != NULL){
-        _trueBranch->printTripleCode(level+1);
-
+    //false branche
+    ir.writeLabelLine();
+    falseTmp = ir.lastCommandLine();
+    if (_falseBranch) {
+        _falseBranch->printTripleCode();
+        ir.writeLine("br label %endLabel");
     }
 
-    outStream << QString("\tgoto EndIf_%1\n")
-                 .arg(_key);
-    outStream << QString("Else_%1:\n")
-                 .arg(_key);
+    //end
+    ir.writeLabelLine();
+    endTmp = ir.lastCommandLine();
 
-    if(_falseBranch != NULL){
-        _falseBranch->printTripleCode(level+1);
+    ir.stopStore();
 
-    }
+    ir.replaceInStored("%endLabel", endTmp);
 
-    outStream << QString("EndIf_%1:\n")
-                 .arg(_key);
+    ir.writeLine(QString("br i1 %1, label %2, label %3")
+                 .arg(condTmp)
+                 .arg(trueTmp)
+                 .arg(falseTmp));
+
+    ir.flushStore();
 
     return "";
 }

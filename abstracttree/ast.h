@@ -5,6 +5,7 @@
 #include "abstracttree/abstractvalueastnode.h"
 #include "abstracttree/arraydeclarenode.h"
 #include "abstracttree/arrayreferencenode.h"
+#include "abstracttree/assignmentnode.h"
 #include "abstracttree/binarnode.h"
 #include "abstracttree/casenode.h"
 #include "abstracttree/fornode.h"

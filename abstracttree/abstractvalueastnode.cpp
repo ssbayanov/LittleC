@@ -23,7 +23,12 @@ bool AbstractValueASTNode::isValueNode()
 
 QString AbstractValueASTNode::getValueTypeLLVM()
 {
-    switch(_typeValue) {
+    return getValueTypeLLVM(_typeValue);
+}
+
+QString AbstractValueASTNode::getValueTypeLLVM(ValueTypeEnum type)
+{
+    switch(type) {
     case typeVoid:
         return "void";
     case typeBool:

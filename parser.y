@@ -824,10 +824,10 @@ do_head : DO {
 
 // Assignments ---------------------------------------------------------------
 
-assignment : reference[variable] ASSIGN exp[value] {
-    AbstractASTNode *node = binarMathNode(((AbstractValueASTNode *) $variable), "=", ((AbstractValueASTNode *) $value));
-    if (node != NULL) {
-        $$ = node;
+assignment : IDENTIFIER[id] ASSIGN exp[value] {
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$id);
+    if (var != NULL) {
+        $$ = new AssignmentNode(var, $value);
     }
     else {
         $$ = NULL;

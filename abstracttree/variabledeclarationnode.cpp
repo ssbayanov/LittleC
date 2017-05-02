@@ -22,15 +22,31 @@ void VariableDeclarationNode::printNode(int level)
 
 QString VariableDeclarationNode::printTripleCode(int level, QString param)
 {
-    ir.writeLine( QString("%1%2 = %4 %3")
+    /*ir.writeLine( QString("%1%2 = %4 %3")
                  .arg(_variable->isGlobal() ? "@" : "%")
                  .arg(_variable->getName())
                  .arg((_value == NULL) ? "": _value->printTripleCode(level))
                  .arg(_variable->isGlobal() ? "global "+getValueTypeLLVM()
                                             : QString("add %1 0, ")
                                               .arg(getValueTypeLLVM())));
-
-
+    */
+    if(_variable->isGlobal()) {
+        ir.writeLine( QString("@%1 = global %2 %3")
+                      .arg(_variable->getName())
+                      .arg(getValueTypeLLVM())
+                      .arg((_value == NULL) ? "": _value->printTripleCode(level)));
+    }
+    else {
+        ir.writeLine( QString("%%1 = alloca %2")
+                      .arg(_variable->getName())
+                      .arg(getValueTypeLLVM()));
+        if(_value != NULL) {
+        ir.writeLine( QString("store %1 %2, %1* %%3")
+                      .arg(getValueTypeLLVM())
+                      .arg(_value->printTripleCode(level))
+                      .arg(_variable->getName()));
+        }
+    }
 
     return "";
 }

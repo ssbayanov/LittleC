@@ -17,6 +17,8 @@ public:
 
     QString getValueTypeLLVM();
 
+    static QString getValueTypeLLVM(ValueTypeEnum type);
+
 protected:
 
     ValueTypeEnum _typeValue;
