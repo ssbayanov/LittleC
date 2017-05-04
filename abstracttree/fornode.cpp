@@ -51,35 +51,54 @@ void ForNode::printNode(int level)
 
 QString ForNode::printTripleCode(int level, QString param)
 {
+
     if(_init != NULL) {
-        _init->printTripleCode(level+1);
+        _init->printTripleCode(level);
     }
 
-    outStream << QString("LoopBegin_%1:\n")
-                 .arg(_key);
+    ir.startStore();
+
+    ir.writeLine(QString("br label %begin"));
+    ir.writeNamedLabelLine("Begin");
 
     if(_condition != NULL){
-        outStream << QString("\tiffalse %1 goto LoopEnd_%2\n")
-                     .arg(_condition->printTripleCode(level+1))
-                     .arg(_key);
+        ir.writeLine(QString("br i1 %1, label %body, label %end")
+                     .arg(_condition->printTripleCode())
+                     .arg("")
+                     .arg(""));
     }
+    else {
+        ir.writeLine("br label %bodyLoop");
+    }
+
+    ir.writeNamedLabelLine("Body");
 
     if(_body != NULL){
-        _body->printTripleCode(level+1);
-
+        _body->printTripleCode(level);
     }
 
-    outStream << QString("LoopContinue_%1:\n").arg(_key);
+    ir.writeLine(QString("br label %continue"));
+    ir.writeNamedLabelLine("Continue");
 
     if(_iteration != NULL){
-        _iteration->printTripleCode(level+1);
-    }
+        _iteration->printTripleCode(level);
+    }    
 
-    outStream << QString("\tgoto LoopBegin_%1\n")
-                 .arg(_key);
+    ir.writeLine(QString("br label %1")
+                 .arg(ir.getLabelByName("Begin")));
 
-    outStream << QString("LoopEnd_%1:\n")
-                 .arg(_key);
+    ir.writeNamedLabelLine("End");
+
+    ir.stopStore();
+
+    ir.replaceInStored("%body", ir.getLabelByName("Body"));
+    ir.replaceInStored("%end", ir.getLabelByName("End"));
+    ir.replaceInStored("%begin", ir.getLabelByName("Begin"));
+    ir.replaceInStored("%continue", ir.getLabelByName("Continue"));
+
+    ir.flushStore();
+
+
 
     return "";
 

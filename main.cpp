@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
             printingTokens();
         }
     }
-
+    ir.flushStore();
 }
 
 bool changeStream(QTextStream *stream, QFile *file, QString fileName)

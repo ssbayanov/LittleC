@@ -15,7 +15,8 @@ void GoToNode::printNode(int level)
 
 QString GoToNode::printTripleCode(int level, QString param)
 {
-    outStream << QString("\tgoto %1_%2\n").arg(_nameLabel).arg(_key);
+    ir.writeLine(QString("br label %1")
+                 .arg(_nameLabel));
     return "";
 }
 

@@ -236,7 +236,7 @@ print scan
 %nonassoc IF
 %nonassoc ELSE
 %right ASSIGN
-%left BOOLOP
+%left AND OR XOR
 %left RELOP
 %left PLUS MINUS
 %left MULOP
@@ -671,7 +671,7 @@ break_statement : BREAK SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("LoopEnd",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
+        $$ = new GoToNode("%end",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 
@@ -681,7 +681,7 @@ continue_statement : CONTINUE SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("LoopContinue",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
+        $$ = new GoToNode("%continue",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 //Switch - case -------------------------------------------------------------------
@@ -1145,15 +1145,38 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
         return new BinarNode(left, right, operation, typeBool);
     }
     else {
-        if ( !isNumericType(left) )
+        if ( !isNumericType(left) ) {
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(left->getValueType()))
-                        .arg(typeName.at(typeBool)));
-        if ( !isNumericType(right) )
+                        .arg(typeName.at(typeBool))); }
+        else {
+            if(!isInt(left->getValueType())) {
+                left = convert(left, typeInt);
+                if(left == NULL) {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    return NULL;
+                }
+
+            }
+        }
+
+        if ( !isNumericType(right) ) {
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(right->getValueType()))
-                        .arg(typeName.at(typeBool)));
-        return NULL;
+                        .arg(typeName.at(typeBool))); }
+        else {
+            if(!isInt(right->getValueType())) {
+                right = convert(right, typeInt);
+                if(right == NULL) {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    return NULL;
+                }
+
+            }
+        }
+
+        return new BinarNode(left, right, operation, typeBool);
+
     }
 }
 

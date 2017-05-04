@@ -32,6 +32,7 @@ QString AbstractValueASTNode::getValueTypeLLVM(ValueTypeEnum type)
     case typeVoid:
         return "void";
     case typeBool:
+        return "i1";
     case typeChar:
     case typeShort:
         return "i8";

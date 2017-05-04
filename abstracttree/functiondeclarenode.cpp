@@ -35,15 +35,15 @@ void FunctionDeclareNode::printNode(int level)
 
 QString FunctionDeclareNode::printTripleCode(int level, QString param)
 {
-    outStream << QString("define %2 @%1 () {\n")
+    ir.writeLine(QString("define %2 @%1 () {\n")
                  .arg(_variable->getName())
-                 .arg(getValueTypeLLVM());
+                 .arg(getValueTypeLLVM()));
 
     if(_body != NULL){
         _body->printTripleCode();
     }
 
-    outStream << QString("}\n");
+    ir.writeLine( QString("}\n"));
 
     return "";
 }

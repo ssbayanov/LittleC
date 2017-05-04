@@ -39,41 +39,35 @@ void IfNode::printNode(int level)
 QString IfNode::printTripleCode(int level, QString param)
 {
 
-    QString trueTmp = "";
-    QString falseTmp = "";
-    QString endTmp = "";
-    QString condTmp = _condition->printTripleCode();
-
     ir.startStore();
 
+    ir.writeLine(QString("br i1 %1, label %true, label %2")
+                 .arg(_condition->printTripleCode())
+                 .arg( (_falseBranch != NULL) ? "%false" : "%endif"));
+
     //true branche
-    ir.writeLabelLine();
-    trueTmp = ir.lastCommandLine();
+    ir.writeNamedLabelLine("True");
+
     if (_trueBranch != NULL) {
         _trueBranch->printTripleCode();
-        ir.writeLine("br label %endLabel");
+        ir.writeLine("br label %endif");
     }
 
     //false branche
-    ir.writeLabelLine();
-    falseTmp = ir.lastCommandLine();
-    if (_falseBranch) {
+
+    if (_falseBranch != NULL) {
+        ir.writeNamedLabelLine("False");
         _falseBranch->printTripleCode();
-        ir.writeLine("br label %endLabel");
+        ir.writeLine("br label %endif");
     }
 
     //end
-    ir.writeLabelLine();
-    endTmp = ir.lastCommandLine();
+    ir.writeNamedLabelLine("EndIf");
 
-    ir.stopStore();
 
-    ir.replaceInStored("%endLabel", endTmp);
-
-    ir.writeLine(QString("br i1 %1, label %2, label %3")
-                 .arg(condTmp)
-                 .arg(trueTmp)
-                 .arg(falseTmp));
+    ir.replaceInStored("%endif", ir.getLabelByName("EndIf"));
+    ir.replaceInStored("%true", ir.getLabelByName("True"));
+    ir.replaceInStored("%false", ir.getLabelByName("False"));
 
     ir.flushStore();
 
