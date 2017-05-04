@@ -12,13 +12,10 @@ IRPrint::IRPrint()
 QString IRPrint::writeCommandLine(QString textLine)
 {
     line++;
-    QString tmp;
-    tmp = QString("%%2 = %1\n")
+    writeLine(QString("%%2 = %1\n")
             .arg(textLine)
             .arg(line)
-            .replace("$t", "%");
-
-    currentSpace->text.append(tmp);
+            .replace("$t", "%"));
 
     return QString("$t%1").arg(line);
 }
@@ -50,12 +47,11 @@ QString IRPrint::getLabelByName(QString name)
 
 void IRPrint::writeLine(QString textLine)
 {
-    QString tmp;
-    tmp =QString("%1\n")
-            .arg(textLine.replace("$t", "%"));
-
-    currentSpace->text.append(tmp);
-
+    QString lastLine = currentSpace->text.right(currentSpace->text.length() - currentSpace->text.lastIndexOf("\n", -2));
+    if(!textLine.split(" ").contains("br") ||
+            !lastLine.contains("\nbr "))
+    currentSpace->text.append(QString("%1\n")
+                              .arg(textLine.replace("$t", "%")));
 }
 
 QString IRPrint::lastCommandLine()
@@ -84,7 +80,8 @@ void IRPrint::flushStore()
     store.removeAt(store.length()-1);
 
     if(store.isEmpty()) {
-        outStream << currentSpace->text.replace("$t", "%");
+        outStream << currentSpace->text
+                     .replace("$t", "%");
     }
     else {
         store.last()->text.append(currentSpace->text.replace("$t", "%"));
