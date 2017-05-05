@@ -375,6 +375,9 @@ function_call : IDENTIFIER[id] OPENPAREN exp_list[params] CLOSEPAREN
         if (function->isFunction()) {
             AbstractASTNode *validParams = validatedParams(((FunctionTableRecord *) function), $params);
             if (validParams != NULL) {
+                if(validParams->getType() == NT_List) {
+                    ((ListNode *) validParams)->setType(LT_CallParamList);
+                }
                 $$ = new FunctionCallNode(function, validParams);
             }
             else {
@@ -601,7 +604,7 @@ declaration_list_element : %empty {
 };
 
 parameter_list : parameter[param] COMA parameter_list[list] {
-    $$ = new ListNode($param, $list);
+    $$ = new ListNode($param, $list, LT_DeclareParamList);
 }
 | parameter[param]
 | %empty {
@@ -1188,11 +1191,13 @@ AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractVa
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
         }
-        if(value->getValueType() != type) {
-            value = convert(value, type);
-            if (value == NULL) {
-                parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
-                return NULL;
+        if(value != NULL) {
+            if(value->getValueType() != type) {
+                value = convert(value, type);
+                if (value == NULL) {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    return NULL;
+                }
             }
         }
         return new VariableDeclarationNode(var, value);

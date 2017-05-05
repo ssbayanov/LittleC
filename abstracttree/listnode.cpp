@@ -1,10 +1,12 @@
 #include "listnode.h"
+#include "variabledeclarationnode.h"
 
-ListNode::ListNode(AbstractASTNode *left, AbstractASTNode *right)
+ListNode::ListNode(AbstractASTNode *left, AbstractASTNode *right, ListTypeEnum typeList)
     : AbstractASTNode(NT_List)
 {
     _left = left;
     _right = right;
+    _typeList = typeList;
 }
 
 void ListNode::printNode(int level)
@@ -34,39 +36,71 @@ void ListNode::printNode(int level)
 
 QString ListNode::printTripleCode(int level, QString param)
 {
-    if (param == "isParamList") {
-        int resultNum = 0;
+    QString outString = "";
+
+    switch (_typeList) {
+    case LT_Default:
         if(_left != NULL) {
-            outStream << QString("\tparam %1\n")
-                         .arg(_left->printTripleCode(level+1, param));
-            resultNum++;
+
+            _left->printTripleCode();
         }
-
         if(_right != NULL) {
-            QString result = _right->printTripleCode(level+1, param);
-            bool hasResult = false;
-            resultNum += result.toInt(&hasResult);
 
-            if(!hasResult) {
-                outStream << QString("\tparam %1\n")
-                             .arg(result);
-                resultNum++;
+            _right->printTripleCode();
+        }
+        break;
+    case LT_DeclareParamList:
+
+        if(_left != NULL) {
+            if(_left->getType() == NT_Declaration) {
+                outString = ((VariableDeclarationNode *) _left)->printParamTriple();
+            }
+            else {
+                outString = _left->printTripleCode();
+            }
+
+        }
+        if(_right != NULL) {
+            outString.append(", ");
+            if(_right->getType() == NT_Declaration) {
+
+                outString.append(((VariableDeclarationNode *) _right)->printParamTriple());
+            }
+            else {
+                outString.append(_right->printTripleCode());
             }
         }
-        return QString("%1").arg(resultNum);
-    }
-    else {
+        break;
+
+    case LT_CallParamList:
         if(_left != NULL) {
+            if(_left->getType() == NT_List) {
+                ((ListNode *) _left)->setListType(LT_CallParamList);
+                outString.append(_left->printTripleCode());
+            }
+            if(_left->isValueNode())
+                outString.append(((AbstractValueASTNode *) _left)->getValueTypeLLVM());
+           outString.append(" " + _left->printTripleCode());
 
-            _left->printTripleCode(level+1, param);
         }
+
+
         if(_right != NULL) {
-
-            _right->printTripleCode(level+2, param);
+            outString.append(", ");
+            if(_right->getType() == NT_List) {
+                ((ListNode *) _right)->setListType(LT_CallParamList);
+                outString.append(_right->printTripleCode());
+            }
+            if(_right->isValueNode())
+                outString.append(((AbstractValueASTNode *) _right)->getValueTypeLLVM());
+            outString.append(" " + _right->printTripleCode());
         }
+        break;
+    default:
+        break;
     }
-    return "";
 
+    return outString;
 }
 
 AbstractASTNode *ListNode::getLeftNode()
@@ -87,6 +121,11 @@ void ListNode::setLeftNode(AbstractASTNode *left)
 void ListNode::setRightNode(AbstractASTNode *right)
 {
     _right = right;
+}
+
+void ListNode::setListType(ListTypeEnum typeList)
+{
+    _typeList = typeList;
 }
 
 ListNode::~ListNode()

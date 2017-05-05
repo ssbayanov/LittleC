@@ -38,6 +38,8 @@ public:
 
     void replaceInStored(QString what, QString on);
 
+    void resetCommandCounter();
+
 private:
     long int line;
     bool isStore;

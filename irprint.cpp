@@ -12,10 +12,9 @@ IRPrint::IRPrint()
 QString IRPrint::writeCommandLine(QString textLine)
 {
     line++;
-    writeLine(QString("%%2 = %1\n")
-            .arg(textLine)
-            .arg(line)
-            .replace("$t", "%"));
+    writeLine(QString("%%2 = %1")
+              .arg(textLine)
+              .arg(line));
 
     return QString("$t%1").arg(line);
 }
@@ -26,7 +25,7 @@ QString IRPrint::writeLabelLine(QString comment)
     QString tmp;
     tmp = QString("\n; <label>: %%2%1\n")
             .arg(comment.isEmpty() ? "" : QString("\t\t\t#%1")
-                                                 .arg(comment))
+                                     .arg(comment))
             .arg(line);
     currentSpace->text.append(tmp);
 
@@ -47,11 +46,12 @@ QString IRPrint::getLabelByName(QString name)
 
 void IRPrint::writeLine(QString textLine)
 {
-    QString lastLine = currentSpace->text.right(currentSpace->text.length() - currentSpace->text.lastIndexOf("\n", -2));
+    //bug with double br
+    QString lastLine = currentSpace->text.right(currentSpace->text.length() - currentSpace->text.lastIndexOf("\n", -4));
     if(!textLine.split(" ").contains("br") ||
-            !lastLine.contains("\nbr "))
-    currentSpace->text.append(QString("%1\n")
-                              .arg(textLine.replace("$t", "%")));
+            (!lastLine.contains("\nbr ") && !lastLine.contains("\nret ")))
+        currentSpace->text.append(QString("%1\n")
+                                  .arg(textLine.replace("$t", "%")));
 }
 
 QString IRPrint::lastCommandLine()
@@ -94,4 +94,9 @@ void IRPrint::flushStore()
 void IRPrint::replaceInStored(QString what, QString on)
 {
     currentSpace->text = currentSpace->text.replace(what, on);
+}
+
+void IRPrint::resetCommandCounter()
+{
+    line = 0;
 }
