@@ -3,8 +3,16 @@
 ValueNode::ValueNode(ValueTypeEnum typeValue, QVariant value)
     : AbstractValueASTNode(NT_NumericConstant)
 {
-    _value = value;
+
     _typeValue = typeValue;
+    if(_typeValue == typeString){
+        _value = value.toString()
+                .replace("\\t", "\t")
+                .replace("\\n", "\n");
+    }
+    else {
+    _value = value;
+    }
 }
 
 void ValueNode::printNode(int level)
@@ -17,7 +25,20 @@ void ValueNode::printNode(int level)
 
 QString ValueNode::printTripleCode(int level, QString param)
 {
+    if(getValueType() == typeString) {
+        return ir.addUnnamedVariable(
+                    QString("private unnamed_addr constant [%1 x i8] c\"%2\\00\"")
+                    .arg(_value.toString().length()+1)
+                    .arg(_value.toString()
+                         .replace("\n","\\0A")
+                         .replace("\t", "\\09")));
+    }
     return _value.toString();
+}
+
+QVariant ValueNode::getValue()
+{
+    return _value;
 }
 
 ValueNode::~ValueNode()

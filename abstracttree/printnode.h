@@ -19,6 +19,8 @@ public:
 
 private:
     AbstractASTNode *_expression;
+
+    QString printTextVariable(QString text);
 };
 
 

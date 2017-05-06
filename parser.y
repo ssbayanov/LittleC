@@ -376,7 +376,7 @@ function_call : IDENTIFIER[id] OPENPAREN exp_list[params] CLOSEPAREN
             AbstractASTNode *validParams = validatedParams(((FunctionTableRecord *) function), $params);
             if (validParams != NULL) {
                 if(validParams->getType() == NT_List) {
-                    ((ListNode *) validParams)->setType(LT_CallParamList);
+                    ((ListNode *) validParams)->setListType(LT_CallParamList);
                 }
                 $$ = new FunctionCallNode(function, validParams);
             }
@@ -674,7 +674,7 @@ break_statement : BREAK SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("%end",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
+        $$ = new GoToNode("%end%",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 
@@ -684,7 +684,7 @@ continue_statement : CONTINUE SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("%continue",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
+        $$ = new GoToNode("%continue%",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 //Switch - case -------------------------------------------------------------------

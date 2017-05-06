@@ -3,10 +3,14 @@
 IRPrint::IRPrint()
 {
     line = 0;
+    unnameVarsCount = 0;
     isStore = false;
     store.clear();
+    externFunctions.clear();
     currentSpace = new Space {LabelStore(),QString()};
     store.append(currentSpace);
+
+    writeLine("%global_placed_here%");
 }
 
 QString IRPrint::writeCommandLine(QString textLine)
@@ -54,9 +58,32 @@ void IRPrint::writeLine(QString textLine)
                                   .arg(textLine.replace("$t", "%")));
 }
 
+void IRPrint::writeGlobalLine(QString textLine)
+{
+    globalText.append(textLine + "\n");
+}
+
+void IRPrint::addExternFunction(QString textLine)
+{
+    if(!externFunctions.contains(textLine))
+        externFunctions.append(textLine);
+}
+
 QString IRPrint::lastCommandLine()
 {
     return QString("$t%1").arg(line);
+}
+
+QString IRPrint::addUnnamedVariable(QString declarationText)
+{
+    if(unnamedVariables.contains(declarationText))
+        return unnamedVariables.key(declarationText);
+
+    unnamedVariables.insert(QString("@unname_variable_%1")
+                            .arg(unnameVarsCount++)
+                            , declarationText);
+
+    return unnamedVariables.key(declarationText);
 }
 
 
@@ -80,8 +107,22 @@ void IRPrint::flushStore()
     store.removeAt(store.length()-1);
 
     if(store.isEmpty()) {
+        globalText.append(unnamedVariables.getVariablesText());
+
+        QString externText = "";
+        if(!externFunctions.isEmpty()) {
+            if(externFunctions.count() != 1){
+                externText = externFunctions.join("\n");
+            }
+            else{
+                externText = externFunctions.at(0);
+            }
+        }
+
         outStream << currentSpace->text
-                     .replace("$t", "%");
+                     .replace("$t", "%")
+                     .replace("%global_placed_here%", globalText)
+                  << externText;
     }
     else {
         store.last()->text.append(currentSpace->text.replace("$t", "%"));
@@ -99,4 +140,22 @@ void IRPrint::replaceInStored(QString what, QString on)
 void IRPrint::resetCommandCounter()
 {
     line = 0;
+}
+
+VariablesStore::VariablesStore()
+{
+    this->clear();
+}
+
+QString VariablesStore::getVariablesText()
+{
+    QString tmpText = "";
+
+    iterator i = begin();
+    while (i != end()) {
+        tmpText.append(i.key()+" = "+i.value()+"\n");
+        ++i;
+    }
+
+    return tmpText;
 }

@@ -8,6 +8,13 @@ extern QTextStream outStream;
 
 typedef QHash<QString, QString> LabelStore;
 
+class VariablesStore : public QHash<QString, QString>
+{
+public:
+    VariablesStore();
+    QString getVariablesText();
+};
+
 struct Space{
     LabelStore labelsStore;
     QString text;
@@ -28,7 +35,13 @@ public:
 
     QString lastCommandLine();
 
+    QString addUnnamedVariable(QString declarationText);
+
     void writeLine(QString textLine);
+
+    void writeGlobalLine(QString textLine);
+
+    void addExternFunction(QString textLine);
 
     void startStore();
 
@@ -42,10 +55,16 @@ public:
 
 private:
     long int line;
+
+    long int unnameVarsCount;
+
     bool isStore;
 
-    //QStringList store;
-    //QString stoppedStore;
+    QString globalText;
+
+    QStringList externFunctions;
+
+    VariablesStore unnamedVariables;
 
     QList<Space *> store;
 

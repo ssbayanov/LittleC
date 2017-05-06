@@ -58,17 +58,17 @@ QString ForNode::printTripleCode(int level, QString param)
 
     ir.startStore();
 
-    ir.writeLine(QString("br label %begin"));
+    ir.writeLine(QString("br label %begin%"));
     ir.writeNamedLabelLine("Begin");
 
     if(_condition != NULL){
-        ir.writeLine(QString("br i1 %1, label %body, label %end")
+        ir.writeLine(QString("br i1 %1, label %body%, label %end%")
                      .arg(_condition->printTripleCode())
                      .arg("")
                      .arg(""));
     }
     else {
-        ir.writeLine("br label %bodyLoop");
+        ir.writeLine("br label %body%Loop");
     }
 
     ir.writeNamedLabelLine("Body");
@@ -77,7 +77,7 @@ QString ForNode::printTripleCode(int level, QString param)
         _body->printTripleCode(level);
     }
 
-    ir.writeLine(QString("br label %continue"));
+    ir.writeLine(QString("br label %continue%"));
     ir.writeNamedLabelLine("Continue");
 
     if(_iteration != NULL){
@@ -91,10 +91,10 @@ QString ForNode::printTripleCode(int level, QString param)
 
     ir.stopStore();
 
-    ir.replaceInStored("%body", ir.getLabelByName("Body"));
-    ir.replaceInStored("%end", ir.getLabelByName("End"));
-    ir.replaceInStored("%begin", ir.getLabelByName("Begin"));
-    ir.replaceInStored("%continue", ir.getLabelByName("Continue"));
+    ir.replaceInStored("%body%", ir.getLabelByName("Body"));
+    ir.replaceInStored("%end%", ir.getLabelByName("End"));
+    ir.replaceInStored("%begin%", ir.getLabelByName("Begin"));
+    ir.replaceInStored("%continue%", ir.getLabelByName("Continue"));
 
     ir.flushStore();
 

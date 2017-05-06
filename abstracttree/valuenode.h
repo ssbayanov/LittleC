@@ -13,6 +13,8 @@ public:
 
     virtual QString printTripleCode(int level, QString param);
 
+    QVariant getValue();
+
     ~ValueNode();
 
 private:
