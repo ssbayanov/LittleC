@@ -105,7 +105,9 @@ QString UnaryNode::printTripleCode()
                                  .arg(value->printTripleCode()));
             break;
         case UnarNot:
-            opText = "!";
+            ir.writeCommandLine( QString("sub %1 1, %2")
+                                 .arg(value->getValueTypeLLVM())
+                                 .arg(value->printTripleCode()));
             break;
         default:
             break;

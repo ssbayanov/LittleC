@@ -78,9 +78,11 @@ QString ListNode::printTripleCode()
                 ((ListNode *) _left)->setListType(LT_CallParamList);
                 outString.append(_left->printTripleCode());
             }
-            if(_left->isValueNode())
-                outString.append(((AbstractValueASTNode *) _left)->getValueTypeLLVM());
-            outString.append(" " + _left->printTripleCode());
+            else {
+                if(_left->isValueNode())
+                    outString.append(((AbstractValueASTNode *) _left)->getValueTypeLLVM());
+                outString.append(" " + _left->printTripleCode());
+            }
 
         }
 
@@ -91,9 +93,11 @@ QString ListNode::printTripleCode()
                 ((ListNode *) _right)->setListType(LT_CallParamList);
                 outString.append(_right->printTripleCode());
             }
-            if(_right->isValueNode())
-                outString.append(((AbstractValueASTNode *) _right)->getValueTypeLLVM());
-            outString.append(" " + _right->printTripleCode());
+            else {
+                if(_right->isValueNode())
+                    outString.append(((AbstractValueASTNode *) _right)->getValueTypeLLVM());
+                outString.append(" " + _right->printTripleCode());
+            }
         }
         break;
     case LT_CaseValueList:
