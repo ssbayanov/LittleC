@@ -17,6 +17,7 @@ public:
 
 struct Space{
     LabelStore labelsStore;
+    LabelStore userLabelsStore;
     QString text;
 };
 
@@ -31,7 +32,11 @@ public:
 
     QString writeNamedLabelLine(QString name);
 
+    QString writeUserLabelLine(QString name);
+
     QString getLabelByName(QString name);
+
+    QString getUserLabelByName(QString name);
 
     QString lastCommandLine();
 

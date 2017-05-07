@@ -11,9 +11,9 @@ VariableDeclarationNode::VariableDeclarationNode(AbstractSymbolTableRecord *vari
 void VariableDeclarationNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << QString("Declaration variable: %1, type: %2\n")
-                 .arg(_variable->getName())
-                 .arg(_variable->getTypeName());
+               << QString("Declaration variable: %1, type: %2\n")
+                  .arg(_variable->getName())
+                  .arg(_variable->getTypeName());
 
     if (_value != NULL) {
         _value->printNode(level+1);
@@ -23,24 +23,23 @@ void VariableDeclarationNode::printNode(int level)
 QString VariableDeclarationNode::printTripleCode(int level, QString param)
 {
 
-        if(_variable->isGlobal()) {
-            ir.writeLine( QString("@%1 = global %2 %3")
-                          .arg(_variable->getName())
-                          .arg(getValueTypeLLVM())
-                          .arg((_value == NULL) ? "": _value->printTripleCode(level)));
-        }
-        else {
-            ir.writeLine( QString("%%1 = alloca %2")
-                          .arg(_variable->getName())
-                          .arg(getValueTypeLLVM()));
-            if(_value != NULL) {
+    if(_variable->isGlobal()) {
+        ir.writeLine( QString("@%1 = global %2 %3")
+                      .arg(_variable->getName())
+                      .arg(getValueTypeLLVM())
+                      .arg((_value == NULL) ? "": _value->printTripleCode(level)));
+    }
+    else {
+        ir.writeLine( QString("%%1 = alloca %2")
+                      .arg(_variable->getName())
+                      .arg(getValueTypeLLVM()));
+        if(_value != NULL) {
             ir.writeLine( QString("store %1 %2, %1* %%3")
                           .arg(getValueTypeLLVM())
                           .arg(_value->printTripleCode(level))
                           .arg(_variable->getName()));
-            }
         }
-
+    }
 
     return "";
 }

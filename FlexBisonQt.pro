@@ -58,7 +58,8 @@ SOURCES += main.cpp \
     abstracttree/structreferencenode.cpp \
     abstracttree/variabledeclarationnode.cpp \
     irprint.cpp \
-    abstracttree/assignmentnode.cpp
+    abstracttree/assignmentnode.cpp \
+    subexpression.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y

@@ -7,7 +7,7 @@ IRPrint::IRPrint()
     isStore = false;
     store.clear();
     externFunctions.clear();
-    currentSpace = new Space {LabelStore(),QString()};
+    currentSpace = new Space {LabelStore(),LabelStore(), QString()};
     store.append(currentSpace);
 
     writeLine("%global_placed_here%");
@@ -20,7 +20,7 @@ QString IRPrint::writeCommandLine(QString textLine)
               .arg(textLine)
               .arg(line));
 
-    return QString("$t%1").arg(line);
+    return QString("⭢t%1").arg(line);
 }
 
 QString IRPrint::writeLabelLine(QString comment)
@@ -34,7 +34,7 @@ QString IRPrint::writeLabelLine(QString comment)
     currentSpace->text.append(tmp);
 
 
-    return QString("$t%1").arg(line);
+    return QString("⭢t%1").arg(line);
 }
 
 QString IRPrint::writeNamedLabelLine(QString name)
@@ -43,9 +43,21 @@ QString IRPrint::writeNamedLabelLine(QString name)
     return lastCommandLine();
 }
 
+QString IRPrint::writeUserLabelLine(QString name)
+{
+    writeLine(QString("br label %%1").arg(line+1));
+    currentSpace->userLabelsStore.insert(name, writeLabelLine(name));
+    return lastCommandLine();
+}
+
 QString IRPrint::getLabelByName(QString name)
 {
     return currentSpace->labelsStore.value(name);
+}
+
+QString IRPrint::getUserLabelByName(QString name)
+{
+    return currentSpace->userLabelsStore.value(name);
 }
 
 void IRPrint::writeLine(QString textLine)
@@ -55,7 +67,7 @@ void IRPrint::writeLine(QString textLine)
     if(!textLine.split(" ").contains("br") ||
             (!lastLine.contains("\nbr ") && !lastLine.contains("\nret ")))
         currentSpace->text.append(QString("%1\n")
-                                  .arg(textLine.replace("$t", "%")));
+                                  .arg(textLine.replace("⭢t", "%")));
 }
 
 void IRPrint::writeGlobalLine(QString textLine)
@@ -71,19 +83,18 @@ void IRPrint::addExternFunction(QString textLine)
 
 QString IRPrint::lastCommandLine()
 {
-    return QString("$t%1").arg(line);
+    return QString("⭢t%1").arg(line);
 }
 
 QString IRPrint::addUnnamedVariable(QString declarationText)
 {
-    if(unnamedVariables.contains(declarationText))
-        return unnamedVariables.key(declarationText);
+    if(!unnamedVariables.contains(declarationText)) {
+        unnamedVariables.insert(declarationText,
+                    QString("@unname_variable_%1")
+                                .arg(unnameVarsCount++));
+    }
 
-    unnamedVariables.insert(QString("@unname_variable_%1")
-                            .arg(unnameVarsCount++)
-                            , declarationText);
-
-    return unnamedVariables.key(declarationText);
+    return unnamedVariables.value(declarationText);
 }
 
 
@@ -91,7 +102,10 @@ void IRPrint::startStore()
 {
     isStore = true;
 
-    currentSpace = new Space {LabelStore(),QString()};
+    currentSpace = new Space {LabelStore(),LabelStore(), QString()};
+
+    currentSpace->userLabelsStore = store.last()->userLabelsStore;
+
     store.append(currentSpace);
 }
 
@@ -120,12 +134,12 @@ void IRPrint::flushStore()
         }
 
         outStream << currentSpace->text
-                     .replace("$t", "%")
+                     .replace("⭢t", "%")
                      .replace("%global_placed_here%", globalText)
                   << externText;
     }
     else {
-        store.last()->text.append(currentSpace->text.replace("$t", "%"));
+        store.last()->text.append(currentSpace->text.replace("⭢t", "%"));
         delete currentSpace;
         currentSpace = store.last();
     }
@@ -153,7 +167,7 @@ QString VariablesStore::getVariablesText()
 
     iterator i = begin();
     while (i != end()) {
-        tmpText.append(i.key()+" = "+i.value()+"\n");
+        tmpText.append(i.value()+" = "+i.key()+"\n");
         ++i;
     }
 

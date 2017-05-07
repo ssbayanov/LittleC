@@ -13,10 +13,10 @@ void GoToNode::printNode(int level)
                << QString("Go to label: %1\n").arg(_nameLabel);
 }
 
-QString GoToNode::printTripleCode(int level, QString param)
+QString GoToNode::printTripleCode(int , QString )
 {
     ir.writeLine(QString("br label %1")
-                 .arg(_nameLabel));
+                 .arg(ir.getUserLabelByName(_nameLabel)));
     return "";
 }
 

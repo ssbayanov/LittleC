@@ -33,6 +33,9 @@ QString ValueNode::printTripleCode(int level, QString param)
                          .replace("\n","\\0A")
                          .replace("\t", "\\09")));
     }
+    if(getValueType() == typeDouble || getValueType() == typeFloat)
+        return QString("%1").arg(_value.toDouble(), 0, 'e', 6);
+
     return _value.toString();
 }
 

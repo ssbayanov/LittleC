@@ -56,9 +56,14 @@ QString UnaryNode::printTripleCode(int level, QString)
         case UnarToDouble:
             if(isInt(value->getValueType())) {
                 ir.writeCommandLine( QString("sitofp %1 %2 to %3")
-                        .arg(value->getValueTypeLLVM())
-                        .arg(value->printTripleCode())
-                        .arg(getValueTypeLLVM()));
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode())
+                                     .arg(getValueTypeLLVM()));
+            }
+            else {
+
+                ir.writeCommandLine( QString("fpext float %1 to double")
+                                     .arg(value->printTripleCode()));
             }
 
             break;
@@ -68,22 +73,31 @@ QString UnaryNode::printTripleCode(int level, QString)
         case UnarToShort:
             if(isInt(value->getValueType())) {
                 ir.writeCommandLine( QString("%1 %2 %3 to %4")
-                        .arg(getSizeType(getValueType()) < getSizeType(value->getValueType()) ?
-                                 "trunc" :
-                                 "zext")
-                        .arg(value->getValueTypeLLVM())
-                        .arg(value->printTripleCode())
-                        .arg(getValueTypeLLVM()));
+                                     .arg(getSizeType(getValueType()) < getSizeType(value->getValueType()) ?
+                                              "trunc" :
+                                              "zext")
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode())
+                                     .arg(getValueTypeLLVM()));
             }
             else {
                 ir.writeCommandLine( QString("fptosi %1 %2 to %3")
-                        .arg(value->getValueTypeLLVM())
-                        .arg(value->printTripleCode())
-                        .arg(getValueTypeLLVM()));
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode())
+                                     .arg(getValueTypeLLVM()));
             }
             break;
         case UnarToFloat:
-            opText = "float ";
+            if(isInt(value->getValueType())) {
+                ir.writeCommandLine( QString("sitofp %1 %2 to float")
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode()));
+
+            }
+            else {
+                ir.writeCommandLine( QString("fptrunc double %1 to float")
+                                     .arg(value->printTripleCode()));
+            }
             break;
         case UnarMinus:
             ir.writeCommandLine( QString("sub %1 0, %2")

@@ -49,19 +49,19 @@ QString WhileNode::printTripleCode(int level, QString param)
 {
     ir.startStore();
 
-    ir.writeLine("br label %continue%");
+    ir.writeLine("br label $continue$");
     ir.writeNamedLabelLine("Continue");
 
-    ir.writeLine("br label %begin%");
+    ir.writeLine("br label $begin$");
     ir.writeNamedLabelLine("Begin");
 
     if(!_isDoWhile){
         if(_condition != NULL){
-            ir.writeLine(QString("br i1 %1, label %body%, label %end%")
+            ir.writeLine(QString("br i1 %1, label $body$, label $end$")
                          .arg(_condition->printTripleCode(level+1)));
         }
         else {
-            ir.writeLine("br label %body%");
+            ir.writeLine("br label $body$");
         }
     }
 
@@ -74,21 +74,21 @@ QString WhileNode::printTripleCode(int level, QString param)
 
     if(_isDoWhile) {
         if(_condition != NULL){
-            ir.writeLine(QString("br i1 %1 label %body%, label %end%")
+            ir.writeLine(QString("br i1 %1 label $body$, label $end$")
                          .arg(_condition->printTripleCode(level+1)));
         }
 
     }
 
-    ir.writeLine("br label %begin%");
+    ir.writeLine("br label $begin$");
     ir.writeNamedLabelLine("End");
 
     ir.stopStore();
 
-    ir.replaceInStored("%body%", ir.getLabelByName("Body"));
-    ir.replaceInStored("%end%", ir.getLabelByName("End"));
-    ir.replaceInStored("%begin%", ir.getLabelByName("Begin"));
-    ir.replaceInStored("%continue%", ir.getLabelByName("Continue"));
+    ir.replaceInStored("$body$", ir.getLabelByName("Body"));
+    ir.replaceInStored("$end$", ir.getLabelByName("End"));
+    ir.replaceInStored("$begin$", ir.getLabelByName("Begin"));
+    ir.replaceInStored("$continue$", ir.getLabelByName("Continue"));
 
     ir.flushStore();
 

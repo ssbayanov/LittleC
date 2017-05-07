@@ -36,21 +36,21 @@ void IfNode::printNode(int level)
     }
 }
 
-QString IfNode::printTripleCode(int level, QString param)
+QString IfNode::printTripleCode(int , QString )
 {
 
     ir.startStore();
 
-    ir.writeLine(QString("br i1 %1, label %true%, label %2")
+    ir.writeLine(QString("br i1 %1, label $true$, label %2")
                  .arg(_condition->printTripleCode())
-                 .arg( (_falseBranch != NULL) ? "%false%" : "%endif%"));
+                 .arg( (_falseBranch != NULL) ? "$false$" : "$endif$"));
 
     //true branche
     ir.writeNamedLabelLine("True");
 
     if (_trueBranch != NULL) {
         _trueBranch->printTripleCode();
-        ir.writeLine("br label %endif%");
+        ir.writeLine("br label $endif$");
     }
 
     //false branche
@@ -58,16 +58,16 @@ QString IfNode::printTripleCode(int level, QString param)
     if (_falseBranch != NULL) {
         ir.writeNamedLabelLine("False");
         _falseBranch->printTripleCode();
-        ir.writeLine("br label %endif%");
+        ir.writeLine("br label $endif$");
     }
 
     //end
     ir.writeNamedLabelLine("EndIf");
 
 
-    ir.replaceInStored("%endif%", ir.getLabelByName("EndIf"));
-    ir.replaceInStored("%true%", ir.getLabelByName("True"));
-    ir.replaceInStored("%false%", ir.getLabelByName("False"));
+    ir.replaceInStored("$endif$", ir.getLabelByName("EndIf"));
+    ir.replaceInStored("$true$", ir.getLabelByName("True"));
+    ir.replaceInStored("$false$", ir.getLabelByName("False"));
 
     ir.flushStore();
 

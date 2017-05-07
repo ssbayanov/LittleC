@@ -674,7 +674,7 @@ break_statement : BREAK SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("%end%",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
+        $$ = new GoToNode("$end$",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 
@@ -684,7 +684,7 @@ continue_statement : CONTINUE SEMICOLON {
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("%continue%",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
+        $$ = new GoToNode("$continue$",QString("%1_%2").arg(operatorNumerStack.last()).arg(lastFunctionName));
     }
 }
 //Switch - case -------------------------------------------------------------------
@@ -731,7 +731,10 @@ switch_statement : SWITCH {
 
 //Print and scan-------------------------------------------------------------------
 print : PRINT OPENPAREN exp CLOSEPAREN {
-    $$ = new PrintNode($3);
+    AbstractValueASTNode *value = ((AbstractValueASTNode *) $3);
+    if(value->getValueType() == typeFloat)
+        value = convert(value, typeDouble);
+    $$ = new PrintNode(value);
 };
 
 scan: SCAN OPENPAREN STRING[typeString] CLOSEPAREN {
@@ -830,7 +833,19 @@ do_head : DO {
 assignment : IDENTIFIER[id] ASSIGN exp[value] {
     AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$id);
     if (var != NULL) {
-        $$ = new AssignmentNode(var, $value);
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) $value);
+        if(value->getValueType() == var->getValueType())
+            $$ = new AssignmentNode(var, $value);
+        else{
+            value = convert(value, var->getValueType());
+            if(value != NULL) {
+                $$ = new AssignmentNode(var, value);
+            }
+            else {
+                $$ = NULL;
+                YYERROR;
+            }
+        }
     }
     else {
         $$ = NULL;
@@ -1122,12 +1137,37 @@ AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, Ab
 
         if (left->getValueType() != right->getValueType())
         {
-            right = convert(right, left->getValueType());
+            if (isInt(left->getValueType())) {
+                if(isInt(right->getValueType())){
+                    if(getSizeType(left->getValueType()) > getSizeType(right->getValueType())) {
+                        right = convert(right, left->getValueType());
+                    }
+                    else {
+                        left = convert(left, right->getValueType());
+                    }
+                }
+                else {
+                    left = convert(left, right->getValueType());
+                }
+            }
+            else {
+                if(isInt(right->getValueType())){
+                    right = convert(right, left->getValueType());
+                }
+                else {
+                    if(getSizeType(left->getValueType()) > getSizeType(right->getValueType())) {
+                        right = convert(right, left->getValueType());
+                    }
+                    else {
+                        left = convert(left, right->getValueType());
+                    }
+                }
+            }
         }
-        if (right != NULL)
-            return new BinarNode(left, right, operation);
-        else
+        if (right == NULL || left == NULL)
             return NULL;
+        else
+            return new BinarNode(left, right, operation);
     }
     else {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(left->getValueType())).arg(typeName.at(right->getValueType())));
