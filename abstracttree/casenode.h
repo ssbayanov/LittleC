@@ -9,18 +9,21 @@
 class CaseNode : public AbstractASTNode
 {
 public:
-    CaseNode(QString key, AbstractASTNode *value, AbstractASTNode *statements);
+    CaseNode(AbstractASTNode *value, AbstractASTNode *statements);
 
     void printNode(int level);
 
-    QString printTripleCode(int level, QString param);
+    QString printTripleCode();
+
+    QString printValues();
 
     ~CaseNode();
 
 private:
     AbstractASTNode *_value;
     AbstractASTNode *_statements;
-    QString _key;
+
+    QString valuePtr;
 };
 
 #endif // CASENODE_H

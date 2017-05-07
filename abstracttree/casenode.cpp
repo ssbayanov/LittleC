@@ -1,11 +1,11 @@
 #include "casenode.h"
+#include "abstractvalueastnode.h"
 
-CaseNode::CaseNode(QString key, AbstractASTNode *value, AbstractASTNode *statements)
+CaseNode::CaseNode(AbstractASTNode *value, AbstractASTNode *statements)
     : AbstractASTNode(NT_CaseStatement)
 {
     _value = value;
     _statements = statements;
-    _key = key;
 }
 
 void CaseNode::printNode(int level)
@@ -31,33 +31,37 @@ void CaseNode::printNode(int level)
     }
 }
 
-QString CaseNode::printTripleCode(int level, QString param)
+QString CaseNode::printTripleCode()
 {
-    if(param == "value"){
-        if(_value != NULL){
-            outStream << QString("\t$t%1 = value_%2 == %3\n")
-                         .arg(level)
-                         .arg(_key)
-                         .arg(_value->printTripleCode(level+1));
+    QString caseLabel = ir.writeLabelLine(QString("Case node %1")
+                                          .arg(valuePtr));
+    ir.replaceInStored(QString("$labelTo%1$")
+                       .arg(valuePtr), caseLabel);
 
+    _statements->printTripleCode();
 
-            outStream << QString("\tif $t%1 goto CaseLabel_%1_%2\n")
-                         .arg(level)
-                         .arg(_key);
-        }
-        else {
-            outStream << QString("\tgoto CaseLabel_%1_%2\n")
-                         .arg(level)
-                         .arg(_key);
-        }
+    return "";
+}
+
+QString CaseNode::printValues()
+{
+    if(_value != NULL) {
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) _value);
+
+        valuePtr = ir.writeCommandLine(QString("%1 %2 $value$, %4")
+                                       .arg(isInt(value->getValueType()) ? "icmp eq" : "fcmp oeq")
+                                       .arg(value->getValueTypeLLVM())
+                                       .arg(value->printTripleCode()));
+
+    ir.writeLine(QString("br i1 %1, label $labelTo%1$, label $next$")
+                 .arg(valuePtr));
+
+    ir.replaceInStored("$next$", ir.writeLabelLine("Next"));
+
     }
     else {
-        if(_statements != NULL){
-            outStream << QString("CaseLabel_%1_%2:\n")
-                         .arg(level)
-                         .arg(_key);
-            _statements->printTripleCode();
-        }
+        valuePtr = "Default";
+        ir.writeLine("br label $labelToDefault$");
     }
 
     return "";

@@ -9,13 +9,13 @@
 class ForNode : public AbstractASTNode
 {
 public:
-    ForNode(QString key, AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *increment, AbstractASTNode *body = NULL);
+    ForNode(AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *increment, AbstractASTNode *body = NULL);
 
     void setBody(AbstractASTNode *body);
 
     void printNode(int level);
 
-    QString printTripleCode(int level, QString param);
+    QString printTripleCode();
 
     ~ForNode();
 
@@ -24,7 +24,6 @@ private:
     AbstractASTNode *_condition;
     AbstractASTNode *_iteration;
     AbstractASTNode *_body;
-    QString _key;
 };
 
 

@@ -15,7 +15,7 @@ void ReferenceNode::printNode(int level)
                  .arg(typeName.at(_typeValue));
 }
 
-QString ReferenceNode::printTripleCode(int level, QString param)
+QString ReferenceNode::printTripleCode()
 {
     ir.writeCommandLine(QString("load %1, %1* %2%3")
                         .arg(getValueTypeLLVM())

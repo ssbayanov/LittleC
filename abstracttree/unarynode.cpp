@@ -47,7 +47,7 @@ void UnaryNode::printNode(int level)
     }
 }
 
-QString UnaryNode::printTripleCode(int level, QString)
+QString UnaryNode::printTripleCode()
 {
     if(_value != NULL) {
         AbstractValueASTNode *value = ((AbstractValueASTNode *) _value);
@@ -112,8 +112,7 @@ QString UnaryNode::printTripleCode(int level, QString)
         }
         //outStream << opText;
 
-        return QString(ir.lastCommandLine())
-                .arg(level);
+        return ir.lastCommandLine();
 
     }
     return "";

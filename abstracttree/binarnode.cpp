@@ -48,7 +48,7 @@ void BinarNode::printNode(int level)
     }
 }
 
-QString BinarNode::printTripleCode(int , QString )
+QString BinarNode::printTripleCode()
 {
     if(_left != NULL && _right != NULL) {
         if(_operation == BO_Assign) {

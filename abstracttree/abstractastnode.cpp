@@ -22,10 +22,9 @@ void AbstractASTNode::printNode(int level)
                   .arg(_nodetype);
 }
 
-QString AbstractASTNode::printTripleCode(int level, QString param)
+QString AbstractASTNode::printTripleCode()
 {
-    outStream << QString("printing Abstract node. Child class has not member printTripleCode(int, QString). Level: %1 Type: %2\n")
-                 .arg(level)
+    outStream << QString("printing Abstract node. Child class has not member printTripleCode(int, QString). Type: %2\n")
                  .arg(_nodetype);
 
     return "";

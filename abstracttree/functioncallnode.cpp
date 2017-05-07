@@ -22,7 +22,7 @@ void FunctionCallNode::printNode(int level)
     }
 }
 
-QString FunctionCallNode::printTripleCode(int level, QString param)
+QString FunctionCallNode::printTripleCode()
 {
 
     ir.writeCommandLine(QString("call %3 @%1(%2)\n")

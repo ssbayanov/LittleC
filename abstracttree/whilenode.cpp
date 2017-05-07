@@ -1,12 +1,11 @@
 #include "whilenode.h"
 
-WhileNode::WhileNode(QString key, AbstractASTNode *condition, AbstractASTNode *body)
+WhileNode::WhileNode(AbstractASTNode *condition, AbstractASTNode *body)
     : AbstractASTNode(NT_WhileStatement)
 {
     _condition = condition;
     _body = body;
     _isDoWhile = false;
-    _key = key;
 }
 
 void WhileNode::setBody(AbstractASTNode *body)
@@ -45,7 +44,7 @@ void WhileNode::printNode(int level)
     }
 }
 
-QString WhileNode::printTripleCode(int level, QString param)
+QString WhileNode::printTripleCode()
 {
     ir.startStore();
 
@@ -58,7 +57,7 @@ QString WhileNode::printTripleCode(int level, QString param)
     if(!_isDoWhile){
         if(_condition != NULL){
             ir.writeLine(QString("br i1 %1, label $body$, label $end$")
-                         .arg(_condition->printTripleCode(level+1)));
+                         .arg(_condition->printTripleCode()));
         }
         else {
             ir.writeLine("br label $body$");
@@ -75,7 +74,7 @@ QString WhileNode::printTripleCode(int level, QString param)
     if(_isDoWhile) {
         if(_condition != NULL){
             ir.writeLine(QString("br i1 %1 label $body$, label $end$")
-                         .arg(_condition->printTripleCode(level+1)));
+                         .arg(_condition->printTripleCode()));
         }
 
     }

@@ -1,13 +1,12 @@
 #include "fornode.h"
 
-ForNode::ForNode(QString key, AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *iteration, AbstractASTNode *body)
+ForNode::ForNode(AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *iteration, AbstractASTNode *body)
     : AbstractASTNode(NT_ForStatement)
 {
     _init = init;
     _condition = condition;
     _iteration = iteration;
     _body = body;
-    _key = key;
 }
 
 void ForNode::setBody(AbstractASTNode *body)
@@ -49,11 +48,11 @@ void ForNode::printNode(int level)
     }
 }
 
-QString ForNode::printTripleCode(int level, QString param)
+QString ForNode::printTripleCode()
 {
 
     if(_init != NULL) {
-        _init->printTripleCode(level);
+        _init->printTripleCode();
     }
 
     ir.startStore();
@@ -74,14 +73,14 @@ QString ForNode::printTripleCode(int level, QString param)
     ir.writeNamedLabelLine("Body");
 
     if(_body != NULL){
-        _body->printTripleCode(level);
+        _body->printTripleCode();
     }
 
     ir.writeLine(QString("br label $continue$"));
     ir.writeNamedLabelLine("Continue");
 
     if(_iteration != NULL){
-        _iteration->printTripleCode(level);
+        _iteration->printTripleCode();
     }    
 
     ir.writeLine(QString("br label %1")

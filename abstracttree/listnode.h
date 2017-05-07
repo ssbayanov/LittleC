@@ -11,7 +11,8 @@ typedef enum{
     LT_Default,
     LT_DeclareParamList,
     LT_CallParamList,
-    LT_CaseList
+    LT_CaseList,
+    LT_CaseValueList
 } ListTypeEnum;
 
 class ListNode : public AbstractASTNode
@@ -21,7 +22,7 @@ public:
 
     void printNode(int level);
 
-    QString printTripleCode(int level, QString param);
+    QString printTripleCode();
 
     AbstractASTNode *getLeftNode();
     AbstractASTNode *getRightNode();

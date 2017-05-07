@@ -56,7 +56,7 @@ public:
 
 
 
-    virtual QString printTripleCode(int, QString);
+    virtual QString printTripleCode();
 
     void printNode(int level);
 

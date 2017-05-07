@@ -11,7 +11,7 @@ public:
 
     void printNode(int level);
 
-    virtual QString printTripleCode(int level, QString param);
+    virtual QString printTripleCode();
 
     QVariant getValue();
 

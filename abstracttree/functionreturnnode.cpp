@@ -19,10 +19,10 @@ void FunctionReturnNode::printNode(int level)
 
 }
 
-QString FunctionReturnNode::printTripleCode(int level, QString param)
+QString FunctionReturnNode::printTripleCode()
 {
     ir.writeLine( QString("ret %2 %1\n")
-                 .arg(_expression->printTripleCode(level+1, param))
+                 .arg(_expression->printTripleCode())
                  .arg(((AbstractValueASTNode *) _expression)->getValueTypeLLVM()));
 
     return "";

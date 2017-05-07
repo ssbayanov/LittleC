@@ -34,7 +34,7 @@ void ListNode::printNode(int level)
 
 }
 
-QString ListNode::printTripleCode(int level, QString param)
+QString ListNode::printTripleCode()
 {
     QString outString = "";
 
@@ -80,7 +80,7 @@ QString ListNode::printTripleCode(int level, QString param)
             }
             if(_left->isValueNode())
                 outString.append(((AbstractValueASTNode *) _left)->getValueTypeLLVM());
-           outString.append(" " + _left->printTripleCode());
+            outString.append(" " + _left->printTripleCode());
 
         }
 
@@ -94,6 +94,45 @@ QString ListNode::printTripleCode(int level, QString param)
             if(_right->isValueNode())
                 outString.append(((AbstractValueASTNode *) _right)->getValueTypeLLVM());
             outString.append(" " + _right->printTripleCode());
+        }
+        break;
+    case LT_CaseValueList:
+        //print goto
+        if(_left != NULL) {
+            if(_left->getType() == NT_List) {
+                ((ListNode *) _left)->setListType(LT_CaseValueList);
+                _left->printTripleCode();
+            }
+            else {
+                ((CaseNode *) _left)->printValues();
+            }
+        }
+
+
+        if(_right != NULL) {
+            if(_right->getType() == NT_List) {
+                ((ListNode *) _right)->setListType(LT_CaseValueList);
+                _right->printTripleCode();
+            }
+            else {
+                ((CaseNode *) _right)->printValues();
+            }
+        }
+        break;
+    case LT_CaseList:
+        if(_left != NULL) {
+            if(_left->getType() == NT_List) {
+                ((ListNode *) _left)->setListType(LT_CaseList);
+            }
+            _left->printTripleCode();
+        }
+
+
+        if(_right != NULL) {
+            if(_right->getType() == NT_List) {
+                ((ListNode *) _right)->setListType(LT_CaseList);
+            }
+            _right->printTripleCode();
         }
         break;
     default:

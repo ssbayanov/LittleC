@@ -1,10 +1,9 @@
 #include "gotonode.h"
 
-GoToNode::GoToNode(QString nameLabel, QString key)
+GoToNode::GoToNode(QString nameLabel)
     : AbstractASTNode(NT_GoToStatement)
 {
     _nameLabel = nameLabel;
-    _key = key;
 }
 
 void GoToNode::printNode(int level)
@@ -13,10 +12,16 @@ void GoToNode::printNode(int level)
                << QString("Go to label: %1\n").arg(_nameLabel);
 }
 
-QString GoToNode::printTripleCode(int , QString )
+QString GoToNode::printTripleCode()
 {
-    ir.writeLine(QString("br label %1")
-                 .arg(ir.getUserLabelByName(_nameLabel)));
+    if(!_nameLabel.contains("$")) {
+        ir.writeLine(QString("br label %1")
+                     .arg(ir.getUserLabelByName(_nameLabel)));
+    }
+    else {
+        ir.writeLine(QString("br label %1")
+                     .arg(_nameLabel));
+    }
     return "";
 }
 

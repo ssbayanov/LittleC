@@ -65,7 +65,7 @@ public:
 
     virtual void printNode(int level = 0);
 
-    virtual QString printTripleCode(int level = 0, QString param = "");
+    virtual QString printTripleCode();
 
     virtual ~AbstractASTNode();
 

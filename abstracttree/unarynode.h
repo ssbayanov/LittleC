@@ -43,7 +43,7 @@ public:
 
     void printNode(int level);
 
-    virtual QString printTripleCode(int level, QString);
+    virtual QString printTripleCode();
 
     ~UnaryNode();
 

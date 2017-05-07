@@ -26,6 +26,9 @@ QString IRPrint::writeCommandLine(QString textLine)
 QString IRPrint::writeLabelLine(QString comment)
 {
     line++;
+
+    writeLine(QString("br label %%1").arg(line));
+
     QString tmp;
     tmp = QString("\n; <label>: %%2%1\n")
             .arg(comment.isEmpty() ? "" : QString("\t\t\t#%1")
@@ -45,7 +48,6 @@ QString IRPrint::writeNamedLabelLine(QString name)
 
 QString IRPrint::writeUserLabelLine(QString name)
 {
-    writeLine(QString("br label %%1").arg(line+1));
     currentSpace->userLabelsStore.insert(name, writeLabelLine(name));
     return lastCommandLine();
 }
@@ -67,7 +69,7 @@ void IRPrint::writeLine(QString textLine)
     if(!textLine.split(" ").contains("br") ||
             (!lastLine.contains("\nbr ") && !lastLine.contains("\nret ")))
         currentSpace->text.append(QString("%1\n")
-                                  .arg(textLine.replace("⭢t", "%")));
+                                  .arg(textLine));
 }
 
 void IRPrint::writeGlobalLine(QString textLine)
@@ -139,7 +141,7 @@ void IRPrint::flushStore()
                   << externText;
     }
     else {
-        store.last()->text.append(currentSpace->text.replace("⭢t", "%"));
+        store.last()->text.append(currentSpace->text);
         delete currentSpace;
         currentSpace = store.last();
     }

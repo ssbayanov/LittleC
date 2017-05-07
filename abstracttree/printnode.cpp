@@ -23,7 +23,7 @@ void PrintNode::printNode(int level)
     }
 }
 
-QString PrintNode::printTripleCode(int level, QString param)
+QString PrintNode::printTripleCode()
 {
     ir.addExternFunction("declare i32 @printf(i8*, ...)");
 
@@ -36,7 +36,7 @@ QString PrintNode::printTripleCode(int level, QString param)
             if(valueExpression->getValueType() == typeString){
                 printString = printString
                         .arg(_expression->printTripleCode())
-                        .arg(((ValueNode *) _expression)->getValue().toString().length()+1);
+                        .arg(((ValueNode *) _expression)->getValue().toByteArray().length()+1);
             }
             else{
                 QString stringType = "";

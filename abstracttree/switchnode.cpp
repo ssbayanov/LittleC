@@ -1,11 +1,12 @@
 #include "switchnode.h"
+#include "casenode.h"
+#include "listnode.h"
 
-SwitchNode::SwitchNode(QString key, AbstractASTNode *value, AbstractASTNode *caseList)
+SwitchNode::SwitchNode(AbstractASTNode *value, AbstractASTNode *caseList)
     : AbstractASTNode(NT_SwitchStatement)
 {
     _value = value;
     _caseList = caseList;
-    _key = key;
 }
 
 void SwitchNode::printNode(int level)
@@ -33,18 +34,28 @@ void SwitchNode::printNode(int level)
     }
 }
 
-QString SwitchNode::printTripleCode(int level, QString param)
+QString SwitchNode::printTripleCode()
 {
-    outStream << QString("\tvalue_%1 = %2\n")
-                 .arg(_key)
-                 .arg(_value->printTripleCode(level+1));
+    QString value = _value->printTripleCode();
 
-    if(_caseList != NULL){        
-        _caseList->printTripleCode(level, "value");
-        _caseList->printTripleCode(level, param);
+    ir.startStore();
+
+    if(_caseList->getType() == NT_CaseStatement){
+        CaseNode *caseNode = ((CaseNode *) _caseList);
+        caseNode->printValues();
+        caseNode->printTripleCode();
+    }
+    else {
+        ((ListNode *)_caseList)->setListType(LT_CaseValueList);
+        _caseList->printTripleCode();
+        ((ListNode *)_caseList)->setListType(LT_CaseList);
+        _caseList->printTripleCode();
     }
 
-    outStream << QString("LoopEnd_%1:\n").arg(_key);
+    ir.replaceInStored("$end$", ir.writeLabelLine("EndSwitch"));
+    ir.replaceInStored("$value$", value);
+
+    ir.flushStore();
 
     return "";
 }

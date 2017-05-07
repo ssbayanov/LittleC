@@ -25,7 +25,7 @@ void AssignmentNode::printNode(int level)
     }
 }
 
-QString AssignmentNode::printTripleCode(int level, QString param)
+QString AssignmentNode::printTripleCode()
 {
     ir.writeLine(QString("store %1 %2, %3* %4")
                  .arg(((AbstractValueASTNode * )_value)->getValueTypeLLVM())

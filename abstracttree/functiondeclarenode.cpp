@@ -34,7 +34,7 @@ void FunctionDeclareNode::printNode(int level)
     }
 }
 
-QString FunctionDeclareNode::printTripleCode(int level, QString param)
+QString FunctionDeclareNode::printTripleCode()
 {
     QString params = "";
 

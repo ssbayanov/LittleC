@@ -1,12 +1,11 @@
 #include "ifnode.h"
 
-IfNode::IfNode(QString key, AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch)
+IfNode::IfNode(AbstractASTNode *condition, AbstractASTNode *trueBranch, AbstractASTNode *falseBranch)
     : AbstractASTNode(NT_IfStatement)
 {
     _condition = condition;
     _trueBranch = trueBranch;
     _falseBranch = falseBranch;
-    _key = key;
 }
 
 void IfNode::printNode(int level)
@@ -36,7 +35,7 @@ void IfNode::printNode(int level)
     }
 }
 
-QString IfNode::printTripleCode(int , QString )
+QString IfNode::printTripleCode()
 {
 
     ir.startStore();

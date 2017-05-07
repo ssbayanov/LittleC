@@ -20,14 +20,14 @@ void VariableDeclarationNode::printNode(int level)
     }
 }
 
-QString VariableDeclarationNode::printTripleCode(int level, QString param)
+QString VariableDeclarationNode::printTripleCode()
 {
 
     if(_variable->isGlobal()) {
         ir.writeLine( QString("@%1 = global %2 %3")
                       .arg(_variable->getName())
                       .arg(getValueTypeLLVM())
-                      .arg((_value == NULL) ? "": _value->printTripleCode(level)));
+                      .arg((_value == NULL) ? "": _value->printTripleCode()));
     }
     else {
         ir.writeLine( QString("%%1 = alloca %2")
@@ -36,7 +36,7 @@ QString VariableDeclarationNode::printTripleCode(int level, QString param)
         if(_value != NULL) {
             ir.writeLine( QString("store %1 %2, %1* %%3")
                           .arg(getValueTypeLLVM())
-                          .arg(_value->printTripleCode(level))
+                          .arg(_value->printTripleCode())
                           .arg(_variable->getName()));
         }
     }

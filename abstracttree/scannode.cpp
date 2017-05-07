@@ -13,7 +13,7 @@ void ScanNode::printNode(int level)
                  .arg(typeName.at(getValueType()));
 }
 
-QString ScanNode::printTripleCode(int , QString )
+QString ScanNode::printTripleCode()
 {
     ir.addExternFunction("declare i32 @scanf(i8*, ...)");
 
