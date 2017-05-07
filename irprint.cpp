@@ -30,7 +30,7 @@ QString IRPrint::writeLabelLine(QString comment)
     writeLine(QString("br label %%1").arg(line));
 
     QString tmp;
-    tmp = QString("\n; <label>: %%2%1\n")
+    tmp = QString("\n; <label>:%2%1\n")
             .arg(comment.isEmpty() ? "" : QString("\t\t\t#%1")
                                      .arg(comment))
             .arg(line);

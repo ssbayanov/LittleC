@@ -30,8 +30,10 @@ QString ScanNode::printTripleCode()
         stringType = "%d";
         break;
     case typeFloat:
-    case typeDouble:
         stringType = "%f";
+        break;
+    case typeDouble:
+        stringType = "%lf";
         break;
     default:
         break;

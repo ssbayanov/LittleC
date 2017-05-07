@@ -57,7 +57,6 @@ QString IfNode::printTripleCode()
     if (_falseBranch != NULL) {
         ir.writeNamedLabelLine("False");
         _falseBranch->printTripleCode();
-        ir.writeLine("br label $endif$");
     }
 
     //end

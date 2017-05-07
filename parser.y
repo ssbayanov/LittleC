@@ -745,16 +745,22 @@ scan: SCAN OPENPAREN STRING[typeString] CLOSEPAREN {
         case 'd':
         case 'i': scanType = typeInt; break;
         case 'e':
-        case 'f':
-        case 'g': scanType = typeInt; break;
+        case 'f': scanType = typeFloat; break;
+        case 'l': scanType = typeDouble; break;
         case 's': scanType = typeString; break;
         case 'c': scanType = typeChar; break;
         default: parsererror(errorList.at(ERROR_SCAN_STRING));
             $$ = NULL;
             YYERROR;
         }
-        if(scanType != typeVoid)
+        if(scanType != typeVoid) {
             $$ = new ScanNode(scanType);
+        }
+        else {
+            parsererror(errorList.at(ERROR_SCAN_STRING));
+            $$ = NULL;
+            YYERROR;
+        }
     }
     else {
         parsererror(errorList.at(ERROR_SCAN_STRING));

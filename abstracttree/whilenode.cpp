@@ -48,10 +48,8 @@ QString WhileNode::printTripleCode()
 {
     ir.startStore();
 
-    ir.writeLine("br label $continue$");
     ir.writeNamedLabelLine("Continue");
 
-    ir.writeLine("br label $begin$");
     ir.writeNamedLabelLine("Begin");
 
     if(!_isDoWhile){

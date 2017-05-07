@@ -57,7 +57,6 @@ QString ForNode::printTripleCode()
 
     ir.startStore();
 
-    ir.writeLine(QString("br label $begin$"));
     ir.writeNamedLabelLine("Begin");
 
     if(_condition != NULL){
@@ -66,9 +65,6 @@ QString ForNode::printTripleCode()
                      .arg("")
                      .arg(""));
     }
-    else {
-        ir.writeLine("br label $body$Loop");
-    }
 
     ir.writeNamedLabelLine("Body");
 
@@ -76,7 +72,7 @@ QString ForNode::printTripleCode()
         _body->printTripleCode();
     }
 
-    ir.writeLine(QString("br label $continue$"));
+
     ir.writeNamedLabelLine("Continue");
 
     if(_iteration != NULL){
