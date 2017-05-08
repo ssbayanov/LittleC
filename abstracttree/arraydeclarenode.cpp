@@ -97,8 +97,8 @@ void ArrayDeclareNode::printValues(uint index, AbstractASTNode *value)
 {
     if(value != NULL) {
         if(value->getType() == NT_List) {
-            printValues(++index, ((ListNode *) value)->getRightNode());
-            printValues(++index, ((ListNode *) value)->getLeftNode());
+            printValues(index+1, ((ListNode *) value)->getRightNode());
+            printValues(index, ((ListNode *) value)->getLeftNode());
         }
         else {
             printAssign(index, value);
