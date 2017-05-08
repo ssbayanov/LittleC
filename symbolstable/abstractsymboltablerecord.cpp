@@ -42,6 +42,9 @@ SymbolsTableRecordType AbstractSymbolTableRecord::getType()
 
 QString AbstractSymbolTableRecord::getTypeName()
 {
+    if(isStruct()){
+        return ((StructTableRecord*) this)->getStructName();
+    }
     return typeName.at(_valueType);
 }
 

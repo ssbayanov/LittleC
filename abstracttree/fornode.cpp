@@ -61,9 +61,7 @@ QString ForNode::printTripleCode()
 
     if(_condition != NULL){
         ir.writeLine(QString("br i1 %1, label $body$, label $end$")
-                     .arg(_condition->printTripleCode())
-                     .arg("")
-                     .arg(""));
+                     .arg(_condition->printTripleCode()));
     }
 
     ir.writeNamedLabelLine("Body");

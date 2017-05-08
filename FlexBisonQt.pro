@@ -59,7 +59,10 @@ SOURCES += main.cpp \
     abstracttree/variabledeclarationnode.cpp \
     irprint.cpp \
     abstracttree/assignmentnode.cpp \
-    subexpression.cpp
+    subexpression.cpp \
+    abstracttree/structvariableassignment.cpp \
+    symbolstable/arraytablerecord.cpp \
+    abstracttree/arrayassignmentnode.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -100,5 +103,8 @@ HEADERS += \
     abstracttree/structreferencenode.h \
     abstracttree/variabledeclarationnode.h \
     irprint.h \
-    abstracttree/assignmentnode.h
+    abstracttree/assignmentnode.h \
+    abstracttree/structvariableassignment.h \
+    symbolstable/arraytablerecord.h \
+    abstracttree/arrayassignmentnode.h
 

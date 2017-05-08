@@ -11,6 +11,8 @@ public:
 
     void printNode(int level);
 
+    QString printTripleCode();
+
     ~StructReferenceNode();
 
 private:

@@ -1,4 +1,5 @@
 #include "structdeclarenode.h"
+#include "listnode.h"
 
 StructDeclareNode::StructDeclareNode(AbstractSymbolTableRecord *variable, AbstractASTNode *variablesList)
     : AbstractValueASTNode(NT_StructTypeDeclare)
@@ -22,6 +23,23 @@ void StructDeclareNode::printNode(int level)
         treeStream << QString().fill(' ',level*2)
                   << "BAD VARIABLE LIST NODE!!!\n";
     }
+}
+
+QString StructDeclareNode::printTripleCode()
+{
+    QString vars = "";
+    if(_variablesList->getType() == NT_List) {
+        ((ListNode *)_variablesList)->setListType(LT_DeclareStructVars);
+        vars = _variablesList->printTripleCode();
+    }
+    else {
+        vars = ((AbstractValueASTNode *)_variablesList)->getValueTypeLLVM();
+    }
+
+    ir.writeGlobalLine(QString("%struct.%1 = type {%2}")
+                       .arg(_variable->getName())
+                       .arg(vars));
+    return "";
 }
 
 StructDeclareNode::~StructDeclareNode()

@@ -216,9 +216,10 @@ parameter parameter_list
 // Operations
 assignment compound_statement exp exp_list identifier_list reference variable_reference
 // Array
-array_declaration array_declaration_statement array_reference
+array_declaration array_declaration_statement array_reference array_assignment_statement
 // Structure
-struct_decloration_statement struct_variable_declaration_statement srtuct_variable_reference
+struct_decloration_statement struct_variable_declaration_statement
+srtuct_variable_reference srtuct_variable_assignment_statement
 // Control statements
 condition_statement
 switch_statement case_statement case_list case_tail
@@ -293,11 +294,13 @@ statement : condition_statement
 | goto_statement
 | label_statement
 | array_declaration_statement
+| array_assignment_statement
 | function_description_statement
 | function_return_statement
 | enum_decloration_statement
 | struct_decloration_statement
 | struct_variable_declaration_statement
+| srtuct_variable_assignment_statement
 | utterance SEMICOLON {
     $$ = $1;
 }
@@ -405,11 +408,11 @@ array_declaration_statement : array_declaration SEMICOLON {
     $$ = $1;
 };
 
-array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CLOSEBRACKET {
+array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[size] CLOSEBRACKET {
     if(!contains(*$name)) {
         AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
-            $$ = new ArrayDeclareNode(array, $values);
+            $$ = new ArrayDeclareNode(array, NULL, $size);
         }
         else {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
@@ -427,7 +430,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
     if(!contains(*$name)) {
         AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
-            $$ = new ArrayDeclareNode(array, $values);
+            $$ = new ArrayDeclareNode(array, $values, NULL);
         }
         else {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
@@ -445,7 +448,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
         if ($type == typeChar) {
             AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
             if (array != NULL) {
-                $$ = new ArrayDeclareNode(array, new ValueNode(typeString, *$value));
+                $$ = new ArrayDeclareNode(array, new ValueNode(typeString, *$value), NULL);
             }
             else {
                 parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
@@ -486,6 +489,17 @@ array_reference : IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET {
     }
     else {
         parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$1));
+        $$ = NULL;
+        YYERROR;
+    }
+}
+
+array_assignment_statement : IDENTIFIER[id] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] SEMICOLON{
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$id);
+    if (var != NULL) {
+        $$ = new ArrayAssignmentNode(var, $index, $value);
+    }
+    else {
         $$ = NULL;
         YYERROR;
     }
@@ -578,6 +592,39 @@ srtuct_variable_reference : IDENTIFIER[struct_name] DOT IDENTIFIER[name] {
         YYERROR;
     }
 }
+
+srtuct_variable_assignment_statement : IDENTIFIER[struct_name] DOT IDENTIFIER[name] ASSIGN exp[value] SEMICOLON{
+   AbstractSymbolTableRecord *structVariable = currentTable->getVariableGlobal(*$struct_name);
+   if (structVariable != NULL) {
+       if (structVariable->isStruct()) {
+           AbstractSymbolTableRecord *member = ((StructTableRecord *) structVariable)->getStructType()->getVariables()->getVariable(*$name);
+           if (member != NULL) {
+               AbstractValueASTNode *value = ((AbstractValueASTNode *) $value);
+               if(value->getValueType() != member->getValueType()) {
+                   value = convert(value, member->getValueType());
+               }
+
+               $$ = new StructVariableAssignment(structVariable, member, value);
+           }
+           else {
+               parsererror(errorList.at(ERROR_IS_NOT_A_MEMBER_STRUCT).arg(*$name).arg(*$struct_name));
+               $$ = NULL;
+               YYERROR;
+           }
+       }
+       else {
+           parsererror(errorList.at(ERROR_IS_NOT_A_STRUCT).arg(*$struct_name));
+           $$ = NULL;
+           YYERROR;
+       }
+   }
+   else {
+       parsererror(errorList.at(ERROR_NOT_DECLARED).arg(*$struct_name));
+       $$ = NULL;
+       YYERROR;
+   }
+}
+
 
 // Numeric declaration ------------------------------------------------------------
 enum_decloration_statement : ENUM { enumCounter = 0; } OPENBRACE identifier_list[values] CLOSEBRACE SEMICOLON{
@@ -1065,9 +1112,7 @@ exp : exp[left] RELOP exp[right] {
 | FALSE {
     $$ = new ValueNode(typeBool, 0);
 }
-| function_call {
-    $$ = $1;
-}
+| function_call
 | scan
 | reference;
 

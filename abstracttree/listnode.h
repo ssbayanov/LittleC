@@ -12,7 +12,8 @@ typedef enum{
     LT_DeclareParamList,
     LT_CallParamList,
     LT_CaseList,
-    LT_CaseValueList
+    LT_CaseValueList,
+    LT_DeclareStructVars
 } ListTypeEnum;
 
 class ListNode : public AbstractASTNode
@@ -31,7 +32,7 @@ public:
     void setRightNode(AbstractASTNode *right);
 
     void setListType(ListTypeEnum typeList);
-
+    uint getSize();
     ~ListNode();
 
 private:

@@ -15,6 +15,14 @@ void StructVariableDeclareNode::printNode(int level)
                  .arg(_typeStruct->getName());
 }
 
+QString StructVariableDeclareNode::printTripleCode()
+{
+    ir.writeLine(QString("%%2 = alloca %struct.%1")
+                 .arg(_typeStruct->getName())
+                 .arg(_variable->getName()));
+    return "";
+}
+
 StructVariableDeclareNode::~StructVariableDeclareNode()
 {
 

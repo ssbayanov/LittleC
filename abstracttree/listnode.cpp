@@ -139,6 +139,32 @@ QString ListNode::printTripleCode()
             _right->printTripleCode();
         }
         break;
+
+    case LT_DeclareStructVars:
+        if(_left != NULL) {
+            if(_left->getType() == NT_List) {
+                ((ListNode *) _left)->setListType(LT_CallParamList);
+                outString.append(_left->printTripleCode());
+            }
+            else {
+                if(_left->isValueNode())
+                    outString.append(((AbstractValueASTNode *) _left)->getValueTypeLLVM());
+            }
+
+        }
+
+
+        if(_right != NULL) {
+            outString.append(", ");
+            if(_right->getType() == NT_List) {
+                ((ListNode *) _right)->setListType(LT_CallParamList);
+                outString.append(_right->printTripleCode());
+            }
+            else {
+                if(_right->isValueNode())
+                    outString.append(((AbstractValueASTNode *) _right)->getValueTypeLLVM());
+            }
+        }
     default:
         break;
     }
@@ -169,6 +195,33 @@ void ListNode::setRightNode(AbstractASTNode *right)
 void ListNode::setListType(ListTypeEnum typeList)
 {
     _typeList = typeList;
+}
+
+uint ListNode::getSize()
+{
+    uint size = 0;
+    if(_left != NULL) {
+        if(_left->getType() == NT_List) {
+            size+=((ListNode *) _left)->getSize();
+        }
+        else {
+            if(_left->isValueNode())
+                size++;
+        }
+    }
+
+
+    if(_right != NULL) {
+        if(_right->getType() == NT_List) {
+            size+=((ListNode *) _right)->getSize();
+        }
+        else {
+            if(_right->isValueNode())
+                size++;
+        }
+    }
+
+    return size;
 }
 
 ListNode::~ListNode()

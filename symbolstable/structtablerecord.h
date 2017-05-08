@@ -15,6 +15,8 @@ public:
                       StructTypeTableRecord *structType);
 
     StructTypeTableRecord *getStructType();
+    QString getStructName();
+    uint getVarIndex(AbstractSymbolTableRecord *var);
 
 private:
     StructTypeTableRecord *_structType;
