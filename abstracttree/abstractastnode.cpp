@@ -17,12 +17,17 @@ ASTNodeTypeEnum AbstractASTNode::getType()
 
 void AbstractASTNode::printNode(int level)
 {
-    treeStream << QString("printing Abstract node :( on level %1\n").arg(level);
+    treeStream << QString("printing Abstract node. Child class has not member printNode(int). Level: %1. Type: %2\n")
+                  .arg(level)
+                  .arg(_nodetype);
 }
 
-QString AbstractASTNode::printTripleCode(int level)
+QString AbstractASTNode::printTripleCode()
 {
-    outStream << QString("printing Triple code :( on level %1\n").arg(level);
+    outStream << QString("printing Abstract node. Child class has not member printTripleCode(int, QString). Type: %2\n")
+                 .arg(_nodetype);
+
+    return "";
 }
 
 AbstractASTNode::~AbstractASTNode()

@@ -131,8 +131,10 @@
 extern int lno;
 extern int parserlex();
 
-int loopNestingCounter = 0;
+int loopSwitchCounter = 0;
+int ifCounter = 0;
 int enumCounter = 0;
+static QString lastFunctionName = "global";
 
 static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
 static SymbolsTable* currentTable = topLevelVariableTable;
@@ -200,8 +202,8 @@ static SymbolsTable* currentTable = topLevelVariableTable;
 %token      SCAN       "scan"
 %token      PRINT      "print"
 //
-%token      TRUEt       "true"
-%token      FALSEt      "false"
+%token      TRUE       "true"
+%token      FALSE      "false"
 
 %token      RETURN     "return"
 
@@ -233,7 +235,7 @@ print scan
 %nonassoc IF
 %nonassoc ELSE
 %right ASSIGN
-%left BOOLOP
+%left AND OR XOR
 %left RELOP
 %left PLUS MINUS
 %left MULOP
@@ -345,7 +347,7 @@ function_description_statement : data_types[type] IDENTIFIER[name] OPENPAREN {
         YYERROR;
     }
     currentTable = currentTable->appendChildTable();
-
+    lastFunctionName = *$name;
 
 }
 parameter_list[params] CLOSEPAREN compound_statement[body] {
@@ -353,8 +355,10 @@ parameter_list[params] CLOSEPAREN compound_statement[body] {
     SymbolsTable *paramsTable = currentTable;
     currentTable = currentTable->getParent();
 
+    lastFunctionName = "global";
+
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, $type, paramsTable);
+        AbstractSymbolTableRecord *function = currentTable->insertFunction(*$name, lastFunctionName, $type, paramsTable);
         $$ = new FunctionDeclareNode(function, $params, $body);
     }
     else {
@@ -370,6 +374,9 @@ function_call : IDENTIFIER[id] OPENPAREN exp_list[params] CLOSEPAREN
         if (function->isFunction()) {
             AbstractASTNode *validParams = validatedParams(((FunctionTableRecord *) function), $params);
             if (validParams != NULL) {
+                if(validParams->getType() == NT_List) {
+                    ((ListNode *) validParams)->setListType(LT_CallParamList);
+                }
                 $$ = new FunctionCallNode(function, validParams);
             }
             else {
@@ -400,7 +407,7 @@ array_declaration_statement : array_declaration SEMICOLON {
 
 array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CLOSEBRACKET {
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
             $$ = new ArrayDeclareNode(array, $values);
         }
@@ -418,7 +425,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 }
 | data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN OPENBRACE exp_list[values] CLOSEBRACE {
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+        AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
             $$ = new ArrayDeclareNode(array, $values);
         }
@@ -436,7 +443,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 | data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET ASSIGN STRING[value] {
     if(!contains(*$name)) {
         if ($type == typeChar) {
-            AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, $type);
+            AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
             if (array != NULL) {
                 $$ = new ArrayDeclareNode(array, new ValueNode(typeString, *$value));
             }
@@ -493,7 +500,7 @@ struct_decloration_statement : STRUCT IDENTIFIER[name] {
     currentTable->setHidden();
     currentTable = currentTable->getParent();
     if(!contains(*$name)) {
-        AbstractSymbolTableRecord *structure = currentTable->insertStructType(*$name, variables);
+        AbstractSymbolTableRecord *structure = currentTable->insertStructType(*$name, lastFunctionName, variables);
         if (structure != NULL) {
             $$ = new StructDeclareNode(structure, $values);
         }
@@ -514,7 +521,7 @@ struct_variable_declaration_statement : IDENTIFIER[struct_name] IDENTIFIER[name]
     if (structType != NULL) {
         if (structType->isStructType()) {
             if (!contains(*$name)) {
-                AbstractSymbolTableRecord *structVariable = currentTable->insertStruct(*$name, (StructTypeTableRecord *) structType);
+                AbstractSymbolTableRecord *structVariable = currentTable->insertStruct(*$name, lastFunctionName, (StructTypeTableRecord *) structType);
                 if (structVariable != NULL) {
                     $$ = new StructVariableDeclareNode(structType, structVariable);
                 }
@@ -596,7 +603,7 @@ declaration_list_element : %empty {
 };
 
 parameter_list : parameter[param] COMA parameter_list[list] {
-    $$ = new ListNode($param, $list);
+    $$ = new ListNode($param, $list, LT_DeclareParamList);
 }
 | parameter[param]
 | %empty {
@@ -605,7 +612,7 @@ parameter_list : parameter[param] COMA parameter_list[list] {
 
 parameter : data_types[type] IDENTIFIER{
     if (isNumericType( $type )) {
-        AbstractASTNode *var = numericDeclaration($1, *$2);
+        AbstractASTNode *var = numericDeclaration($type, *$2);
         if (var == NULL)
             YYERROR;
         $$ = var;
@@ -629,9 +636,9 @@ parameter : data_types[type] IDENTIFIER{
 
 
 declaration : parameter
-| data_types IDENTIFIER ASSIGN exp
+| data_types[type] IDENTIFIER ASSIGN exp
 {
-    AbstractASTNode *var = numericDeclaration($1, *$2, (AbstractValueASTNode *)$4);
+    AbstractASTNode *var = numericDeclaration($type, *$2, (AbstractValueASTNode *)$4);
     if (var == NULL)
         YYERROR;
     $$ = var;
@@ -645,7 +652,7 @@ label_statement : IDENTIFIER COLON {
         parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(*$1));
     }
     else {
-        label = currentTable->insertVariable(*$1, typeLabel, *$1);
+        label = currentTable->insertVariable(*$1, lastFunctionName, typeLabel, *$1);
     }
     $$ = new LabelNode(label);
 }
@@ -661,22 +668,22 @@ goto_statement : GOTO IDENTIFIER SEMICOLON {
 };
 
 break_statement : BREAK SEMICOLON {
-    if (loopNestingCounter <= 0) {
+    if (loopSwitchCounter == 0) {
         parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("EndOfLoop");
+        $$ = new GoToNode("$end$");
     }
 }
 
 continue_statement : CONTINUE SEMICOLON {
-    if (loopNestingCounter <= 0) {
-        parsererror(errorList.at(ERROR_BREAK_NOT_INSIDE_LOOP));
+    if (loopSwitchCounter == 0) {
+        parsererror(errorList.at(ERROR_CONTINUE_NOT_INSIDE_LOOP));
         $$ = NULL;
     }
     else {
-        $$ = new GoToNode("NextIterationOfLoop");
+        $$ = new GoToNode("$continue$");
     }
 }
 //Switch - case -------------------------------------------------------------------
@@ -715,15 +722,20 @@ case_statement : CASE IDENTIFIER COLON statement_list {
 };
 
 switch_statement : SWITCH {
-    loopNestingCounter++;
+    loopSwitchCounter++;
+
 } OPENPAREN exp CLOSEPAREN OPENBRACE case_list CLOSEBRACE {
-    loopNestingCounter--;
+
     $$ = new SwitchNode($exp, $case_list);
+    loopSwitchCounter--;
 };
 
 //Print and scan-------------------------------------------------------------------
 print : PRINT OPENPAREN exp CLOSEPAREN {
-    $$ = new PrintNode($3);
+    AbstractValueASTNode *value = ((AbstractValueASTNode *) $3);
+    if(value->getValueType() == typeFloat)
+        value = convert(value, typeDouble);
+    $$ = new PrintNode(value);
 };
 
 scan: SCAN OPENPAREN STRING[typeString] CLOSEPAREN {
@@ -761,27 +773,31 @@ condition_statement : IF OPENPAREN exp CLOSEPAREN statement %prec IF {
 
 //Loops -------------------------------------------------------------------
 loop_statement : while_head statement {
+    loopSwitchCounter--;
     ((WhileNode *)$1)->setBody($2);
     $$ = $1;
-    --loopNestingCounter;
+
 }
 | for_head statement {
+    loopSwitchCounter--;
     ((ForNode *)$1)->setBody($2);
     $$ = $1;
-    --loopNestingCounter;
+
 
     currentTable->setHidden();
     currentTable = currentTable->getParent();
 }
 | do_head statement while_head SEMICOLON{
+    loopSwitchCounter--;
     ((WhileNode *)$while_head)->setBody($2);
     ((WhileNode *)$while_head)->setIsDoWhile(true);
     $$ = $3;
-    --loopNestingCounter;
+
 }
 ;
 
 while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
+    loopSwitchCounter++;
     AbstractValueASTNode *cond = NULL;
     if ($condition != NULL) {
         cond = (AbstractValueASTNode *)$condition;
@@ -790,11 +806,11 @@ while_head : WHILE OPENPAREN exp[condition] CLOSEPAREN {
     }
 
     $$ = new WhileNode(cond);
-    ++loopNestingCounter;
 };
 
 for_head : FOR {
     currentTable = currentTable->appendChildTable();
+    loopSwitchCounter++;
 }
 OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment] CLOSEPAREN {
     AbstractValueASTNode *cond = NULL;
@@ -805,19 +821,40 @@ OPENPAREN utterance[init] SEMICOLON exp[condition] SEMICOLON utterance[increment
     }
 
     $$ = new ForNode($init, cond, $increment);
-    ++loopNestingCounter;
 };
 
 do_head : DO {
-    ++loopNestingCounter;
+    loopSwitchCounter++;
 }
 
 // Assignments ---------------------------------------------------------------
 
-assignment : reference[variable] ASSIGN exp[value] {
-    AbstractASTNode *node = binarMathNode(((AbstractValueASTNode *) $variable), "=", ((AbstractValueASTNode *) $value));
-    if (node != NULL) {
-        $$ = node;
+assignment : IDENTIFIER[id] ASSIGN exp[value] {
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$id);
+    if (var != NULL) {
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) $value);
+        if(value->getValueType() == var->getValueType())
+            $$ = new AssignmentNode(var, $value, NULL);
+        else{
+            value = convert(value, var->getValueType());
+            if(value != NULL) {
+                $$ = new AssignmentNode(var, value, NULL);
+            }
+            else {
+                $$ = NULL;
+                YYERROR;
+            }
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+}
+|IDENTIFIER[id] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$id);
+    if (var != NULL) {
+        $$ = new AssignmentNode(var, $value,$index);
     }
     else {
         $$ = NULL;
@@ -830,7 +867,7 @@ assignment : reference[variable] ASSIGN exp[value] {
 identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
     if($list != NULL) {
         if(!currentTable->containsGlobal(*$id)) {
-            AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
+            AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, lastFunctionName, typeInt, enumCounter);
             if(var != NULL) {
                 $$ = new ListNode(new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "="), $list);
             }
@@ -852,7 +889,7 @@ identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
 }
 | IDENTIFIER[id] {
     if(!currentTable->containsGlobal(*$id)) {
-        AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, typeInt, enumCounter);
+        AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, lastFunctionName, typeInt, enumCounter);
         if(var != NULL) {
             $$ = new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "=");
         }
@@ -1026,10 +1063,10 @@ exp : exp[left] RELOP exp[right] {
 | STRING {
     $$ = new ValueNode(typeString, $1->toString());
 }
-| TRUEt {
+| TRUE {
     $$ = new ValueNode(typeBool, 1);
 }
-| FALSEt {
+| FALSE {
     $$ = new ValueNode(typeBool, 0);
 }
 | function_call {
@@ -1107,15 +1144,39 @@ AbstractASTNode *binarMathNode(AbstractValueASTNode *left, QString operation, Ab
 {
     if ( isNumericType(left) && isNumericType(right) ) {
 
-
         if (left->getValueType() != right->getValueType())
         {
-            right = convert(right, left->getValueType());
+            if (isInt(left->getValueType())) {
+                if(isInt(right->getValueType())){
+                    if(getSizeType(left->getValueType()) > getSizeType(right->getValueType())) {
+                        right = convert(right, left->getValueType());
+                    }
+                    else {
+                        left = convert(left, right->getValueType());
+                    }
+                }
+                else {
+                    left = convert(left, right->getValueType());
+                }
+            }
+            else {
+                if(isInt(right->getValueType())){
+                    right = convert(right, left->getValueType());
+                }
+                else {
+                    if(getSizeType(left->getValueType()) > getSizeType(right->getValueType())) {
+                        right = convert(right, left->getValueType());
+                    }
+                    else {
+                        left = convert(left, right->getValueType());
+                    }
+                }
+            }
         }
-        if (right != NULL)
-            return new BinarNode(left, right, operation);
-        else
+        if (right == NULL || left == NULL)
             return NULL;
+        else
+            return new BinarNode(left, right, operation);
     }
     else {
         parsererror(errorList.at(ERROR_TYPES_INCOMPATIBLE).arg(typeName.at(left->getValueType())).arg(typeName.at(right->getValueType())));
@@ -1136,29 +1197,62 @@ AbstractASTNode *binarBoolNode(AbstractValueASTNode *left, QString operation, Ab
         return new BinarNode(left, right, operation, typeBool);
     }
     else {
-        if ( !isNumericType(left) )
+        if ( !isNumericType(left) ) {
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(left->getValueType()))
-                        .arg(typeName.at(typeBool)));
-        if ( !isNumericType(right) )
+                        .arg(typeName.at(typeBool))); }
+        else {
+            if(!isInt(left->getValueType())) {
+                left = convert(left, typeInt);
+                if(left == NULL) {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    return NULL;
+                }
+
+            }
+        }
+
+        if ( !isNumericType(right) ) {
             parsererror(errorList.at(ERROR_CANNOT_CONVERT)
                         .arg(typeName.at(right->getValueType()))
-                        .arg(typeName.at(typeBool)));
-        return NULL;
+                        .arg(typeName.at(typeBool))); }
+        else {
+            if(!isInt(right->getValueType())) {
+                right = convert(right, typeInt);
+                if(right == NULL) {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    return NULL;
+                }
+
+            }
+        }
+
+        return new BinarNode(left, right, operation, typeBool);
+
     }
 }
 
 AbstractASTNode *numericDeclaration(ValueTypeEnum type, QString name, AbstractValueASTNode *value)
 {
     if ( !contains(name) ) {
-        AbstractSymbolTableRecord *var = currentTable->insertVariable(name, type, 0);
+        AbstractSymbolTableRecord *var = currentTable->insertVariable(name, lastFunctionName, type, 0);
         if (var == NULL) {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
             return NULL;
         }
-        return new BinarNode(new ReferenceNode(var), (value == NULL ? new ValueNode(type, 0) : value), "=");
+        if(value != NULL) {
+            if(value->getValueType() != type) {
+                value = convert(value, type);
+                if (value == NULL) {
+                    parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
+                    return NULL;
+                }
+            }
+        }
+        return new VariableDeclarationNode(var, value);
     }
     else {
+        parsererror(errorList.at(ERROR_DOUBLE_DECLARED).arg(name));
         return NULL;
     }
 }
@@ -1208,27 +1302,6 @@ AbstractValueASTNode *convert(AbstractValueASTNode *what, ValueTypeEnum to)
                 .arg(typeName.at(to)));
     return NULL;
 
-}
-
-int getSizeType(ValueTypeEnum type)
-{
-    switch(type) {
-    case typeVoid:
-        return 0;
-    case typeBool:
-    case typeChar:
-        return 1;
-    case typeShort:
-        return 2;
-    case typeFloat:
-    case typeInt:
-        return 4;
-    case typeDouble:
-        return 8;
-    default:
-        parsererror(errorList.at(ERROR_UNKNOWN_TYPE).arg(type));
-        return 0;
-    }
 }
 
 AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode *paramsNode)
@@ -1307,7 +1380,6 @@ AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode 
         if(paramsString.length() != 0)
             paramsString.append(",");
         paramsString.append(typeName.at(((AbstractValueASTNode *) currentNode)->getValueType()));
-
     }
 
     if (callParamsTypes.count() == function->getParams()->count()) {
@@ -1327,4 +1399,3 @@ AbstractASTNode *validatedParams(FunctionTableRecord *function, AbstractASTNode 
 
     return NULL;
 }
-

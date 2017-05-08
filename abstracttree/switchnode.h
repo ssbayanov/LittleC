@@ -22,6 +22,9 @@ public:
      */
     void printNode(int level);
 
+
+    QString printTripleCode();
+
     /**
       * @brief ~SwitchNode destruction class and call destrucor of _value and _caseList
       */

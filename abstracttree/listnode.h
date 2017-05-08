@@ -6,14 +6,24 @@
 /**
  * @brief The ListNode class Set of expressions
  */
+
+typedef enum{
+    LT_Default,
+    LT_DeclareParamList,
+    LT_CallParamList,
+    LT_CaseList,
+    LT_CaseValueList,
+    LT_ArrayValueList
+} ListTypeEnum;
+
 class ListNode : public AbstractASTNode
 {
 public:
-    ListNode(AbstractASTNode *left, AbstractASTNode *right);
+    ListNode(AbstractASTNode *left, AbstractASTNode *right, ListTypeEnum typeList = LT_Default);
 
     void printNode(int level);
 
-    QString printTripleCode(int level);
+    QString printTripleCode();
 
     AbstractASTNode *getLeftNode();
     AbstractASTNode *getRightNode();
@@ -21,11 +31,18 @@ public:
     void setLeftNode(AbstractASTNode *left);
     void setRightNode(AbstractASTNode *right);
 
+    void setListType(ListTypeEnum typeList);
+    int getSize(){
+        return _size;
+    }
+    void setSize();
     ~ListNode();
 
 private:
     AbstractASTNode *_left;
     AbstractASTNode *_right;
+    ListTypeEnum _typeList;
+    int _size;
 };
 
 #endif // LISTNODE_H

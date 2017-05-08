@@ -14,9 +14,15 @@ typedef enum
     typeChar,
     typeBool,
     typeStruct,
+    typeStructType,
     typeFunction,
     typeString
 } ValueTypeEnum;
+
+int getSizeType(ValueTypeEnum type);
+
+
+int isInt(ValueTypeEnum type);
 
 static QStringList typeName = QStringList() << "int"
                                             << "short"
@@ -27,6 +33,7 @@ static QStringList typeName = QStringList() << "int"
                                             << "char"
                                             << "bool"
                                             << "struct"
+                                            << "struct type"
                                             << "function"
                                             << "string";
 #endif // SUBEXPRESSION_H

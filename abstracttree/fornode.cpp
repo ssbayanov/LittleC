@@ -1,11 +1,11 @@
 #include "fornode.h"
 
-ForNode::ForNode(AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *increment, AbstractASTNode *body)
+ForNode::ForNode(AbstractASTNode *init, AbstractASTNode *condition, AbstractASTNode *iteration, AbstractASTNode *body)
     : AbstractASTNode(NT_ForStatement)
 {
     _init = init;
     _condition = condition;
-    _increment = increment;
+    _iteration = iteration;
     _body = body;
 }
 
@@ -18,6 +18,7 @@ void ForNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
               << "For:\n";
+
     if(_init != NULL) {
         treeStream << QString().fill(' ',level*2)
                   << "Initialisation:\n";
@@ -30,10 +31,10 @@ void ForNode::printNode(int level)
         _condition->printNode(level+1);
     }
 
-    if(_increment != NULL) {
+    if(_iteration != NULL) {
         treeStream << QString().fill(' ',level*2)
                   << "Increment:\n";
-        _increment->printNode(level+1);
+        _iteration->printNode(level+1);
     }
 
     if(_body != NULL) {
@@ -47,14 +48,69 @@ void ForNode::printNode(int level)
     }
 }
 
+QString ForNode::printTripleCode()
+{
+
+    if(_init != NULL) {
+        _init->printTripleCode();
+    }
+
+    ir.startStore();
+
+    ir.writeLine(QString("br label $begin$"));
+    ir.writeNamedLabelLine("Begin");
+
+    if(_condition != NULL){
+        ir.writeLine(QString("br i1 %1, label $body$, label $end$")
+                     .arg(_condition->printTripleCode())
+                     .arg("")
+                     .arg(""));
+    }
+    else {
+        ir.writeLine("br label $body$Loop");
+    }
+
+    ir.writeNamedLabelLine("Body");
+
+    if(_body != NULL){
+        _body->printTripleCode();
+    }
+
+    ir.writeLine(QString("br label $continue$"));
+    ir.writeNamedLabelLine("Continue");
+
+    if(_iteration != NULL){
+        _iteration->printTripleCode();
+    }    
+
+    ir.writeLine(QString("br label %1")
+                 .arg(ir.getLabelByName("Begin")));
+
+    ir.writeNamedLabelLine("End");
+
+    ir.stopStore();
+
+    ir.replaceInStored("$body$", ir.getLabelByName("Body"));
+    ir.replaceInStored("$end$", ir.getLabelByName("End"));
+    ir.replaceInStored("$begin$", ir.getLabelByName("Begin"));
+    ir.replaceInStored("$continue$", ir.getLabelByName("Continue"));
+
+    ir.flushStore();
+
+
+
+    return "";
+
+}
+
 ForNode::~ForNode()
 {
     if(_init != NULL)
         _init->~AbstractASTNode();
     if(_condition != NULL)
         _condition->~AbstractASTNode();
-    if(_increment != NULL)
-        _increment->~AbstractASTNode();
+    if(_iteration != NULL)
+        _iteration->~AbstractASTNode();
     if(_body != NULL)
         _body->~AbstractASTNode();
 }

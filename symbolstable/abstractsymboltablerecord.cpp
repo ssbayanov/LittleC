@@ -1,9 +1,11 @@
 #include "abstractsymboltablerecord.h"
+#include "symbolstable/symbolstable.h"
 
-AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, SymbolsTable *table)
+AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, QString key, ValueTypeEnum valueType, SymbolsTable *table)
 {
     _type = type;
     _name = name;
+    _key = key;
     _valueType = valueType;
     _table = table;
 }
@@ -23,6 +25,11 @@ QString AbstractSymbolTableRecord::getName()
     return _name;
 }
 
+QString AbstractSymbolTableRecord::getKey()
+{
+    return _key;
+}
+
 SymbolsTable *AbstractSymbolTableRecord::getTable()
 {
     return _table;
@@ -31,6 +38,16 @@ SymbolsTable *AbstractSymbolTableRecord::getTable()
 SymbolsTableRecordType AbstractSymbolTableRecord::getType()
 {
     return _type;
+}
+
+QString AbstractSymbolTableRecord::getTypeName()
+{
+    return typeName.at(_valueType);
+}
+
+int AbstractSymbolTableRecord::getSize()
+{
+    return getSizeType(_valueType);
 }
 
 bool AbstractSymbolTableRecord::isFunction()
@@ -46,4 +63,19 @@ bool AbstractSymbolTableRecord::isArray()
 bool AbstractSymbolTableRecord::isVariable()
 {
     return (_type == SymbolTableRecord_Variable);
+}
+
+bool AbstractSymbolTableRecord::isStructType()
+{
+    return (_type == SymbolTableRecord_StructType);
+}
+
+bool AbstractSymbolTableRecord::isStruct()
+{
+    return (_type == SymbolTableRecord_Struct);
+}
+
+bool AbstractSymbolTableRecord::isGlobal()
+{
+    return (getTable()->getParent() == NULL);
 }

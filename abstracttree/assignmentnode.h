@@ -2,29 +2,23 @@
 #define ASSIGNMENTNODE_H
 
 #include "abstracttree/abstractastnode.h"
+#include "abstracttree/abstractvalueastnode.h"
+#include "valuenode.h"
 
-/**
- * @brief The AssignmentNode class
- */
+
 class AssignmentNode : public AbstractASTNode
 {
 public:
-    AssignmentNode(AbstractSymbolTableRecord *variable, AbstractASTNode *value);
+    AssignmentNode(AbstractSymbolTableRecord *variable, AbstractASTNode *value, AbstractASTNode* index);
 
     void printNode(int level);
-    AbstractSymbolTableRecord* getVariable(){
-        return _variable;
-    }
-    AbstractASTNode* getValue(){
-        return _value;
-    }
 
-    ~AssignmentNode();
+    QString printTripleCode();
 
 private:
     AbstractSymbolTableRecord *_variable;
     AbstractASTNode *_value;
+    int _index;
 };
-
 
 #endif // ASSIGNMENTNODE_H

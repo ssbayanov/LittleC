@@ -14,7 +14,8 @@ public:
     void setBody(AbstractASTNode *body);
 
     void printNode(int level);
-    virtual QString printTripleCode(int level);
+
+    QString printTripleCode();
 
     void setIsDoWhile(bool isDoWhile = true);
 

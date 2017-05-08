@@ -13,6 +13,8 @@ public:
 
     void printNode(int level);
 
+    QString printTripleCode();
+
     ~GoToNode();
 
 private:

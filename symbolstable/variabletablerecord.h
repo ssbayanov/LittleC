@@ -1,7 +1,6 @@
 #ifndef VARIABLETABLERECORD_H
 #define VARIABLETABLERECORD_H
 
-#include "subexpression.h"
 #include "symbolstable/abstractsymboltablerecord.h"
 
 #include <QString>
@@ -13,6 +12,7 @@ class VariableTableRecord : public AbstractSymbolTableRecord
 {
 public:
     VariableTableRecord(QString name,
+                        QString key,
                         ValueTypeEnum valueType,
                         QVariant value, SymbolsTable *table,
                         SymbolsTableRecordType type = SymbolTableRecord_Variable);

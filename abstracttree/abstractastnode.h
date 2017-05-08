@@ -6,15 +6,24 @@
 #include <QTextStream>
 
 #include "symbolstable/abstractsymboltablerecord.h"
+#include "symbolstable/arraytablerecord.h"
+#include "irprint.h"
+
+//#include "llvm/ADT/APFloat.h"
+//#include "llvm/ADT/STLExtras.h"
+//#include "llvm/IR/BasicBlock.h"
+//#include "llvm/IR/Constants.h"
+//#include "llvm/IR/DerivedTypes.h"
+//#include "llvm/IR/Function.h"
+//#include "llvm/IR/IRBuilder.h"
+//#include "llvm/IR/LLVMContext.h"
+//#include "llvm/IR/Module.h"
+//#include "llvm/IR/Type.h"
+//#include "llvm/IR/Verifier.h"
 
 extern QTextStream treeStream;
 extern QTextStream outStream;
-extern int g_LastLabelNumber;
-extern int g_LabelStackPointer;
-extern int Labels[256];
-extern void PushLabelNumber(int);
-extern int PopLabelNumber(void);
-extern void EmptyLabels(void);
+extern IRPrint ir;
 
 typedef enum
 {
@@ -23,6 +32,7 @@ typedef enum
     NT_AssignmentOperation, // Unary assignment operator.
     NT_NumericConstant,             // Numeric literal.
     NT_StringConstant,             // Sting literal.
+    NT_Declaration,
     NT_Reference,        // Variable name.
     NT_IfStatement,       // If statement.
     NT_WhileStatement,    // While statement.
@@ -56,7 +66,7 @@ public:
 
     virtual void printNode(int level = 0);
 
-    virtual QString printTripleCode(int level = 0);
+    virtual QString printTripleCode();
 
     virtual ~AbstractASTNode();
 

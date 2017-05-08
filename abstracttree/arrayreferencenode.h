@@ -12,7 +12,12 @@ public:
     ArrayReferenceNode(AbstractSymbolTableRecord *array, AbstractValueASTNode *index);
 
     void printNode(int level);
-
+    AbstractValueASTNode* getIndex(){
+        return _index;
+    }
+    AbstractSymbolTableRecord* getId(){
+        return _array;
+    }
     ~ArrayReferenceNode();
 
 private:

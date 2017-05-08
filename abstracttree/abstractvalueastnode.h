@@ -15,6 +15,10 @@ public:
 
     bool isValueNode();
 
+    QString getValueTypeLLVM();
+
+    static QString getValueTypeLLVM(ValueTypeEnum type);
+
 protected:
 
     ValueTypeEnum _typeValue;

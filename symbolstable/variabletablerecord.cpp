@@ -1,7 +1,7 @@
 #include "variabletablerecord.h"
 
-VariableTableRecord::VariableTableRecord(QString name, ValueTypeEnum valueType, QVariant value, SymbolsTable *table, SymbolsTableRecordType type)
-    : AbstractSymbolTableRecord(type, name, valueType, table)
+VariableTableRecord::VariableTableRecord(QString name, QString key, ValueTypeEnum valueType, QVariant value, SymbolsTable *table, SymbolsTableRecordType type)
+    : AbstractSymbolTableRecord(type, name, key, valueType, table)
 {
     _value = value;
 }

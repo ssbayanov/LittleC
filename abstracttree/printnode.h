@@ -13,10 +13,14 @@ public:
 
     void printNode(int level);
 
+    QString printTripleCode();
+
     ~PrintNode();
 
 private:
     AbstractASTNode *_expression;
+
+    QString printTextVariable(QString text);
 };
 
 

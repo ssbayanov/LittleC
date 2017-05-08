@@ -16,83 +16,84 @@ void WhileNode::setBody(AbstractASTNode *body)
 void WhileNode::printNode(int level)
 {
     treeStream << QString().fill(' ',level*2)
-              << (_isDoWhile == false ? "While:" : "Do-While")
-              << "\n";
+               << (_isDoWhile == false ? "While:" : "Do-While")
+               << "\n";
 
 
     if(!_isDoWhile && _condition != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "Condition:\n";
+                   << "Condition:\n";
         _condition->printNode(level+1);
     }
 
     if(_body != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "Body:\n";
+                   << "Body:\n";
         _body->printNode(level+1);
     }
 
     if(_isDoWhile && _condition != NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "Condition:\n";
+                   << "Condition:\n";
         _condition->printNode(level+1);
     }
 
     if (_condition == NULL) {
         treeStream << QString().fill(' ',level*2)
-                  << "BAD CONDITION NODE!!!\n";
+                   << "BAD CONDITION NODE!!!\n";
     }
 }
 
-QString WhileNode::printTripleCode(int level)
+QString WhileNode::printTripleCode()
 {
+    ir.startStore();
+
+    ir.writeLine("br label $continue$");
+    ir.writeNamedLabelLine("Continue");
+
+    ir.writeLine("br label $begin$");
+    ir.writeNamedLabelLine("Begin");
 
     if(!_isDoWhile){
         if(_condition != NULL){
-            outStream << QString("LoopBegin_%1:\n").arg(_key);
-            outStream << QString("iffalse %1 goto LoopEnd_%2\n")
-                         .arg(_condition->printTripleCode(level+1))
-                         .arg(_key);
+            ir.writeLine(QString("br i1 %1, label $body$, label $end$")
+                         .arg(_condition->printTripleCode()));
         }
+        else {
+            ir.writeLine("br label $body$");
+        }
+    }
 
 
+    ir.writeNamedLabelLine("Body");
     if(_body != NULL){
-
         _body->printTripleCode();
-        outStream << QString("goto LoopBegin_%1\n")
-                     .arg(_key);
-        outStream << QString("LoopEnd_%1:\n").arg(_key);
-    }
 
     }
-
 
     if(_isDoWhile) {
-        if(_body != NULL){
-             outStream << QString("LoopBegin_%1:\n").arg(_key);
-            _body->printTripleCode();
-
-        }
-
         if(_condition != NULL){
-            outStream << QString("iffalse %1 goto LoopEnd_%2\n")
-                         .arg(_condition->printTripleCode(level+1))
-                         .arg(_key);
-            outStream << QString("goto LoopBegin_%1\n")
-                         .arg(_key);
-            outStream << QString("LoopEnd_%1:\n").arg(_key);
+            ir.writeLine(QString("br i1 %1 label $body$, label $end$")
+                         .arg(_condition->printTripleCode()));
         }
 
-//        else {
-//            outStream << QString("goto LoopBegin_%2\n")
-//                         .arg(_key);
-//        }
     }
 
-    //outStream << QString("LoopEnd_%1:\n").arg(_key);
+    ir.writeLine("br label $begin$");
+    ir.writeNamedLabelLine("End");
+
+    ir.stopStore();
+
+    ir.replaceInStored("$body$", ir.getLabelByName("Body"));
+    ir.replaceInStored("$end$", ir.getLabelByName("End"));
+    ir.replaceInStored("$begin$", ir.getLabelByName("Begin"));
+    ir.replaceInStored("$continue$", ir.getLabelByName("Continue"));
+
+    ir.flushStore();
 
     return "";
 }
+
 void WhileNode::setIsDoWhile(bool isDoWhile)
 {
     _isDoWhile = isDoWhile;

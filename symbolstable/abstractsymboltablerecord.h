@@ -9,28 +9,42 @@ class SymbolsTable;
 typedef enum {
     SymbolTableRecord_Function,
     SymbolTableRecord_Variable,
-    SymbolTableRecord_Array
+    SymbolTableRecord_Array,
+    SymbolTableRecord_Struct,
+    SymbolTableRecord_StructType
 } SymbolsTableRecordType;
 
 class AbstractSymbolTableRecord
 {
 public:
-    AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, SymbolsTable *table);
+    AbstractSymbolTableRecord(SymbolsTableRecordType type,
+                              QString name,
+                              QString key,
+                              ValueTypeEnum valueType,
+                              SymbolsTable *table);
     ~AbstractSymbolTableRecord();
 
     ValueTypeEnum getValueType();
     QString getName();
+    QString getKey();
 
     SymbolsTable *getTable();
     SymbolsTableRecordType getType();
+    QString getTypeName();
+    int getSize();
 
     bool isFunction();
     bool isArray();
     bool isVariable();
+    bool isStructType();
+    bool isStruct();
 
-private:
+    bool isGlobal();
+
+protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */
     QString _name;
+    QString _key;
     SymbolsTable *_table;
 
     SymbolsTableRecordType _type;

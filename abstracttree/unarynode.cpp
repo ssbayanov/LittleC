@@ -47,16 +47,77 @@ void UnaryNode::printNode(int level)
     }
 }
 
-QString UnaryNode::printTripleCode(int level)
+QString UnaryNode::printTripleCode()
 {
     if(_value != NULL) {
-        outStream << QString("$t%1 = %2 %3\n")
-                     .arg(level)
-                     .arg(unarOperationCommand.at(_uType))
-                     .arg(_value->printTripleCode(level+1));
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) _value);
+        QString opText = "";
+        switch (_uType) {
+        case UnarToDouble:
+            if(isInt(value->getValueType())) {
+                ir.writeCommandLine( QString("sitofp %1 %2 to %3")
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode())
+                                     .arg(getValueTypeLLVM()));
+            }
+            else {
+
+                ir.writeCommandLine( QString("fpext float %1 to double")
+                                     .arg(value->printTripleCode()));
+            }
+
+            break;
+        case UnarToInt:
+        case UnarToBool:
+        case UnarToChar:
+        case UnarToShort:
+            if(isInt(value->getValueType())) {
+                ir.writeCommandLine( QString("%1 %2 %3 to %4")
+                                     .arg(getSizeType(getValueType()) < getSizeType(value->getValueType()) ?
+                                              "trunc" :
+                                              "zext")
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode())
+                                     .arg(getValueTypeLLVM()));
+            }
+            else {
+                ir.writeCommandLine( QString("fptosi %1 %2 to %3")
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode())
+                                     .arg(getValueTypeLLVM()));
+            }
+            break;
+        case UnarToFloat:
+            if(isInt(value->getValueType())) {
+                ir.writeCommandLine( QString("sitofp %1 %2 to float")
+                                     .arg(value->getValueTypeLLVM())
+                                     .arg(value->printTripleCode()));
+
+            }
+            else {
+                ir.writeCommandLine( QString("fptrunc double %1 to float")
+                                     .arg(value->printTripleCode()));
+            }
+            break;
+        case UnarMinus:
+            ir.writeCommandLine( QString("sub %1 0, %2")
+                                 .arg(value->getValueTypeLLVM())
+                                 .arg(value->printTripleCode()));
+            break;
+        case UnarNot:
+            ir.writeCommandLine( QString("sub %1 1, %2")
+                                 .arg(value->getValueTypeLLVM())
+                                 .arg(value->printTripleCode()));
+            break;
+        default:
+            break;
+        }
+        //outStream << opText;
+
+        return ir.lastCommandLine();
+
     }
-    return QString("$t%1")
-            .arg(level);
+    return "";
 }
 
 UnaryNode::~UnaryNode()

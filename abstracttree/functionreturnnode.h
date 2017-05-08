@@ -10,6 +10,8 @@ public:
 
       void printNode(int level);
 
+      QString printTripleCode();
+
       ~FunctionReturnNode();
 private:
       AbstractASTNode *_expression;

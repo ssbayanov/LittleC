@@ -15,9 +15,15 @@ void ReferenceNode::printNode(int level)
                  .arg(typeName.at(_typeValue));
 }
 
-QString ReferenceNode::printTripleCode(int level)
+QString ReferenceNode::printTripleCode()
 {
-    return _variable->getName();
+    ir.writeCommandLine(QString("load %1, %1* %2%3")
+                        .arg(getValueTypeLLVM())
+                        .arg(_variable->isGlobal() ? "@" : "%")
+                        .arg(_variable->getName()));
+
+    return ir.lastCommandLine();
+
 }
 
 ReferenceNode::~ReferenceNode()
