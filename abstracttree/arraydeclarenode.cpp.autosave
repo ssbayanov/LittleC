@@ -7,7 +7,7 @@ ArrayDeclareNode::ArrayDeclareNode(AbstractSymbolTableRecord *array, AbstractAST
     _values = values;
     _size = size;
     if(_values != NULL) {
-        if(_values == NT_List) {
+        if(_values->getType() == NT_List) {
             ((arraytablerecord*)_array)->setSize(((ListNode *) _values)->getSize());
         }
         else {
@@ -33,7 +33,7 @@ QString ArrayDeclareNode::printTripleCode()
 
         ir.writeLine(QString("%%1 = alloca [%2 x %3]")
                      .arg(_array->getName())
-                     .arg(_size == NULL? ((ListNode *) _values)->getSize(): _size->printTripleCode())
+                     .arg(_size == NULL ? ((ListNode *) _values)->getSize(): _size->printTripleCode())
                      .arg(AbstractValueASTNode::getValueTypeLLVM(_array->getValueType())));
     }
 

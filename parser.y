@@ -410,6 +410,7 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
         AbstractSymbolTableRecord *array = currentTable->insertArray(*$name, lastFunctionName, $type);
         if (array != NULL) {
             $$ = new ArrayDeclareNode(array, $values);
+            //qDebug() << (arraytablerecord*)array->getSize();
         }
         else {
             parsererror(errorList.at(ERROR_MEMORY_ALLOCATION));
@@ -467,10 +468,13 @@ array_declaration : data_types[type] IDENTIFIER[name] OPENBRACKET exp[values] CL
 
 array_reference : IDENTIFIER[name] OPENBRACKET exp[index] CLOSEBRACKET {
     AbstractSymbolTableRecord *var = getVariableByName(*$name);
+    //qDebug() << ((arraytablerecord*)var)->getSize();
     if (var != NULL) {
         if (var->isArray()) {
+
             if (isNumericType( (AbstractValueASTNode *) $index) ) {
                 $$ = new ArrayReferenceNode(var, ((AbstractValueASTNode *)$index));
+                //qDebug() << ((arraytablerecord*)var)->getSize();
             }
             else {
                 parsererror(errorList.at(ERROR_CANNOT_USE_AS_INDEX).arg((typeName.at(((AbstractValueASTNode *)$index)->getValueType()))));
@@ -851,10 +855,45 @@ assignment : IDENTIFIER[id] ASSIGN exp[value] {
         YYERROR;
     }
 }
-|IDENTIFIER[id] OPENBRACKET exp[index] CLOSEBRACKET ASSIGN exp[value] {
+|array_reference[id] ASSIGN exp[value] {
+    AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(((ArrayReferenceNode*)$id)->getId()->getName());
+    if (var != NULL) {
+   // qDebug() << ((ArrayReferenceNode*)$id)->getId()->getSize()<<((ArrayReferenceNode*)$id)->getId()->isArray();
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) $value);
+        if(value->getValueType() == var->getValueType())
+            $$ = new AssignmentNode(var, $value, ((ArrayReferenceNode*)$id)->getIndex());
+        else{
+            value = convert(value, var->getValueType());
+            if(value != NULL) {
+                $$ = new AssignmentNode(var, value, ((ArrayReferenceNode*)$id)->getIndex());
+            }
+            else {
+                $$ = NULL;
+                YYERROR;
+            }
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+}
+|IDENTIFIER[id] ASSIGN array_reference[value] {
     AbstractSymbolTableRecord *var = currentTable->getVariableGlobal(*$id);
     if (var != NULL) {
-        $$ = new AssignmentNode(var, $value,$index);
+        AbstractValueASTNode *value = ((AbstractValueASTNode *) $value);
+        if(value->getValueType() == var->getValueType())
+            $$ = new AssignmentNode(var, $value, NULL);
+        else{
+            value = convert(value, var->getValueType());
+            if(value != NULL) {
+                $$ = new AssignmentNode(var, value, NULL);
+            }
+            else {
+                $$ = NULL;
+                YYERROR;
+            }
+        }
     }
     else {
         $$ = NULL;

@@ -32,17 +32,13 @@ public:
     void setRightNode(AbstractASTNode *right);
 
     void setListType(ListTypeEnum typeList);
-    int getSize(){
-        return _size;
-    }
-    void setSize();
+    uint getSize();
     ~ListNode();
 
 private:
     AbstractASTNode *_left;
     AbstractASTNode *_right;
     ListTypeEnum _typeList;
-    int _size;
 };
 
 #endif // LISTNODE_H

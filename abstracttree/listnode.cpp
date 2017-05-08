@@ -139,59 +139,13 @@ QString ListNode::printTripleCode()
             _right->printTripleCode();
         }
         break;
-    case LT_ArrayValueList:
-        break;
     default:
         break;
     }
 
     return outString;
 }
-void ListNode::setSize(){
-    if(_typeList == LT_ArrayValueList){
-        AbstractASTNode* tmp;
-        tmp = this->getLeftNode();
-        while(tmp != NULL) {
-                    if(tmp->getType() == NT_List) {
-                        ((ListNode *) tmp)->setListType(LT_ArrayValueList);
-                         tmp = ((ListNode *)tmp)->getLeftNode();
-                     }
-                    else {
-                        if(tmp->isValueNode()) {
-                            //outString.append(((AbstractValueASTNode *) _left)->getValueTypeLLVM());
-                        //outString.append(" " + _left->printTripleCode());
-                       // qDebug()<<_size;
-                        }
-                        tmp = NULL;
-                    }
-                    _size++;
-                // qDebug()<<_size;
-                }
 
-        tmp = this->getRightNode();
-                while(tmp != NULL) {
-
-                    if(tmp->getType() == NT_List) {
-                        ((ListNode *) tmp)->setListType(LT_ArrayValueList);
-                        tmp = ((ListNode *)tmp)->getRightNode();
-                        //qDebug()<<_size;
-
-
-                    }
-                    else {
-                        if(tmp->isValueNode()){
-                       //     outString.append(((AbstractValueASTNode *) _right)->getValueTypeLLVM());
-                        //outString.append(" " + _right->printTripleCode());
-                        //qDebug()<<_size;
-                        }
-                        tmp = NULL;
-                    }
-
-                     _size++;
-                     //qDebug()<<_size;
-                }
-    }
-}
 AbstractASTNode *ListNode::getLeftNode()
 {
     return _left;
@@ -215,6 +169,33 @@ void ListNode::setRightNode(AbstractASTNode *right)
 void ListNode::setListType(ListTypeEnum typeList)
 {
     _typeList = typeList;
+}
+
+uint ListNode::getSize()
+{
+    uint size = 0;
+    if(_left != NULL) {
+        if(_left->getType() == NT_List) {
+            size+=((ListNode *) _left)->getSize();
+        }
+        else {
+            if(_left->isValueNode())
+                size++;
+        }
+    }
+
+
+    if(_right != NULL) {
+        if(_right->getType() == NT_List) {
+            size+=((ListNode *) _right)->getSize();
+        }
+        else {
+            if(_right->isValueNode())
+                size++;
+        }
+    }
+
+    return size;
 }
 
 ListNode::~ListNode()

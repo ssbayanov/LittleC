@@ -3,6 +3,7 @@
 
 #include "abstracttree/abstractastnode.h"
 #include "abstracttree/abstractvalueastnode.h"
+#include "abstracttree/arrayreferencenode.h"
 #include "valuenode.h"
 
 
@@ -18,7 +19,7 @@ public:
 private:
     AbstractSymbolTableRecord *_variable;
     AbstractASTNode *_value;
-    int _index;
+    AbstractASTNode *_index;
 };
 
 #endif // ASSIGNMENTNODE_H

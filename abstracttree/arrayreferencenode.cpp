@@ -22,7 +22,22 @@ void ArrayReferenceNode::printNode(int level)
         treeStream << "BAD INDEX NODE!!!";
     }
 }
+QString ArrayReferenceNode::printTripleCode()
+{
+    ir.writeCommandLine( QString("getelementptr inbounds [ %1 x %2 ], [ %1 x %2 ]* %%3, i32 0, i32 %4")
+    .arg(((arraytablerecord*)_array)->getSize())
+    .arg(getValueTypeLLVM())
+    .arg(_array->getName())
+    .arg(_index->printTripleCode())
+    );
+    ir.writeCommandLine(QString("load %1, %1* %2")
+    .arg(getValueTypeLLVM())
+    .arg(ir.lastCommandLine())
+    );
 
+    return ir.lastCommandLine();
+
+}
 ArrayReferenceNode::~ArrayReferenceNode()
 {
     if (_index != NULL) {

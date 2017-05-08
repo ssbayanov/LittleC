@@ -18,6 +18,7 @@ public:
     AbstractSymbolTableRecord* getId(){
         return _array;
     }
+    virtual QString printTripleCode();
     ~ArrayReferenceNode();
 
 private:

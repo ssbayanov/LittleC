@@ -10,7 +10,7 @@
 class ArrayDeclareNode : public AbstractASTNode
 {
 public:
-    ArrayDeclareNode(AbstractSymbolTableRecord *array, AbstractASTNode *values);
+    ArrayDeclareNode(AbstractSymbolTableRecord *array, AbstractASTNode *values, AbstractASTNode *size);
     void printNode(int level);
     QString printTripleCode();
     ~ArrayDeclareNode();
@@ -18,6 +18,10 @@ public:
 private:
     AbstractSymbolTableRecord *_array;
     AbstractASTNode *_values;
+    AbstractASTNode *_size;
+
+    void printAssign(uint index, AbstractASTNode value);
+    void printValues(uint index, AbstractASTNode value);
 };
 
 #endif // ARRAYDECLARENODE_H

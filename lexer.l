@@ -28,6 +28,7 @@
 #include <tuple>
 #include <vector>
 #include <string.h>
+#include <unistd.h>
 
 #include "parser_yacc.h"
 
@@ -35,6 +36,8 @@
 bool multilineComment();
 
 #define lexerlex parserlex
+
+
 
 typedef std::tuple<std::string, std::string, int> TokenTableRow;
 std::vector <std::tuple<std::string, std::string, int> > TokenTable;
@@ -83,13 +86,13 @@ stringch      [^"\n]
                             }*/
 
 \+                          {
-                                //TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
+                                TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
                                 return PLUS;
                             }
 
-\-                         {
-                                //TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
+\-                          {
+                                TokenTable.push_back(TokenTableRow("MINUS", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
                                 return MINUS;
                             }
@@ -102,7 +105,6 @@ stringch      [^"\n]
                             }
 
     /* Boolean operations */
-
 "&"                         {
                                 TokenTable.push_back(TokenTableRow("BOOLOP", yytext, lno));
                                 strcpy(parserlval.opName, yytext);
@@ -211,8 +213,8 @@ enum     { TokenTable.push_back(TokenTableRow("ENUM", yytext, lno)); return ENUM
 struct   { TokenTable.push_back(TokenTableRow("STRUCT", yytext, lno)); return STRUCT; }
 
     /* Predestined values. */
-true     { TokenTable.push_back(TokenTableRow("TRUE", yytext, lno)); return TRUEt; }
-false    { TokenTable.push_back(TokenTableRow("FALSE", yytext, lno)); return FALSEt; }
+true     { TokenTable.push_back(TokenTableRow("TRUE", yytext, lno)); return TRUE; }
+false    { TokenTable.push_back(TokenTableRow("FALSE", yytext, lno)); return FALSE; }
 
     /* Integrated functions. */
 print    { TokenTable.push_back(TokenTableRow("PRINT", yytext, lno)); return PRINT; }
@@ -245,7 +247,7 @@ return IDENTIFIER;}
 \"{stringch}*\" {
      TokenTable.push_back(TokenTableRow("STRING", yytext, lno));
      QString str = QString(yytext);
-     parserlval.value = new QVariant(str.mid(1,str.length() - 1));
+     parserlval.value = new QVariant(str.mid(1,str.length() - 2));
      return STRING;
      }
 

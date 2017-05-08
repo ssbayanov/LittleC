@@ -14,11 +14,13 @@
 #define DEBUG_MODE 1
 
 #include "parser_yacc.h"
+#include "irprint.h"
 
 //extern int yyparse();
 extern std::vector <std::tuple<std::string, std::string, int> > TokenTable;
 
-
+FILE* outfile;
+char g_outFileName[256];
 
 typedef enum {
     SE_Tree,
@@ -34,6 +36,8 @@ QTextStream tokenStream(stdout);
 QTextStream errorStream(stdout);
 QTextStream symbolsStream(stdout);
 QTextStream cout(stdout);
+
+IRPrint ir;
 
 QFile inFile;
 QFile outFile;
@@ -52,14 +56,6 @@ bool printSymbols = false;
 bool isFlag(QString arg);
 bool changeStream(QTextStream *stream, QFile *file, QString fileName);
 void printingTokens();
-
-/* Обработка таблицы меток. Используется стековая организация */
-int g_LastLabelNumber = 0;
-int g_LabelStackPointer = 0;
-int Labels[256];
-void PushLabelNumber(int);
-int PopLabelNumber(void);
-void EmptyLabels(void);
 
 int main(int argc, char *argv[])
 {
@@ -108,7 +104,7 @@ int main(int argc, char *argv[])
                 if (argc - 1 > i) {
                     if (!isFlag(argv[i+1])) {
                         i++;
-                       if(!changeStream(&outStream, &outFile, argv[i])){
+                        if(!changeStream(&outStream, &outFile, argv[i])){
                             hasError = true;
                             cout << QString("Cannot open error output file %1\n").arg(argv[i]);
                         }
@@ -203,15 +199,19 @@ int main(int argc, char *argv[])
             else
                 cout << "Parser has errors. Stop with result " << parsingResult << "\n";
         }
-        treeStream << "\n";
-        treeStream.flush();
+
+        if(printTree) {
+            treeStream << "\n";
+            treeStream.flush();
+        }
+
         cout.flush();
 
         if(printTokens) {
             printingTokens();
         }
     }
-
+    ir.flushStore();
 }
 
 bool changeStream(QTextStream *stream, QFile *file, QString fileName)
@@ -261,27 +261,4 @@ void printingTokens()
     tokenStream << "\nDump finished.\n";
 
     tokenStream.flush();
-}
-
-void PushLabelNumber(int labelNumber)
-{
-Labels[g_LabelStackPointer] = labelNumber;
-++g_LabelStackPointer;
-}
-int PopLabelNumber(void)
-{
-if (g_LabelStackPointer > 0)
-{
---g_LabelStackPointer;
-return Labels[g_LabelStackPointer];
-}
-else
-{
-g_LabelStackPointer = 0;
-return -1;
-}
-}
-void EmptyLabels(void)
-{
-g_LabelStackPointer = 0;
 }
