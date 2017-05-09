@@ -158,7 +158,6 @@ AbstractSymbolTableRecord *SymbolsTable::getVariableGlobal(QString name)
     return NULL;
 }
 
-
 bool SymbolsTable::containsGlobal(QString name)
 {
     SymbolsTable *ptr = this;
@@ -177,6 +176,11 @@ bool SymbolsTable::contains(QString name) {
         return true;
     }
     return false;
+}
+
+QList<SymbolsTable *> SymbolsTable::getChilds()
+{
+    return childs;
 }
 
 

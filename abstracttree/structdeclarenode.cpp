@@ -27,6 +27,7 @@ void StructDeclareNode::printNode(int level)
 
 QString StructDeclareNode::printTripleCode()
 {
+    _variable->setUniqueName(ir.getUniqueNameAndStore(_variable->getName()));
     QString vars = "";
     if(_variablesList->getType() == NT_List) {
         ((ListNode *)_variablesList)->setListType(LT_DeclareStructVars);
@@ -37,7 +38,7 @@ QString StructDeclareNode::printTripleCode()
     }
 
     ir.writeGlobalLine(QString("%struct.%1 = type {%2}")
-                       .arg(_variable->getName())
+                       .arg(_variable->getUniqueName())
                        .arg(vars));
     return "";
 }

@@ -27,9 +27,9 @@ void ArrayReferenceNode::printNode(int level)
 QString ArrayReferenceNode::printTripleCode()
 {
     ir.writeCommandLine( QString("getelementptr inbounds [ %1 x %2 ], [ %1 x %2 ]* %5%3, i32 0, i32 %4")
-                         .arg(((arraytablerecord*)_array)->getSize())
+                         .arg(((ArrayTableRecord*)_array)->getSize())
                          .arg(getValueTypeLLVM())
-                         .arg(_array->getName())
+                         .arg(_array->getUniqueName())
                          .arg(_index->printTripleCode())
                          .arg(_array->isGlobal() ? "@" : "%"));
 

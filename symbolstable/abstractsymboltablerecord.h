@@ -26,6 +26,8 @@ public:
 
     ValueTypeEnum getValueType();
     QString getName();
+    QString getUniqueName();
+    void setUniqueName(QString name);
     QString getKey();
 
     SymbolsTable *getTable();
@@ -44,6 +46,7 @@ public:
 protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */
     QString _name;
+    QString _uniqueName;
     QString _key;
     SymbolsTable *_table;
 

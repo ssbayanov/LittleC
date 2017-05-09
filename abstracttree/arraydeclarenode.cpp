@@ -9,19 +9,19 @@ ArrayDeclareNode::ArrayDeclareNode(AbstractSymbolTableRecord *array, AbstractAST
     _size = size;
     if(_values != NULL) {
         if(_values->getType() == NT_List) {
-            ((arraytablerecord*)_array)->setSize(((ListNode *) _values)->getSize());
+            ((ArrayTableRecord*)_array)->setSize(((ListNode *) _values)->getSize());
         }
         else {
             if(((AbstractValueASTNode *)_values)->getValueType() == typeString){
-                ((arraytablerecord*)_array)->setSize(((ValueNode *) _values)->getValue().toString().toLocal8Bit().length());
+                ((ArrayTableRecord*)_array)->setSize(((ValueNode *) _values)->getValue().toString().toLocal8Bit().length());
             }
             else {
-                ((arraytablerecord*)_array)->setSize(1);
+                ((ArrayTableRecord*)_array)->setSize(1);
             }
         }
     }
     else {
-        ((arraytablerecord*)_array)->setSize(((ValueNode *)_size)->getValue().toInt());
+        ((ArrayTableRecord*)_array)->setSize(((ValueNode *)_size)->getValue().toInt());
     }
 
 }
@@ -29,17 +29,18 @@ ArrayDeclareNode::ArrayDeclareNode(AbstractSymbolTableRecord *array, AbstractAST
 
 QString ArrayDeclareNode::printTripleCode()
 {
+    _array->setUniqueName(ir.getUniqueNameAndStore(_array->getName()));
     if(_array->isGlobal()){
         ir.writeLine(QString("@%1 = global [%2 x %3] zeroinitializer")
-                     .arg(_array->getName())
+                     .arg(_array->getUniqueName())
                      .arg(_size->printTripleCode())
                      .arg(AbstractValueASTNode::getValueTypeLLVM(_array->getValueType())));
     }
     else {
 
         ir.writeLine(QString("%%1 = alloca [%2 x %3]")
-                     .arg(_array->getName())
-                     .arg(((arraytablerecord*) _array)->getSize())
+                     .arg(_array->getUniqueName())
+                     .arg(((ArrayTableRecord*) _array)->getSize())
                      .arg(AbstractValueASTNode::getValueTypeLLVM(_array->getValueType())));
     }
 
@@ -65,6 +66,7 @@ QString ArrayDeclareNode::printTripleCode()
 
 void ArrayDeclareNode::printNode(int level)
 {
+
     treeStream << QString().fill(' ',level*2)
                << QString("Array Declare: %1, type: %2\n")
                   .arg(_array->getName())

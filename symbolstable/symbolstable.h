@@ -120,7 +120,10 @@ public:
 
     bool containsGlobal(QString name);
 
+
     bool contains(QString name);
+
+    QList<SymbolsTable*> getChilds();
 
 private:
     SymbolsTable *parent;

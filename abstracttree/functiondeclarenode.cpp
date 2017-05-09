@@ -36,6 +36,7 @@ void FunctionDeclareNode::printNode(int level)
 
 QString FunctionDeclareNode::printTripleCode()
 {
+    _variable->setUniqueName(ir.getUniqueNameAndStore(_variable->getName()));
     QString params = "";
 
     ir.startStore();
@@ -43,7 +44,7 @@ QString FunctionDeclareNode::printTripleCode()
     ir.resetCommandCounter();
 
     ir.writeLine(QString("define %2 @%1 (%params) {\n")
-                 .arg(_variable->getName())
+                 .arg(_variable->getUniqueName())
                  .arg(getValueTypeLLVM()));
 
     if(_paramList != NULL) {

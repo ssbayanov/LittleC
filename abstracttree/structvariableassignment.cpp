@@ -32,7 +32,7 @@ QString StructVariableAssignment::printTripleCode()
 {
     QString structVarPtr = ir.writeCommandLine(QString("getelementptr inbounds %struct.%1, %struct.%1* %%2, i32 0, i32 %3")
                         .arg(_structVariable->getTypeName())
-                        .arg(_structVariable->getName())
+                        .arg(_structVariable->getUniqueName())
                         .arg(((StructTableRecord *)_structVariable)->getVarIndex(_variable)));
     QString newValue;
     if(_value != NULL) {

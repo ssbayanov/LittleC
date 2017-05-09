@@ -3,10 +3,10 @@
 #include "symbolstable/abstractsymboltablerecord.h"
 
 
-class arraytablerecord : public AbstractSymbolTableRecord
+class ArrayTableRecord : public AbstractSymbolTableRecord
 {
 public:
-    arraytablerecord(QString name,
+    ArrayTableRecord(QString name,
                      QString key, ValueTypeEnum valueType,
                      SymbolsTable *table);
 

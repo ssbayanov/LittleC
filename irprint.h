@@ -42,6 +42,8 @@ public:
 
     QString addUnnamedVariable(QString declarationText);
 
+    QString getUniqueNameAndStore(QString name);
+
     void writeLine(QString textLine);
 
     void writeGlobalLine(QString textLine);
@@ -72,6 +74,8 @@ private:
     VariablesStore unnamedVariables;
 
     QList<Space *> store;
+
+    QStringList varStore;
 
     Space *currentSpace;
 

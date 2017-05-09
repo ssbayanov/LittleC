@@ -25,6 +25,16 @@ QString AbstractSymbolTableRecord::getName()
     return _name;
 }
 
+QString AbstractSymbolTableRecord::getUniqueName()
+{
+    return _uniqueName;
+}
+
+void AbstractSymbolTableRecord::setUniqueName(QString name)
+{
+    _uniqueName = name;
+}
+
 QString AbstractSymbolTableRecord::getKey()
 {
     return _key;

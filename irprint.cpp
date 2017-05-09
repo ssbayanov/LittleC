@@ -99,6 +99,20 @@ QString IRPrint::addUnnamedVariable(QString declarationText)
     return unnamedVariables.value(declarationText);
 }
 
+QString IRPrint::getUniqueNameAndStore(QString name)
+{
+    if(varStore.contains(name)) {
+        uint i = 1;
+        while(varStore.contains(QString("%1%2").arg(name).arg(i)))
+            i++;
+
+        varStore.append(QString("%1%2").arg(name).arg(i));
+        return QString("%1%2").arg(name).arg(i);
+    }
+    varStore.append(name);
+    return name;
+}
+
 
 void IRPrint::startStore()
 {

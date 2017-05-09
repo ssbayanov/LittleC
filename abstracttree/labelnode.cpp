@@ -15,10 +15,6 @@ void LabelNode::printNode(int level)
 
 QString LabelNode::printTripleCode()
 {
-//    ir.writeLine( QString("; <label>:%1")
-//                 .arg(_variable->getName()));
-
-
     ir.writeUserLabelLine(_variable->getName());
 
     return "";

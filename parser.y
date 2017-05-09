@@ -136,8 +136,8 @@ int ifCounter = 0;
 int enumCounter = 0;
 static QString lastFunctionName = "global";
 
-static SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
-static SymbolsTable* currentTable = topLevelVariableTable;
+SymbolsTable* topLevelVariableTable = new SymbolsTable(NULL);
+SymbolsTable* currentTable = topLevelVariableTable;
 %}
 
 %union
@@ -562,8 +562,6 @@ struct_variable_declaration_statement : IDENTIFIER[struct_name] IDENTIFIER[name]
         YYERROR;
     }
 
-
-
 };
 
 srtuct_variable_reference : IDENTIFIER[struct_name] DOT IDENTIFIER[name] {
@@ -668,7 +666,7 @@ parameter : data_types[type] IDENTIFIER{
         $$ = NULL;
     }
 }
-| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET {
+/*| data_types[type] IDENTIFIER[name] OPENBRACKET CLOSEBRACKET {
     if (isNumericType( $type )) {
         AbstractASTNode *var = NULL;//arrayDeclaration($1, *$2);
         if (var == NULL)
@@ -678,7 +676,7 @@ parameter : data_types[type] IDENTIFIER{
     else {
         $$ = NULL;
     }
-}
+}*/
 ;
 
 
@@ -909,7 +907,7 @@ assignment : IDENTIFIER[id] ASSIGN exp[value] {
 
 identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
     if($list != NULL) {
-        if(!currentTable->containsGlobal(*$id)) {
+        if(!currentTable->contains(*$id)) {
             AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, lastFunctionName, typeInt, enumCounter);
             if(var != NULL) {
                 $$ = new ListNode(new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "="), $list);
@@ -931,7 +929,7 @@ identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
     }
 }
 | IDENTIFIER[id] {
-    if(!currentTable->containsGlobal(*$id)) {
+    if(!currentTable->contains(*$id)) {
         AbstractSymbolTableRecord *var = currentTable->insertVariable(*$id, lastFunctionName, typeInt, enumCounter);
         if(var != NULL) {
             $$ = new BinarNode(new ReferenceNode(var), new ValueNode(typeInt, enumCounter++), "=");

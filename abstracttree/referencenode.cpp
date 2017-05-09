@@ -20,7 +20,7 @@ QString ReferenceNode::printTripleCode()
     ir.writeCommandLine(QString("load %1, %1* %2%3")
                         .arg(getValueTypeLLVM())
                         .arg(_variable->isGlobal() ? "@" : "%")
-                        .arg(_variable->getName()));
+                        .arg(_variable->getUniqueName()));
 
     return ir.lastCommandLine();
 

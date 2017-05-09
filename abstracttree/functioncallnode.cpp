@@ -26,7 +26,7 @@ QString FunctionCallNode::printTripleCode()
 {
 
     ir.writeCommandLine(QString("call %3 @%1(%2)\n")
-                        .arg(_variable->getName())
+                        .arg(_variable->getUniqueName())
                         .arg((_paramList != NULL) ?
                             _paramList->printTripleCode() : "")
                         .arg(getValueTypeLLVM()));

@@ -17,9 +17,10 @@ void StructVariableDeclareNode::printNode(int level)
 
 QString StructVariableDeclareNode::printTripleCode()
 {
+    _variable->setUniqueName(ir.getUniqueNameAndStore(_variable->getName()));
     ir.writeLine(QString("%%2 = alloca %struct.%1")
-                 .arg(_typeStruct->getName())
-                 .arg(_variable->getName()));
+                 .arg(_typeStruct->getUniqueName())
+                 .arg(_variable->getUniqueName()));
     return "";
 }
 

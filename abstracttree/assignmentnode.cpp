@@ -31,7 +31,7 @@ QString AssignmentNode::printTripleCode()
                  .arg(((AbstractValueASTNode * )_value)->getValueTypeLLVM())
                  .arg(_value->printTripleCode())
                  .arg(AbstractValueASTNode::getValueTypeLLVM(_variable->getValueType()))
-                 .arg((_variable->isGlobal() ? "@" : "%")+_variable->getName()));
+                 .arg((_variable->isGlobal() ? "@" : "%")+_variable->getUniqueName()));
     return "";
 }
 

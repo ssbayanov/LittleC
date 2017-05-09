@@ -1,16 +1,16 @@
 #include "arraytablerecord.h"
 
-arraytablerecord::arraytablerecord(QString name, QString key, ValueTypeEnum valueType, SymbolsTable *table)
+ArrayTableRecord::ArrayTableRecord(QString name, QString key, ValueTypeEnum valueType, SymbolsTable *table)
     : AbstractSymbolTableRecord(SymbolTableRecord_Array, name, key, valueType, table)
 {
 
 }
 
-int arraytablerecord::getSize()
+int ArrayTableRecord::getSize()
 {
     return _size;
 }
-void arraytablerecord::setSize(int size)
+void ArrayTableRecord::setSize(int size)
 {
     _size = size;
 }
