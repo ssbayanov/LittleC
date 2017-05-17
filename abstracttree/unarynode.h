@@ -12,7 +12,11 @@ typedef enum
     UnarToFloat,
     UnarToShort,
     UnarMinus,
-    UnarNot
+    UnarNot,
+    UnarIncrement,
+    UnarPreincrement,
+    UnarDecrement,
+    UnarPredecrement
 }TypeUnary;
 
 static QStringList unarTypeString = QStringList() << "To double"
@@ -41,6 +45,8 @@ class UnaryNode : public AbstractValueASTNode
 public:
     UnaryNode(TypeUnary uType, AbstractASTNode *left);
 
+    UnaryNode(TypeUnary uType, AbstractSymbolTableRecord *variable);
+
     void printNode(int level);
 
     virtual QString printTripleCode();
@@ -49,7 +55,11 @@ public:
 
 private:
     AbstractASTNode *_value;
+    AbstractSymbolTableRecord *_variable;
+
     TypeUnary _uType;
+
+    QString writeIncrement(bool isPreincrement = false, bool isDecrement = false);
 };
 
 

@@ -157,25 +157,26 @@ SymbolsTable* currentTable = topLevelVariableTable;
 %token <value>   STRING     "string"
 %token <variableName>        IDENTIFIER "indentifer"
 %token <opName>   RELOP      "relation operator"
-%token <opName>   INCREMENT  "increment (decrement)"
 %token <opName>   PLUS       "+"
 %token <opName>   MINUS      "-"
 %token <opName>   MULOP      "mulop"
+%token      INCREMENT  "increment"
+%token      DECREMENT  "decrement"
 %token      AND
 %token      OR
 %token      NOT
 %token      XOR
-%token       OPENBRACE  "{"
-%token       CLOSEBRACE "}"
-%token       OPENPAREN  "("
-%token       CLOSEPAREN ")"
-%token       OPENBRACKET    "["
-%token       CLOSEBRACKET   "]"
-%token       ASSIGN     "="
-%token       SEMICOLON  ";"
-%token       COLON      ":"
-%token       COMA       ","
-%token       DOT "."
+%token      OPENBRACE  "{"
+%token      CLOSEBRACE "}"
+%token      OPENPAREN  "("
+%token      CLOSEPAREN ")"
+%token      OPENBRACKET    "["
+%token      CLOSEBRACKET   "]"
+%token      ASSIGN     "="
+%token      SEMICOLON  ";"
+%token      COLON      ":"
+%token      COMA       ","
+%token      DOT "."
 // Control constructions.
 %token       IF         "if"
 %token       ELSE       "else"
@@ -214,7 +215,8 @@ SymbolsTable* currentTable = topLevelVariableTable;
 declaration declaration_list_element declaration_list enum_decloration_statement
 parameter parameter_list
 // Operations
-assignment compound_statement exp exp_list identifier_list reference variable_reference
+assignment compound_statement exp exp_list identifier_list
+reference variable_reference increment
 // Array
 array_declaration array_declaration_statement array_reference array_assignment_statement
 // Structure
@@ -244,6 +246,7 @@ print scan
 %right UMINUS
 //%right data_types function_types
 %left INCREMENT
+%left DECREMENT
 %left OPENPAREN CLOSEPAREN OPENBRACKET CLOSEBRACKET
 
 %start program
@@ -283,7 +286,8 @@ statement_tail : %empty   {
 utterance : print
 | assignment
 | declaration
-| function_call;
+| function_call
+| increment;
 
 statement : condition_statement
 | compound_statement
@@ -905,6 +909,83 @@ assignment : IDENTIFIER[id] ASSIGN exp[value] {
 
 // Expressions --------------------------------------------------------------
 
+increment : IDENTIFIER[name] INCREMENT
+{
+    AbstractSymbolTableRecord *var = getVariableByName(*$name);
+    if(var != NULL) {
+        if (isInt(var->getValueType())){
+            $$ = new UnaryNode(UnarIncrement, var);
+        }
+        else {
+            parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->getValueType())).arg(*$name));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+
+}
+
+| INCREMENT IDENTIFIER[name]
+{
+    AbstractSymbolTableRecord *var = getVariableByName(*$name);
+    if(var != NULL) {
+        if (isInt(var->getValueType())){
+            $$ = new UnaryNode(UnarPreincrement, var);
+        }
+        else {
+            parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->getValueType())).arg(*$name));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+}
+| IDENTIFIER[name] DECREMENT
+{
+    AbstractSymbolTableRecord *var = getVariableByName(*$name);
+    if(var != NULL) {
+        if (isInt(var->getValueType())){
+            $$ = new UnaryNode(UnarDecrement, var);
+        }
+        else {
+            parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->getValueType())).arg(*$name));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+
+}
+
+| DECREMENT IDENTIFIER[name]
+{
+    AbstractSymbolTableRecord *var = getVariableByName(*$name);
+    if(var != NULL) {
+        if (isInt(var->getValueType())){
+            $$ = new UnaryNode(UnarPredecrement, var);
+        }
+        else {
+            parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->getValueType())).arg(*$name));
+            $$ = NULL;
+            YYERROR;
+        }
+    }
+    else {
+        $$ = NULL;
+        YYERROR;
+    }
+};
+
 identifier_list : identifier_list[list] COMA IDENTIFIER[id] {
     if($list != NULL) {
         if(!currentTable->contains(*$id)) {
@@ -1111,22 +1192,11 @@ exp : exp[left] RELOP exp[right] {
     $$ = new ValueNode(typeBool, 0);
 }
 | function_call
+| increment
 | scan
 | reference;
 
-/*
- * Not in 2016.
- * | IDENTIFIER INCREMENT
-{
-    AbstractSymbolTableRecord *var = getVariableByName(*$1);
 
-    if (isNumericType(var->valueType))
-        $$ = createNodeAST(NT_UnaryOperation, $2, createReferenceNode(var), NULL);
-    else
-        parsererror(errorList.at(ERROR_INCREMENT_WRONG_TYPE).arg(typeName.at(var->valueType)).arg(*$1));
-
-}
-*/
 
 
 %%

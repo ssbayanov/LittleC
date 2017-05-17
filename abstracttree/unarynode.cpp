@@ -27,6 +27,16 @@ UnaryNode::UnaryNode(TypeUnary uType, AbstractASTNode *left)
     default:
         _typeValue = ((AbstractValueASTNode *)_value)->getValueType();
     }
+    _variable = NULL;
+}
+
+UnaryNode::UnaryNode(TypeUnary uType, AbstractSymbolTableRecord *variable)
+    : AbstractValueASTNode(NT_UnaryOperation)
+{
+    _uType = uType;
+    _typeValue = typeInt;
+    _variable = variable;
+    _value = NULL;
 }
 
 void UnaryNode::printNode(int level)
@@ -36,22 +46,30 @@ void UnaryNode::printNode(int level)
                   .arg(unarTypeString.at(_uType))
                   .arg(typeName.at(_typeValue));
 
-    if(_value != NULL) {
+    if(_value != NULL && _uType <= UnarNot) {
         treeStream << QString().fill(' ',level*2)
                    << "Value:\n";
         _value->printNode(level+1);
     }
     else {
-        treeStream << QString().fill(' ',level*2)
-                   << "BAD VALUE NODE!!!\n";
+        if(_variable != NULL && _uType >= UnarIncrement) {
+            treeStream << QString().fill(' ',level*2)
+                       << QString("Variable: %1\n").arg(_variable->getName());
+        }
+        else {
+            treeStream << QString().fill(' ',level*2)
+                       << "BAD VALUE NODE OR VARIABLE!!!\n";
+        }
     }
+
+
 }
 
 QString UnaryNode::printTripleCode()
 {
-    if(_value != NULL) {
+    if(_value != NULL || _variable != NULL) {
         AbstractValueASTNode *value = ((AbstractValueASTNode *) _value);
-        QString opText = "";
+
         switch (_uType) {
         case UnarToDouble:
             if(isInt(value->getValueType())) {
@@ -109,10 +127,18 @@ QString UnaryNode::printTripleCode()
                                  .arg(value->getValueTypeLLVM())
                                  .arg(value->printTripleCode()));
             break;
+        case UnarIncrement:
+            return writeIncrement();
+        case UnarPreincrement:
+            return writeIncrement(true);
+        case UnarDecrement:
+            return writeIncrement(false, true);
+        case UnarPredecrement:
+            return writeIncrement(true, true);
+
         default:
             break;
         }
-        //outStream << opText;
 
         return ir.lastCommandLine();
 
@@ -124,4 +150,31 @@ UnaryNode::~UnaryNode()
 {
     if(_value != NULL)
         _value->~AbstractASTNode();
+}
+
+QString UnaryNode::writeIncrement(bool isPreincrement,bool isDecrement)
+{
+    QString oldVal = ir.writeCommandLine(QString("load %1, %1* %2%3")
+                                         .arg(getValueTypeLLVM())
+                                         .arg(_variable->isGlobal() ? "@" : "%")
+                                         .arg(_variable->getUniqueName()));
+    QString newVal;
+    if(isDecrement){
+        newVal = ir.writeCommandLine( QString("sub %1 %2, 1")
+                                      .arg(getValueTypeLLVM())
+                                      .arg(oldVal));
+    }
+    else {
+        newVal = ir.writeCommandLine( QString("add %1 1, %2")
+                                      .arg(getValueTypeLLVM())
+                                      .arg(oldVal));
+    }
+    ir.writeLine(QString("store %1 %2, %1* %3")
+                 .arg(getValueTypeLLVM())
+                 .arg(newVal)
+                 .arg((_variable->isGlobal() ? "@" : "%")+_variable->getUniqueName()));
+
+    if(isPreincrement)
+        return newVal;
+    return oldVal;
 }

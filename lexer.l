@@ -73,16 +73,19 @@ stringch      [^"\n]
 
     /* Binar operations. */
 \=                          {
-                                //TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno));
+                                TokenTable.push_back(TokenTableRow("ASSIGN", yytext, lno));
                                 return ASSIGN;
                             }
-    /*
-     * Not in 2016.
-     * \+{2}|\-{2}                     {
-                                TokenTable.push_back(TokenTableRow("ADDUOP", yytext, lno));
-                                strcpy(parserlval.opName, yytext);
+
+\+{2}                {
+                                TokenTable.push_back(TokenTableRow("INCREMENT", yytext, lno));
                                 return INCREMENT;
-                            }*/
+                            }
+
+\-{2}                 {
+                                TokenTable.push_back(TokenTableRow("DECREMENT", yytext, lno));
+                                return DECREMENT;
+                            }
 
 \+                          {
                                 TokenTable.push_back(TokenTableRow("PLUS", yytext, lno));
