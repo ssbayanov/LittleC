@@ -1,7 +1,7 @@
 #include "arraytablerecord.h"
 
-ArrayTableRecord::ArrayTableRecord(QString name, QString key, ValueTypeEnum valueType, SymbolsTable *table)
-    : AbstractSymbolTableRecord(SymbolTableRecord_Array, name, key, valueType, table)
+ArrayTableRecord::ArrayTableRecord(QString name, ValueTypeEnum valueType, SymbolsTable *table)
+    : AbstractSymbolTableRecord(SymbolTableRecord_Array, name, valueType, table)
 {
 
 }

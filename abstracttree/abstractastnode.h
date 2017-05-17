@@ -8,20 +8,7 @@
 #include "symbolstable/abstractsymboltablerecord.h"
 #include "irprint.h"
 
-//#include "llvm/ADT/APFloat.h"
-//#include "llvm/ADT/STLExtras.h"
-//#include "llvm/IR/BasicBlock.h"
-//#include "llvm/IR/Constants.h"
-//#include "llvm/IR/DerivedTypes.h"
-//#include "llvm/IR/Function.h"
-//#include "llvm/IR/IRBuilder.h"
-//#include "llvm/IR/LLVMContext.h"
-//#include "llvm/IR/Module.h"
-//#include "llvm/IR/Type.h"
-//#include "llvm/IR/Verifier.h"
-
 extern QTextStream treeStream;
-extern QTextStream outStream;
 extern IRPrint ir;
 
 typedef enum
@@ -29,22 +16,22 @@ typedef enum
     NT_BinaryOperation,     // Binary operator.
     NT_UnaryOperation,      // Unary arithmetice operator.
     NT_AssignmentOperation, // Unary assignment operator.
-    NT_NumericConstant,             // Numeric literal.
-    NT_StringConstant,             // Sting literal.
-    NT_Declaration,
-    NT_Reference,        // Variable name.
-    NT_IfStatement,       // If statement.
-    NT_WhileStatement,    // While statement.
-    NT_ForStatement,    // For statement
-    NT_GoToStatement,     // Goto, Break or Continue statement.
-    NT_LabelStatement,  // Label
+    NT_NumericConstant,     // Numeric literal.
+    NT_StringConstant,      // Sting literal.
+    NT_Declaration,         // Variable declaration
+    NT_Reference,           // Variable name.
+    NT_IfStatement,         // If statement.
+    NT_WhileStatement,      // While statement.
+    NT_ForStatement,        // For statement
+    NT_GoToStatement,       // Goto, Break or Continue statement.
+    NT_LabelStatement,      // Label
     NT_SwitchStatement,     // Switch statement.
-    NT_CaseStatement,   // Case statement
-    NT_PintStatement,     // Print statement.
-    NT_ScanExpression,
-    NT_List,               // Expression or statement list.
-    NT_FunctionDeclare,             // Declaration function.
-    NT_FunctionCall,
+    NT_CaseStatement,       // Case statement
+    NT_PintStatement,       // Print statement.
+    NT_ScanExpression,      // Scan function
+    NT_List,                // List of nodes.
+    NT_FunctionDeclare,     // Declaration function.
+    NT_FunctionCall,        // Calling function
     NT_FunctionReturn,
     NT_ArrayReference,
     NT_ArrayDeclare,
@@ -55,9 +42,17 @@ typedef enum
     NT_StructAssignment
 } ASTNodeTypeEnum;
 
+/**
+ * @brief The AbstractASTNode class of node abstract tree
+ */
+
 class AbstractASTNode
 {
 public:
+    /**
+     * @brief AbstractASTNode
+     * @param type
+     */
     AbstractASTNode(ASTNodeTypeEnum type);
 
     // Type

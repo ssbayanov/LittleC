@@ -1,8 +1,8 @@
 #include "structtablerecord.h"
 #include "symbolstable.h"
 
-StructTableRecord::StructTableRecord(QString name, QString key, SymbolsTable *table, StructTypeTableRecord *structType)
-    : AbstractSymbolTableRecord(SymbolTableRecord_Struct, name, key, typeStruct, table)
+StructTableRecord::StructTableRecord(QString name, SymbolsTable *table, StructTypeTableRecord *structType)
+    : AbstractSymbolTableRecord(SymbolTableRecord_Struct, name, typeStruct, table)
 {
     _structType = structType;
 }

@@ -1,11 +1,10 @@
 #include "abstractsymboltablerecord.h"
 #include "symbolstable/symbolstable.h"
 
-AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, QString key, ValueTypeEnum valueType, SymbolsTable *table)
+AbstractSymbolTableRecord::AbstractSymbolTableRecord(SymbolsTableRecordType type, QString name, ValueTypeEnum valueType, SymbolsTable *table)
 {
     _type = type;
     _name = name;
-    _key = key;
     _valueType = valueType;
     _table = table;
 }
@@ -33,11 +32,6 @@ QString AbstractSymbolTableRecord::getUniqueName()
 void AbstractSymbolTableRecord::setUniqueName(QString name)
 {
     _uniqueName = name;
-}
-
-QString AbstractSymbolTableRecord::getKey()
-{
-    return _key;
 }
 
 SymbolsTable *AbstractSymbolTableRecord::getTable()

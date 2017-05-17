@@ -12,12 +12,9 @@ QMAKE_LEX = flex
 QMAKE_YACC = bison
 QMAKE_YACCFLAGS = -d -o parser.tab.c -l -v
 
-#INCLUDEPATH += /usr/lib/llvm-3.8/include
-
 
 QT       += core
 QT       -= gui
-
 
 LIBS += -lfl -ly
 
@@ -62,7 +59,8 @@ SOURCES += main.cpp \
     subexpression.cpp \
     abstracttree/structvariableassignment.cpp \
     symbolstable/arraytablerecord.cpp \
-    abstracttree/arrayassignmentnode.cpp
+    abstracttree/arrayassignmentnode.cpp \
+    parsersupport.cpp
 
 LEXSOURCES = lexer.l
 YACCSOURCES = parser.y
@@ -106,5 +104,6 @@ HEADERS += \
     abstracttree/assignmentnode.h \
     abstracttree/structvariableassignment.h \
     symbolstable/arraytablerecord.h \
-    abstracttree/arrayassignmentnode.h
+    abstracttree/arrayassignmentnode.h \
+    parsersupport.h
 

@@ -7,7 +7,7 @@ class ArrayTableRecord : public AbstractSymbolTableRecord
 {
 public:
     ArrayTableRecord(QString name,
-                     QString key, ValueTypeEnum valueType,
+                     ValueTypeEnum valueType,
                      SymbolsTable *table);
 
  int getSize();

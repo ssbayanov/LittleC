@@ -77,26 +77,21 @@ public:
      * @return pointer to struct of this variable
      */
     VariableTableRecord *insertVariable(QString name,
-                                        QString key,
                                         ValueTypeEnum type,
                                         QVariant value,
                                         SymbolsTableRecordType typeRecord = SymbolTableRecord_Variable);
 
     VariableTableRecord *insertArray(QString name,
-                                     QString key,
                                      ValueTypeEnum type);
 
     FunctionTableRecord *insertFunction(QString name,
-                                        QString key,
                                         ValueTypeEnum type,
                                         SymbolsTable *params);
 
     StructTypeTableRecord *insertStructType(QString name,
-                                            QString key,
                                     SymbolsTable *variables);
 
     StructTableRecord *insertStruct(QString name,
-                                    QString key,
                                     StructTypeTableRecord *typeStruct);
 
 

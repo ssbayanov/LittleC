@@ -35,6 +35,7 @@
 bool multilineComment();
 
 #define lexerlex parserlex
+#define yyerror         parsererror
 
 
 

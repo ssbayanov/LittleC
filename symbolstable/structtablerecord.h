@@ -10,7 +10,6 @@ class StructTableRecord : public AbstractSymbolTableRecord
 {
 public:
     StructTableRecord(QString name,
-                      QString key,
                       SymbolsTable *table,
                       StructTypeTableRecord *structType);
 

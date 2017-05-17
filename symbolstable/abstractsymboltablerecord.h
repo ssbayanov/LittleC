@@ -19,7 +19,6 @@ class AbstractSymbolTableRecord
 public:
     AbstractSymbolTableRecord(SymbolsTableRecordType type,
                               QString name,
-                              QString key,
                               ValueTypeEnum valueType,
                               SymbolsTable *table);
     ~AbstractSymbolTableRecord();
@@ -28,7 +27,6 @@ public:
     QString getName();
     QString getUniqueName();
     void setUniqueName(QString name);
-    QString getKey();
 
     SymbolsTable *getTable();
     SymbolsTableRecordType getType();
@@ -47,7 +45,6 @@ protected:
     ValueTypeEnum _valueType; /* Type of a variable or expression */
     QString _name;
     QString _uniqueName;
-    QString _key;
     SymbolsTable *_table;
 
     SymbolsTableRecordType _type;
