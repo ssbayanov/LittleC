@@ -9,6 +9,10 @@ class AssignmentNode : public AbstractASTNode
 public:
     AssignmentNode(AbstractSymbolTableRecord *variable, AbstractASTNode *value);
 
+    /**
+     * @brief printNode Virtual function of printing tree. Tree printed to treeStream.
+     * @param level Level of node. Setup of space.
+     */
     void printNode(int level);
 
     QString printTripleCode();

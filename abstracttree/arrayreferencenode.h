@@ -11,6 +11,10 @@ class ArrayReferenceNode : public AbstractValueASTNode
 public:
     ArrayReferenceNode(AbstractSymbolTableRecord *array, AbstractValueASTNode *index);
 
+    /**
+     * @brief printNode Virtual function of printing tree. Tree printed to treeStream.
+     * @param level Level of node. Setup of space.
+     */
     void printNode(int level);
 
     QString printTripleCode();

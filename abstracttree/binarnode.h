@@ -58,6 +58,7 @@ public:
 
     virtual QString printTripleCode();
 
+
     void printNode(int level);
 
     ~BinarNode();
